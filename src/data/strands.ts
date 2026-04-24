@@ -15,23 +15,23 @@ export const STRANDS: Strand[] = [
   {
     id: 'kindred',
     label: 'Kindreon',
-    tagline: 'Understanding subjective attraction in caregiving contexts',
+    tagline: 'Understanding subjective attraction.',
     href: '#/strands/kindred',
     themes: [
       {
         title: 'Perception of attractiveness',
         description:
-          'How caregivers, clinicians and partners perceive and interpret cues of human attraction in care settings.',
+          'Research into the psychological and social factors that influence how individuals perceive attractiveness.',
       },
       {
         title: 'Interpersonal dynamics',
         description:
-          'Mapping the subjective experience of connection, empathy and rapport across care relationships.',
+          'Equality, power and social context in shaping attraction and relationship formation.',
       },
       {
         title: 'Clinical implications',
         description:
-          'Translating insights into guidance for practitioners supporting vulnerable individuals.',
+          'Maxillofacial aesthetics, reconstructive surgery and their impact on patient satisfaction and self-esteem.',
       },
     ],
   },

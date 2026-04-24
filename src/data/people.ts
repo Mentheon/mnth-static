@@ -41,7 +41,7 @@ export const PEOPLE: Person[] = [
     id: 'toby',
     name: 'Dr Toby Edward Laycock',
     credentials: 'BDS',
-    tagline: '(BDS) · Clinical Lead',
+    tagline: '(BDS) · Chief Visionary Officer',
     href: '#/people/toby',
     themes: [
       {
@@ -69,19 +69,19 @@ export const PEOPLE: Person[] = [
     href: '#/people/rhys',
     themes: [
       {
-        title: 'Software engineering',
+        title: 'Market analysis & product strategy',
         description:
-          'Owns the engineering standards, architecture and quality processes that underpin our products.',
+          'Analyzes market trends and customer needs to inform product development and go-to-market strategies.',
       },
       {
         title: 'Data & signal work',
         description:
-          'Builds the pipelines that turn continuous physiological and behavioural data into clinical signal.',
+          'Researches the market landscape for data-driven digital health products, identifying opportunities for innovation and differentiation.',
       },
       {
-        title: 'Platform & ops',
+        title: 'Operations & quality management',
         description:
-          'Keeps the platform robust, secure and auditable — the foundation SaMD can be trusted on.',
+          'Oversees operational processes and quality management systems to ensure compliance with industry standards and regulatory requirements.',
       },
     ],
   },
