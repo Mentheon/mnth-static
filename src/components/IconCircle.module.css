@@ -1,0 +1,16 @@
+.circle {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease-out, background-color 0.2s ease;
+  transform-origin: center;
+}
+
+.emoji {
+  font-size: 72px;
+  line-height: 1;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji',
+    EmojiSymbols, sans-serif;
+}

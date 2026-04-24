@@ -1,0 +1,29 @@
+.circle {
+    /* background-color: #9C528B; Purple background */
+    border-radius: 50%;        /* Makes the div a circle */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Optionally, add a subtle shadow */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    /* Transition for potential hover effects */
+
+  }
+
+  
+  
+
+
+  /* @keyframes bounce {
+    0% {
+      transform: scale(1.1) translateY(0);
+    }
+    50% {
+      transform: scale(1.15) translateY(-10px);
+    }
+    100% {
+      transform: scale(1.1) translateY(0);
+    }
+  } */
+  
+  

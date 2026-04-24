@@ -1,0 +1,31 @@
+:root {
+  --bg:             #FFECE1;
+  --ink:            #2F0147;
+  --plum:           #3F0247;
+  --crimson:        #A30B37;
+  --grape:          #9C528B;
+  --white:          #FFECE1;
+  --strand-default:  #9C528B;
+  --strand-selected: #A30B37;
+  --strand-hover-scale: 1.12;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Lato', sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+a {
+  color: #FFECE1;
+  text-decoration: none;
+}

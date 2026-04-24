@@ -1,0 +1,43 @@
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 8rem;
+  margin-top: 2rem;
+}
+
+.iconGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Fixed container for the icon that prevents layout shift */
+.iconWrapper {
+  width: 130px;   /* Use defaultSize or a fixed value that fits your design */
+  height: 130px;
+  position: relative;
+  /* Optionally center content if needed */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The link itself can remain as is */
+.iconLink {
+  display: inline-block;
+}
+
+/* Label styling */
+.label {
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.typedContent {
+  min-height: 100px; /* Reserve space for typed content */
+  margin-top: 5rem;
+  font-size: 2rem;
+  font-family: 'lato';
+}

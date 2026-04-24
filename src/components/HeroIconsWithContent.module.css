@@ -1,0 +1,84 @@
+.iconsRow {
+  display: flex;
+  justify-content: center;
+  gap: 8rem;
+  margin-top: 5rem;
+}
+
+.iconGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.iconWrapper {
+  width: 130px;
+  height: 130px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconLink {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.label {
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+  color: var(--ink);
+}
+
+.typedContent {
+  min-height: 100px;
+  margin-top: 5rem;
+  font-size: 2rem;
+  font-family: 'Lato', sans-serif;
+  color: var(--ink);
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.8rem;
+  background: var(--ink);
+  margin-left: 4px;
+  vertical-align: -4px;
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.statusIndicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+}
+
+.activeIndicator {
+  background-color: var(--crimson);
+}
+
+@media (max-width: 1080px) {
+  .iconsRow {
+    gap: 2.5rem;
+    flex-wrap: wrap;
+  }
+}

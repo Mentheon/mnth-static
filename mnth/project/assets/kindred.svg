@@ -1,0 +1,20 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  
+  <circle cx="100" cy="100" r="95" fill="currentColor" class="strand-bg"></circle>
+  
+  
+  <g fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round">
+    
+    <circle cx="80" cy="100" r="32"></circle>
+    
+    <circle cx="120" cy="100" r="32"></circle>
+  </g>
+  
+  
+  <path d="M 100 108 &#xA;           C 100 108, 92 100, 92 94&#xA;           C 92 89, 96 86, 100 90&#xA;           C 104 86, 108 89, 108 94&#xA;           C 108 100, 100 108, 100 108 Z" fill="#FCE8D5"></path>
+  
+  
+  <circle cx="100" cy="55" r="3" fill="#FCE8D5"></circle>
+  <circle cx="85" cy="60" r="2" fill="#FCE8D5" opacity="0.7"></circle>
+  <circle cx="115" cy="60" r="2" fill="#FCE8D5" opacity="0.7"></circle>
+</svg>

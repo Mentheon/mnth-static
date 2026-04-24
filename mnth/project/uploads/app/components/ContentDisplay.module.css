@@ -1,0 +1,54 @@
+.container {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  
+  .menu {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .menuButton {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: #ccc;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+  }
+  
+  .menuButton:hover {
+    background-color: #bbb;
+  }
+  
+  .menuButton.active {
+    background-color: #A30B37;
+    color: #fff;
+  }
+  
+  .typedContent {
+    min-height: 100px; /* Reserve space for typed content */
+    margin-bottom: 1rem;
+  }
+  
+  .statusIndicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+    transition: background-color 0.3s;
+  }
+  
+  .activeIndicator {
+    background-color: #A30B37;
+  }
+  
