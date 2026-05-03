@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import RDStrands from './components/RDStrands'
+import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
 
 function useHash() {
@@ -27,6 +28,7 @@ export default function App() {
         <>
           <HeroSection />
           <RDStrands />
+          <Helix />
         </>
       )}
     </>

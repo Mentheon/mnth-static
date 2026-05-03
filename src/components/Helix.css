@@ -1,0 +1,356 @@
+/* ============================================================
+   Helix (Rod of Asclepius) — global styles, scoped under .helix
+   so that the unscoped utility class names ('panel', 'themeCard',
+   etc.) used by the imperative scene mount don't bleed into the
+   rest of the app or collide with the CSS-module-scoped versions
+   in StrandPanel.module.css.
+
+   Tokens (--bg, --ink, --crimson, etc.) come from src/index.css.
+   ============================================================ */
+
+section.helix {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 4rem 2rem 5rem;
+}
+.helix-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;
+}
+.helix-head-text { flex: 1; min-width: 280px; }
+.helix-eyebrow {
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.55; margin-bottom: 0.6rem;
+  color: var(--ink);
+}
+.helix-title {
+  font-size: 2.2rem; font-weight: 700; margin: 0 0 0.6rem;
+  line-height: 1.15; color: var(--ink);
+}
+.helix-title .thin { font-weight: 400; }
+.helix-blurb {
+  font-size: 1rem; max-width: 640px; line-height: 1.55;
+  opacity: 0.78; margin: 0; color: var(--ink);
+}
+.helix-toolbar { display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; }
+
+.orientation-toggle { display: inline-flex; border: 1.5px solid var(--ink); }
+.orientation-toggle button {
+  background: transparent; border: none;
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink); padding: 0.5rem 1rem;
+  cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.orientation-toggle button.is-active { background: var(--ink); color: var(--bg); }
+
+.helix-key {
+  display: flex; justify-content: center;
+  gap: 2rem; margin-bottom: 1.25rem;
+  font-size: 0.82rem; flex-wrap: wrap; opacity: 0.78;
+  color: var(--ink);
+}
+.helix-key-item { display: flex; align-items: center; gap: 0.5rem; }
+.helix-key-glyph {
+  width: 30px; height: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.helix-stage {
+  width: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  transition: height 0.4s ease;
+}
+.helix-stage[data-orientation="vertical"]   { height: 900px; }
+.helix-stage[data-orientation="horizontal"] { height: 560px; }
+
+.helix-svg { max-width: 100%; max-height: 100%; display: block; overflow: visible; }
+
+.staff { stroke: var(--ink); stroke-width: 1.25; opacity: 0.35; stroke-linecap: round; }
+
+/* Strands — quieter background carriers */
+.strand-segment {
+  fill: none; stroke-width: 2.5; stroke-linecap: round;
+  cursor: pointer; transition: opacity 0.35s, stroke-width 0.25s;
+  opacity: 0.5;
+}
+.strand-segment.is-back { stroke-width: 2; opacity: 0.32; }
+
+.strand-hitbox { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
+
+.strand-label-group { transition: opacity 0.3s; opacity: 0.7; }
+.strand-label-group.is-dim { opacity: 0.25; }
+.strand-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  fill: var(--ink); pointer-events: none;
+}
+.strand-leader {
+  stroke: var(--ink); stroke-width: 1; opacity: 0.3;
+  fill: none; pointer-events: none;
+}
+
+.rung-line {
+  stroke: var(--ink); stroke-width: 1.25; stroke-dasharray: 2 4;
+  opacity: 0.4; fill: none; pointer-events: none;
+  transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s, stroke-dasharray 0.25s;
+}
+.rung-bead {
+  fill: var(--bg); stroke: var(--ink); stroke-width: 1.25;
+  transition: fill 0.25s, stroke 0.25s; cursor: pointer;
+}
+.rung-group:hover .rung-line,
+.rung-group.is-active .rung-line {
+  stroke: var(--ink); stroke-width: 1.75; opacity: 1; stroke-dasharray: none;
+}
+.rung-group:hover .rung-bead,
+.rung-group.is-active .rung-bead { fill: var(--ink); stroke: var(--ink); }
+.rung-group.is-dim { opacity: 0.18; }
+
+.project-bead { cursor: pointer; transition: opacity 0.3s, transform 0.2s; transform-box: fill-box; transform-origin: center; }
+.project-bead-shape { stroke-width: 3; transition: fill 0.25s, stroke 0.25s, stroke-width 0.25s; }
+.project-bead:hover { transform: scale(1.15); }
+.project-bead.is-active .project-bead-shape { stroke: var(--crimson); stroke-width: 4; }
+.project-bead.is-dim { opacity: 0.28; }
+
+.project-bridge { cursor: pointer; transition: opacity 0.3s; }
+.project-bridge-line { stroke-width: 9; stroke-linecap: round; transition: stroke-width 0.2s, opacity 0.25s; }
+.project-bridge-cap { stroke-width: 3; transition: r 0.2s, stroke-width 0.2s; }
+.project-bridge:hover .project-bridge-line { stroke-width: 11; }
+.project-bridge:hover .project-bridge-cap  { stroke-width: 4; }
+.project-bridge.is-active .project-bridge-line { stroke-width: 11; }
+.project-bridge.is-active .project-bridge-cap  { stroke: var(--crimson) !important; stroke-width: 4; }
+.project-bridge.is-dim { opacity: 0.28; }
+
+/* Thin tether from a project's strand point (or capsule midpoint) to the
+   displaced bead/label. Sits beneath the bead inside the same project group
+   so it inherits dim/active states automatically. */
+.project-leader {
+  fill: none;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.25s, stroke 0.25s, stroke-width 0.25s;
+}
+.project-bead.is-active .project-leader,
+.project-bridge.is-active .project-leader {
+  stroke: var(--crimson) !important;
+  opacity: 0.95;
+  stroke-width: 1.6;
+}
+.project-bead.is-dim .project-leader,
+.project-bridge.is-dim .project-leader {
+  opacity: 0.18;
+}
+
+.project-label {
+  font-size: 18px; font-weight: 700; letter-spacing: 0.01em;
+  fill: var(--ink); pointer-events: none; transition: opacity 0.3s;
+}
+.project-label.is-dim { opacity: 0.32; }
+
+.helix-tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--ink); color: var(--bg);
+  padding: 6px 10px; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.04em;
+  transform: translate(-50%, -130%);
+  opacity: 0; transition: opacity 0.18s; white-space: nowrap; z-index: 5;
+}
+.helix-tooltip::after {
+  content: ''; position: absolute; left: 50%; bottom: -5px;
+  transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--ink);
+}
+.helix-tooltip.is-visible { opacity: 1; }
+
+.helix-legend { display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap; margin-top: 1.25rem; }
+.legend-button {
+  background: none; border: none;
+  font-family: inherit; font-weight: 700; font-size: 0.95rem;
+  cursor: pointer; padding: 6px 10px; color: var(--ink);
+  transition: opacity 0.25s, color 0.25s;
+}
+.legend-button.is-dim { opacity: 0.4; }
+.legend-button.is-active { color: var(--crimson); }
+.legend-swatch {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; margin-right: 8px; vertical-align: middle;
+}
+
+/* ============================================================
+   Panel + theme cards — scoped under .helix so the unscoped names
+   used by the imperative scene mount stay isolated from the rest
+   of the site (StrandPanel.module.css uses the same names but is
+   CSS-module-hashed, so no collision either way).
+   anime.js drives max-height / opacity on the panel directly, so
+   we suppress the CSS transition shorthand the prototype carried.
+   ============================================================ */
+.helix .panel {
+  width: 100%;
+  max-width: 1100px;
+  margin: 1.5rem auto 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: none;
+}
+.helix .panel.open {
+  pointer-events: auto;
+}
+.helix .panelInner {
+  position: relative;
+  background-color: #FFECE1;
+  border: 2px solid #2F0147;
+  border-radius: 2px;
+  padding: 3rem 3rem 2.5rem;
+  font-family: 'Lato', sans-serif;
+  text-align: left;
+}
+.helix .panelInner .cornerCropPanel {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  border-top: 3px solid #A30B37;
+  border-left: 3px solid #A30B37;
+}
+.helix .closeButton {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: #2F0147;
+  cursor: pointer;
+  padding: 4px 10px;
+  transition: color 0.2s, transform 0.2s;
+}
+.helix .closeButton:hover { color: #A30B37; transform: scale(1.1); }
+
+.helix .panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(47, 1, 71, 0.15);
+  padding-bottom: 2rem;
+}
+.helix .headerIconCircle {
+  flex-shrink: 0;
+  width: 125px;
+  height: 125px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(47, 1, 71, 0.25);
+  animation: helixIconPulse 0.6s ease-out;
+  overflow: hidden;
+  background-color: transparent;
+}
+.helix .headerIconCircle img,
+.helix .headerIconCircle svg { width: 100%; height: 100%; display: block; }
+
+@keyframes helixIconPulse {
+  0%   { transform: scale(0.85); opacity: 0; }
+  60%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.helix .headerText { flex: 1; min-width: 0; }
+.helix .strandName {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2F0147;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.01em;
+}
+.helix .tagline {
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #2F0147;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.helix .themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.helix .themeCard {
+  position: relative;
+  padding: 1.5rem 1.25rem 1.25rem;
+  background-color: rgba(47, 1, 71, 0.04);
+  border-left: 3px solid #9C528B;
+  transition: background-color 0.25s, border-left-color 0.25s, transform 0.25s;
+  animation: helixCardRise 0.5s ease-out backwards;
+}
+.helix .themeCard:nth-child(1) { animation-delay: 0.15s; }
+.helix .themeCard:nth-child(2) { animation-delay: 0.25s; }
+.helix .themeCard:nth-child(3) { animation-delay: 0.35s; }
+.helix .themeCard:nth-child(4) { animation-delay: 0.45s; }
+@keyframes helixCardRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.helix .themeCard:hover {
+  background-color: rgba(163, 11, 55, 0.06);
+  border-left-color: #A30B37;
+  transform: translateX(2px);
+}
+.helix .themeNumber {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #9C528B;
+  margin-bottom: 0.5rem;
+}
+.helix .themeCard:hover .themeNumber { color: #A30B37; }
+.helix .themeTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2F0147;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+.helix .themeDescription {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #2F0147;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.helix .ctaRow { display: flex; justify-content: flex-end; }
+.helix .ctaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFECE1;
+  background-color: #A30B37;
+  padding: 0.85rem 1.75rem;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background-color 0.2s, gap 0.2s;
+}
+.helix .ctaLink:hover { background-color: #2F0147; gap: 1rem; }
+.helix .ctaArrow { display: inline-block; transition: transform 0.2s; }
+.helix .ctaLink:hover .ctaArrow { transform: translateX(3px); }
+
+@media (max-width: 640px) {
+  .helix .panelInner { padding: 2rem 1.5rem 1.5rem; }
+  .helix .panelHeader { flex-direction: column; text-align: center; gap: 1rem; }
+  .helix .headerIconCircle { width: 90px; height: 90px; }
+  .helix .strandName { font-size: 1.75rem; }
+  .helix .themeGrid { grid-template-columns: 1fr; gap: 1rem; }
+  .helix .ctaRow { justify-content: stretch; }
+  .helix .ctaLink { justify-content: center; width: 100%; }
+}
