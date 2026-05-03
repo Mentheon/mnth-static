@@ -33,8 +33,12 @@ export default function App() {
       ) : (
         <>
           <HeroSection />
-          <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
+          {/* Helix sits ABOVE the R&D Strand buttons so it acts as a
+              compact scroll-driven navigator into them. The two read
+              as one section: scroll the helix → the matching button
+              below highlights and its detail panel opens. */}
           <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
+          <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
         </>
       )}
     </>

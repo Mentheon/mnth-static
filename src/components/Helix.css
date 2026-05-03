@@ -11,10 +11,11 @@
 section.helix {
   max-width: 1280px;
   margin: 0 auto;
-  /* Top padding tightened to 0 so the helix sits flush against the R&D
-     strand row above it (with the legend hidden via .helix-key display:none).
-     Restore to 4rem if/when the legend comes back. */
-  padding: 0 2rem 5rem;
+  /* Helix sits ABOVE the R&D Strand buttons now and reads as one
+     section with them. Bottom padding is tight (0) so the helix
+     flows directly into the "Our ongoing R&D strands" title that
+     follows. Top padding gives it some breathing room from the hero. */
+  padding: 2rem 2rem 0;
 }
 .helix-head {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -63,50 +64,84 @@ section.helix {
 }
 
 /* Wrapper that anchors the absolutely-positioned selector indicator
-   on top of the scrollable stage. */
-.helix-viewport { position: relative; }
+   AND the static header overlay on top of the scrollable stage.
+   Sized to centre on the page (matches the .rd container above). */
+.helix-viewport {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-/* The stage is now a SCROLL CONTAINER. The SVG inside is taller than
-   the visible viewport, so the user can scroll up/down through the
-   helix. Helix.tsx handles the JS-driven snap-to-nearest-project on
-   scroll-end, so CSS scroll-snap is intentionally not used. */
+/* Compact scroll window. The SVG inside is much taller, so the user
+   can scroll up/down through the helix. Helix.tsx handles JS-driven
+   snap-to-nearest-project on scroll-end. overscroll-behavior:contain
+   keeps page scrolling free outside the helix and stops the page
+   from scrolling once the helix's own scroll has more content to show. */
 .helix-stage {
   width: 100%; position: relative;
-  height: 70vh;
-  min-height: 560px;
-  max-height: 900px;
+  height: 300px;
+  min-height: 240px;
+  max-height: 360px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.helix-stage[data-orientation="horizontal"] { height: 560px; overflow-y: hidden; }
+.helix-stage[data-orientation="horizontal"] { height: 300px; overflow-y: hidden; }
 
 .helix-svg {
   width: 100%;
   height: auto;
-  /* Guaranteed scrollable: SVG intrinsic height (width × viewBox aspect)
-     is usually a touch over the stage height anyway, but a min-height
-     ensures projects stay at least one viewport apart so the snap UX
-     feels deliberate even on very wide containers. */
-  min-height: 1500px;
+  min-height: 1100px;          /* taller than stage → scrollable */
   display: block;
   overflow: visible;
 }
 
 /* ============================================================
-   Selection indicator — a horizontal hairline + chevrons centered
-   in the helix viewport. Sits OUTSIDE the scrollable stage so it
-   stays put while the SVG scrolls underneath.
+   Static header overlay — rod logo + four strand labels.
+   Sits over the top of the scrollable stage so the user always
+   sees the helix's identity (rod + colour-coded labels) regardless
+   of scroll position. Solid bg occludes the SVG's own rod/labels
+   that scroll up behind it.
+   ============================================================ */
+.helix-header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 8px 16px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  pointer-events: none;        /* clicks/scroll pass through to stage below */
+}
+.helix-header-rod {
+  width: 56px; height: 56px;
+  display: block;
+}
+.helix-header-labels {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 4px 18px;
+  font-size: 0.7rem; letter-spacing: 0.16em;
+  text-transform: uppercase; font-weight: 700;
+  opacity: 0.85;
+}
+.helix-header-label {
+  /* per-label colour applied inline in Helix.tsx */
+}
+
+/* ============================================================
+   Selection indicator — horizontal hairline + chevrons centered
+   in the visible viewport. Sits BELOW the static header (top: 60%
+   instead of 50%) so it lands inside the visible scroll area
+   rather than under the header overlay.
    ============================================================ */
 .helix-selector {
   position: absolute;
-  left: 0; right: 0; top: 50%;
+  left: 0; right: 0; top: 60%;
   transform: translateY(-50%);
   display: flex; align-items: center; gap: 12px;
   padding: 0 16px;
   pointer-events: none;
-  z-index: 5;
+  z-index: 8;
 }
 .helix-selector-line {
   flex: 1; height: 1px;

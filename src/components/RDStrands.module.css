@@ -1,6 +1,9 @@
 .rd {
   text-align: center;
-  padding: 6rem 2rem 8rem;
+  /* Top padding tightened (was 6rem) so the helix scroll-window above
+     flows directly into the "Our ongoing R&D strands" title without
+     a wide gap — the two read as one combined section. */
+  padding: 1.5rem 2rem 8rem;
   max-width: 1100px;
   margin: 0 auto;
   scroll-margin-top: 20px;

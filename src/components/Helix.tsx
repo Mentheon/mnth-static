@@ -45,6 +45,11 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     vitalis:  'aevorix',
     vitrix:   'acumentra',
   }
+  // Visible position of the selector line within the stage, expressed
+  // as a fraction of stage height. Keep in sync with .helix-selector
+  // `top: 60%` in Helix.css. 60% places the selector below the static
+  // header overlay so it lands inside the visible scroll area.
+  const SELECTOR_FRAC = 0.6
 
   /* ----------------------------------------------------------------
      Mount the helix scene + wire scroll-snap. Run ONCE on mount.
@@ -88,19 +93,20 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       if (svgPxH <= 0) return
       const scale = svgPxH / h.viewBoxHeight
       const stageH = stage.getBoundingClientRect().height
-      const centerScroll = stage.scrollTop + stageH / 2
+      const selectorOffset = stageH * SELECTOR_FRAC
+      const selectorScroll = stage.scrollTop + selectorOffset
 
       let bestHelixId: string | null = null
       let bestDist = Infinity
       for (const pid of ids) {
         const pxY = ys[pid] * scale
-        const dist = Math.abs(pxY - centerScroll)
+        const dist = Math.abs(pxY - selectorScroll)
         if (dist < bestDist) { bestDist = dist; bestHelixId = pid }
       }
       if (!bestHelixId) return
 
-      // Smooth-scroll the chosen project to the selector center.
-      const targetScroll = ys[bestHelixId] * scale - stageH / 2
+      // Smooth-scroll the chosen project to align with the selector line.
+      const targetScroll = ys[bestHelixId] * scale - selectorOffset
       programmaticScrollUntil.current = Date.now() + 700
       stage.scrollTo({ top: targetScroll, behavior: 'smooth' })
 
@@ -159,7 +165,7 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     if (svgPxH <= 0) return
     const scale = svgPxH / h.viewBoxHeight
     const stageH = stage.getBoundingClientRect().height
-    const targetScroll = vbY * scale - stageH / 2
+    const targetScroll = vbY * scale - stageH * SELECTOR_FRAC
 
     programmaticScrollUntil.current = Date.now() + 700
     lastReportedRdId.current = selectedStrandId
@@ -194,6 +200,19 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       </div>
 
       <div className="helix-viewport">
+        {/* Static header overlay — rod logo + colour-coded strand labels.
+            Stays put while the spiral scrolls underneath. Solid bg
+            occludes whatever in the SVG scrolls into the same space. */}
+        <div className="helix-header" aria-hidden="true">
+          <img className="helix-header-rod" src={`${import.meta.env.BASE_URL}rod-only.svg`} alt="" />
+          <div className="helix-header-labels">
+            {/* Order + colours match the strand layout at the top of the SVG */}
+            <span className="helix-header-label" style={{ color: '#6B1F4D' }}>Regulatory</span>
+            <span className="helix-header-label" style={{ color: '#A30B37' }}>Research</span>
+            <span className="helix-header-label" style={{ color: '#3F0247' }}>Development</span>
+            <span className="helix-header-label" style={{ color: '#9C528B' }}>Design</span>
+          </div>
+        </div>
         <div className="helix-selector" aria-hidden="true">
           <span className="helix-selector-chev">&rsaquo;</span>
           <span className="helix-selector-line" />
