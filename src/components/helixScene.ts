@@ -615,7 +615,11 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         }
         label.textContent = proj.name
         layerProjects.appendChild(g)
-        layerLabels.appendChild(label)
+        // Label MUST go into layerProjects (which has the strand-coord
+        // translate) and not layerLabels (untransformed). With the wrong
+        // layer the label renders startOffset px ABOVE its bead — that's
+        // why labels were "referring to incorrect sections".
+        layerProjects.appendChild(label)
         projectEls.push({ g, shape: circle, leader, label, project: proj, px, py, anchorPt: pt, sideSign })
       } else {
         // Multi-domain capsule (2 or more strands): a polyline through
@@ -724,7 +728,10 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         }
         label.textContent = proj.name
         layerProjects.appendChild(g)
-        layerLabels.appendChild(label)
+        // See note in the single-domain branch above: the label belongs
+        // in layerProjects (translated) so its strand-coord y aligns
+        // with the capsule it labels.
+        layerProjects.appendChild(label)
         projectEls.push({ g, line, labelLeader, label, project: proj, mx: mid.x, my: mid.y, sideSign })
       }
     })

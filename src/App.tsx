@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import RDStrands from './components/RDStrands'
+import StrandPanel from './components/StrandPanel'
 import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
+import { STRANDS } from './data/strands'
 
 function useHash() {
   const [hash, setHash] = useState(window.location.hash)
@@ -19,11 +21,12 @@ export default function App() {
   const hash = useHash()
   const page = hash === '#who' ? 'who' : 'home'
 
-  // Selected R&D Strand id, shared between RDStrands buttons and the
-  // Helix below — scrolling the helix snaps to a project and updates
-  // this; clicking an RDStrands button updates this and scrolls the
-  // helix to align that project with the selector.
+  // Selected R&D Strand id, shared between the StrandPanel, the
+  // RDStrands buttons, and the Helix — scrolling the helix snaps to a
+  // project and updates this; clicking an RDStrands button updates this
+  // and scrolls the helix to align that project with the selector.
   const [openStrandId, setOpenStrandId] = useState<string | null>(null)
+  const openStrand = STRANDS.find(s => s.id === openStrandId) ?? null
 
   return (
     <>
@@ -33,12 +36,21 @@ export default function App() {
       ) : (
         <>
           <HeroSection />
-          {/* Helix sits ABOVE the R&D Strand buttons so it acts as a
-              compact scroll-driven navigator into them. The two read
-              as one section: scroll the helix → the matching button
-              below highlights and its detail panel opens. */}
-          <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
+          {/* Top: three circular bubbles (Kindreon / Aevorix / Acumentra). */}
           <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
+          {/* Middle: scrollable helix. Snapping a project here lights
+              the matching bubble above; clicking a bubble scrolls the
+              helix to that project. */}
+          <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
+          {/* Bottom: detail panel for whatever's currently selected. */}
+          {openStrand && (
+            <StrandPanel
+              key={openStrand.id}
+              strand={openStrand}
+              isOpen={openStrandId !== null}
+              onClose={() => setOpenStrandId(null)}
+            />
+          )}
         </>
       )}
     </>

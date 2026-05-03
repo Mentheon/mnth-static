@@ -114,6 +114,20 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       return bandY + vbY * scale
     }
 
+    /** scrollTop value that aligns Kindreon (the topmost project) with
+     *  the selector line. The user is not allowed to scroll above this. */
+    function getMinScroll(): number {
+      const h = handleRef.current
+      if (!h) return 0
+      const ys = h.getProjectViewboxYs()
+      const firstY = ys.kindreon ?? Object.values(ys)[0]
+      if (firstY == null) return 0
+      const pxY = getProjectPxY(h, firstY)
+      if (pxY == null) return 0
+      const stageH = stage.getBoundingClientRect().height
+      return Math.max(0, pxY - stageH * SELECTOR_FRAC)
+    }
+
     function snapToNearest() {
       const h = handleRef.current
       if (!h || !stage) return
@@ -148,6 +162,15 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     }
 
     function onScroll() {
+      // Clamp at the Kindreon position — the user can't scroll above
+      // the first project. Done first, before the programmatic-scroll
+      // guard, so any bounce-back fires regardless of how scrollTop got
+      // below the floor.
+      const minScroll = getMinScroll()
+      if (stage.scrollTop < minScroll) {
+        stage.scrollTop = minScroll
+        return
+      }
       if (Date.now() < programmaticScrollUntil.current) return
       if (snapTimer) window.clearTimeout(snapTimer)
       // Wait until scroll has been idle for ~150 ms before snapping.
@@ -288,10 +311,13 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       </div>
 
       <div className="helix-viewport">
-        {/* Static header overlay — rod logo at very top, domain labels
-            below it. Both stay put while the spiral scrolls underneath.
-            The rod sits at one of two discrete sizes (LARGE / SMALL),
-            flipping when the user has page-scrolled past the threshold. */}
+        {/* Vertical hairline that protrudes through the rod logo and
+            extends down through the entire helix viewport — the SOLE
+            element that crosses the panel. Sits behind the rod img
+            (which occludes it where the rod is opaque) and over the
+            scrolling SVG (so the strands wrap around it visually). */}
+        <div className="helix-line" aria-hidden="true" />
+        {/* Static header overlay — rod logo only (label row hidden). */}
         <div className="helix-header" aria-hidden="true">
           <img
             className="helix-header-rod"
@@ -299,12 +325,6 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
             alt=""
             style={{ width: rodSize, height: rodSize }}
           />
-          <div className="helix-header-labels">
-            <span className="helix-header-label" style={{ color: '#6B1F4D' }}>Regulatory</span>
-            <span className="helix-header-label" style={{ color: '#A30B37' }}>Research</span>
-            <span className="helix-header-label" style={{ color: '#3F0247' }}>Development</span>
-            <span className="helix-header-label" style={{ color: '#9C528B' }}>Design</span>
-          </div>
         </div>
         <div className="helix-selector" aria-hidden="true">
           <span className="helix-selector-chev">&rsaquo;</span>

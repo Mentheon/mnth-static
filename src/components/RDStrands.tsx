@@ -1,6 +1,5 @@
 import { STRANDS } from '../data/strands'
 import StrandIcon from './StrandIcon'
-import StrandPanel from './StrandPanel'
 import styles from './RDStrands.module.css'
 
 interface RDStrandsProps {
@@ -8,12 +7,15 @@ interface RDStrandsProps {
   onSelect: (id: string | null) => void
 }
 
+// StrandPanel is rendered in App.tsx — placed between the HeroSection
+// and the Helix above this component, so the user sees a selected
+// project's details right under the hero icons (above the scrollable
+// helix and these buttons), keeping the panel + helix + buttons
+// readable as one column.
 export default function RDStrands({ openId, onSelect }: RDStrandsProps) {
   function toggle(id: string) {
     onSelect(openId === id ? null : id)
   }
-
-  const openStrand = STRANDS.find((s) => s.id === openId) ?? null
 
   return (
     <section className={styles.rd} id="rd">
@@ -56,15 +58,6 @@ export default function RDStrands({ openId, onSelect }: RDStrandsProps) {
           )
         })}
       </div>
-
-      {openStrand && (
-        <StrandPanel
-          key={openStrand.id}
-          strand={openStrand}
-          isOpen={openId !== null}
-          onClose={() => onSelect(null)}
-        />
-      )}
     </section>
   )
 }
