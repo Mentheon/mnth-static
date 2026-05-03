@@ -14,7 +14,6 @@ export default function Helix() {
   const panelCtaRowRef = useRef<HTMLDivElement>(null)
   const panelCtaRef = useRef<HTMLAnchorElement>(null)
   const panelCloseRef = useRef<HTMLButtonElement>(null)
-  const toggleRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (
@@ -22,12 +21,8 @@ export default function Helix() {
       !tooltipRef.current || !panelIconRef.current || !panelNameRef.current ||
       !panelTaglineRef.current || !panelThemesRef.current ||
       !panelCtaRowRef.current || !panelCtaRef.current ||
-      !panelCloseRef.current || !toggleRef.current
+      !panelCloseRef.current
     ) return
-
-    const orientationButtons = Array.from(
-      toggleRef.current.querySelectorAll<HTMLButtonElement>('button')
-    )
 
     return mountHelix({
       stageEl: stageRef.current,
@@ -41,30 +36,11 @@ export default function Helix() {
       panelCtaRow: panelCtaRowRef.current,
       panelCta: panelCtaRef.current,
       panelCloseBtn: panelCloseRef.current,
-      orientationButtons,
     })
   }, [])
 
   return (
     <section className="helix" id="helix">
-      <div className="helix-head">
-        <div className="helix-head-text">
-          <div className="helix-eyebrow">Research domains, woven around a single staff</div>
-          <h2 className="helix-title"><span className="thin">A research practice,</span> entwined</h2>
-          <p className="helix-blurb">
-            The four disciplines we work in wrap around a central axis &mdash; alternating
-            front and back as they descend, the way a single strand wraps a physician&rsquo;s
-            staff. Concrete projects sit on (and sometimes between) the strands.
-          </p>
-        </div>
-        <div className="helix-toolbar">
-          <div className="orientation-toggle" ref={toggleRef}>
-            <button className="is-active" data-orientation="vertical">Vertical</button>
-            <button data-orientation="horizontal">Horizontal</button>
-          </div>
-        </div>
-      </div>
-
       <div className="helix-key">
         <div className="helix-key-item">
           <span className="helix-key-glyph">

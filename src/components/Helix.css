@@ -11,7 +11,10 @@
 section.helix {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 4rem 2rem 5rem;
+  /* Top padding tightened to 0 so the helix sits flush against the R&D
+     strand row above it (with the legend hidden via .helix-key display:none).
+     Restore to 4rem if/when the legend comes back. */
+  padding: 0 2rem 5rem;
 }
 .helix-head {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -45,7 +48,10 @@ section.helix {
 .orientation-toggle button.is-active { background: var(--ink); color: var(--bg); }
 
 .helix-key {
-  display: flex; justify-content: center;
+  /* Legend (Strand / Bead / Capsule keys) hidden for now.
+     Switch back to `display: flex` to bring it back. */
+  display: none;
+  justify-content: center;
   gap: 2rem; margin-bottom: 1.25rem;
   font-size: 0.82rem; flex-wrap: wrap; opacity: 0.78;
   color: var(--ink);
@@ -61,7 +67,7 @@ section.helix {
   display: flex; align-items: center; justify-content: center;
   transition: height 0.4s ease;
 }
-.helix-stage[data-orientation="vertical"]   { height: 900px; }
+.helix-stage[data-orientation="vertical"]   { height: 1080px; }
 .helix-stage[data-orientation="horizontal"] { height: 560px; }
 
 .helix-svg { max-width: 100%; max-height: 100%; display: block; overflow: visible; }
@@ -80,13 +86,21 @@ section.helix {
 
 .strand-label-group { transition: opacity 0.3s; opacity: 0.7; }
 .strand-label-group.is-dim { opacity: 0.25; }
+/* Toggled by JS when the cursor is over the matching strand's hitbox.
+   The text + leader pick up the strand's own colour via inline `fill`
+   / `stroke` set in attachInteractions (each strand's domain colour). */
+.strand-label-group.is-hover-highlighted { opacity: 1; }
+.strand-label-group.is-hover-highlighted .strand-label { font-weight: 800; }
+.strand-label-group.is-hover-highlighted .strand-leader { opacity: 0.85; stroke-width: 1.5; }
 .strand-label {
   font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
   fill: var(--ink); pointer-events: none;
+  transition: fill 0.2s, font-weight 0.2s;
 }
 .strand-leader {
   stroke: var(--ink); stroke-width: 1; opacity: 0.3;
   fill: none; pointer-events: none;
+  transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
 }
 
 .project-bead { cursor: pointer; transition: opacity 0.3s, transform 0.2s; transform-box: fill-box; transform-origin: center; }

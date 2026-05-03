@@ -116,7 +116,6 @@ interface HelixRefs {
   panelCtaRow: HTMLElement
   panelCta: HTMLAnchorElement
   panelCloseBtn: HTMLElement
-  orientationButtons: HTMLButtonElement[]
 }
 
 export function mountHelix(refs: HelixRefs): () => void {
@@ -346,7 +345,7 @@ export function mountHelix(refs: HelixRefs): () => void {
   const {
     stageEl, legendEl, panelEl, tooltipEl,
     panelIconEl, panelNameEl, panelTaglineEl, panelThemesEl,
-    panelCtaRow, panelCta, panelCloseBtn, orientationButtons,
+    panelCtaRow, panelCta, panelCloseBtn,
   } = refs
 
   let currentOrientation = 'vertical'
@@ -365,7 +364,10 @@ export function mountHelix(refs: HelixRefs): () => void {
     if (orientation === 'vertical') {
       const padding = 80
       const usable = viewBox.W - padding * 2
-      return { x: padding + (usable * (i + 0.5) / n), y: 32 }
+      // Anchored well below the rod (rod sits centred near root y=80 with
+      // ROD_SIZE=100, so its bottom is around root y=130). 220 keeps the
+      // label row clear of the rod with breathing room either side.
+      return { x: padding + (usable * (i + 0.5) / n), y: 220 }
     } else {
       const padding = 60
       const usable = viewBox.H - padding * 2
@@ -403,8 +405,8 @@ export function mountHelix(refs: HelixRefs): () => void {
 
     /* -------- Layout constants for THIS orientation -------- */
     const W = orientation === 'vertical' ? 820 : 1280  // SVG viewBox width
-    const H = orientation === 'vertical' ? 880 : 540   // SVG viewBox height
-    const labelGap   = orientation === 'vertical' ? 110 : 80   // Reserved for strand labels at the leading edge
+    const H = orientation === 'vertical' ? 1050 : 540  // SVG viewBox height — vertical bumped to make room for the elongated rod above the labels
+    const labelGap   = orientation === 'vertical' ? 280 : 80   // Reserved at the leading edge for rod + labels (vertical only)
     const tailMargin = 80                                       // Reserved at the trailing edge so strands don't touch it
     // Length of the staff axis (the "along" dimension).
     const lengthAxis = orientation === 'vertical' ? H - labelGap - tailMargin : W - labelGap - tailMargin
@@ -459,12 +461,18 @@ export function mountHelix(refs: HelixRefs): () => void {
       }
     })
 
-    /* -------- The central staff -------- */
-    // A faint vertical (or horizontal) line down the middle. Just a
-    // single SVG <line>; styled in CSS as a thin, low-opacity ink stroke.
+    /* -------- The central staff --------
+       In vertical mode the staff line extends UP past the labels and
+       up into the rod logo (ROD_ELEVATION pixels above the strand area
+       top, where the rod's centre sits). The labels then visually sit
+       AROUND a single elongated rod, with the rod glyph capping the top.
+       Horizontal mode keeps the original behaviour (staff confined to
+       the strand area). */
+    const ROD_SIZE = 100
+    const ROD_ELEVATION = 200   // px above strand area top (vertical only)
     const staff = svgEl('line', { class: 'staff' })
     if (orientation === 'vertical') {
-      staff.setAttribute('x1', axisOffset); staff.setAttribute('y1', 0)
+      staff.setAttribute('x1', axisOffset); staff.setAttribute('y1', -ROD_ELEVATION)
       staff.setAttribute('x2', axisOffset); staff.setAttribute('y2', lengthAxis)
     } else {
       staff.setAttribute('x1', 0); staff.setAttribute('y1', axisOffset)
@@ -472,19 +480,17 @@ export function mountHelix(refs: HelixRefs): () => void {
     }
     layerStaff.appendChild(staff)
 
-    /* -------- Rod-of-Asclepius icon at the top of the staff --------
-       /public/rod-only.svg is the brand mark (dark plum block + white
-       snake/rod glyph). We embed it as an SVG <image> centred on the
-       staff axis at the leading edge of the strand area. Front strands
-       (depth ≥ 0) render in front of the rod, back strands behind it,
-       so the spiral visually appears to wrap around the icon. */
-    const ROD_SIZE = 100
+    /* -------- Rod-of-Asclepius icon capping the top of the staff -----
+       /public/rod-only.svg — ink-coloured glyph on a transparent ground.
+       In vertical mode the rod sits well above the strand-label row so
+       the elongated staff line carries the eye down from the logo
+       through the labels and into the spiral itself. */
     const rodIcon = svgEl('image', {
       href: import.meta.env.BASE_URL + 'rod-only.svg',
       width: ROD_SIZE,
       height: ROD_SIZE,
       x: orientation === 'vertical' ? axisOffset - ROD_SIZE / 2 : -ROD_SIZE / 2,
-      y: orientation === 'vertical' ? -ROD_SIZE / 2 : axisOffset - ROD_SIZE / 2,
+      y: orientation === 'vertical' ? -ROD_ELEVATION - ROD_SIZE / 2 : axisOffset - ROD_SIZE / 2,
       preserveAspectRatio: 'xMidYMid meet',
       class: 'rod-icon',
     })
@@ -624,7 +630,7 @@ export function mountHelix(refs: HelixRefs): () => void {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', side === 'right' ? px + 22 : px - 22)
-          label.setAttribute('y', py + 0)
+          label.setAttribute('y', py + 285)
           label.setAttribute('text-anchor', side === 'right' ? 'start' : 'end')
         } else {
           label.setAttribute('x', px)
@@ -733,7 +739,7 @@ export function mountHelix(refs: HelixRefs): () => void {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', labelX + (sideSign > 0 ? 6 : -6))
-          label.setAttribute('y', labelY + 0)
+          label.setAttribute('y', labelY + 285)
           label.setAttribute('text-anchor', sideSign > 0 ? 'start' : 'end')
         } else {
           label.setAttribute('x', labelX)
@@ -1010,20 +1016,13 @@ export function mountHelix(refs: HelixRefs): () => void {
   }
 
   /* ============================================================
-     Stage-level pointer listeners — pause idle drift on hover so
-     the spiral doesn't subtly wiggle while the user is reading or
-     about to click something. (Ambient breath keeps going so the
-     helix still feels alive.) Resume only if nothing's selected;
-     if something IS selected, drift stays paused via applyAppearance.
-
-     Added once at module scope so the cleanup function can remove
-     them; the in-stage SVG listeners are recreated by attachInteractions
-     every time the SVG is rebuilt and get GC'd along with it.
+     Hover-pause is wired directly onto each strand's invisible 22px
+     hitbox (see attachInteractions). Drift pauses ONLY while the
+     cursor is over a strand line itself — not the wider stage, not
+     even the empty space inside the SVG bounding box. A counter
+     handles "moved from one strand straight onto another" without a
+     blink-of-an-eye un-pause in between.
      ============================================================ */
-  const onStageEnter = () => { idleDriftPaused = true }
-  const onStageLeave = () => { if (!isAnythingSelected()) idleDriftPaused = false }
-  stageEl.addEventListener('pointerenter', onStageEnter)
-  stageEl.addEventListener('pointerleave', onStageLeave)
 
   /* ============================================================
      attachInteractions() — wire up clicks/hovers on the things
@@ -1040,19 +1039,45 @@ export function mountHelix(refs: HelixRefs): () => void {
        - Hover a project        → tooltip + spring grow (in attachSpringHovers)
      ============================================================ */
   function attachInteractions() {
+    // Counter of strand hitboxes the cursor is currently over. Goes >0
+    // when entering a strand, back to 0 when leaving the last strand.
+    // Drift pauses while >0. Using a counter (rather than a single
+    // boolean) avoids a momentary un-pause when the cursor crosses
+    // directly from one strand onto another, where pointerleave on the
+    // first fires before pointerenter on the second.
+    let hoveredStrandCount = 0
     DOMAINS.forEach(d => {
       const so = scene.strandObjects[d.id]
+      // The corresponding header label group at the top of the helix.
+      // Its <text> and <path class="strand-leader"> get tinted with the
+      // strand's own colour while its strand is hovered, so the header
+      // visually "lights up" in sync with the strand below it.
+      const lg = scene.strandLabels[d.id]
+      const lgText = lg ? lg.querySelector('.strand-label') as SVGTextElement | null : null
+      const lgLeader = lg ? lg.querySelector('.strand-leader') as SVGPathElement | null : null
       so.hitbox.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null))
       so.hitbox.addEventListener('pointerenter', () => {
+        hoveredStrandCount++
+        idleDriftPaused = true
         if (!isAnythingSelected()) {
           so.frontEls.forEach(el => el.style.strokeWidth = '4.8')
           so.backEls.forEach(el => el.style.strokeWidth = '4.3')
+          if (lg) lg.classList.add('is-hover-highlighted')
+          if (lgText) lgText.style.fill = d.color
+          if (lgLeader) lgLeader.style.stroke = d.color
         }
       })
       so.hitbox.addEventListener('pointerleave', () => {
+        hoveredStrandCount = Math.max(0, hoveredStrandCount - 1)
+        if (hoveredStrandCount === 0 && !isAnythingSelected()) {
+          idleDriftPaused = false
+        }
         if (!isAnythingSelected()) {
           so.frontEls.forEach(el => el.style.strokeWidth = '')
           so.backEls.forEach(el => el.style.strokeWidth = '')
+          if (lg) lg.classList.remove('is-hover-highlighted')
+          if (lgText) lgText.style.fill = ''
+          if (lgLeader) lgLeader.style.stroke = ''
         }
       })
     })
@@ -1188,7 +1213,18 @@ export function mountHelix(refs: HelixRefs): () => void {
           p.style.strokeDashoffset = ''
         })
         startAmbientBreath()
-        startIdleDrift()
+        // Idle drift is intentionally NOT started — the strand-label
+        // headers ("Research", "Design", "Development", "Regulatory")
+        // are placed once at buildScene time based on each strand's
+        // initial t=0 emergence x. If we drift the phase, those
+        // emergence points move, and the labels no longer correctly
+        // identify the coloured strands beneath them. Strands stay
+        // statically anchored to their initial phase + amplitude so
+        // the labels remain accurate. Ambient breath (uniform stage
+        // scale) keeps the helix feeling alive without changing any
+        // strand-to-label correspondence.
+        // To re-enable drift, call startIdleDrift() here — the
+        // function is kept intact below for that purpose.
       },
     })
 
@@ -1517,49 +1553,16 @@ export function mountHelix(refs: HelixRefs): () => void {
   }
 
   /* ============================================================
-     setOrientation — flip Vertical ↔ Horizontal.
-     ============================================================
-     Tears down the current scene (clearPanel + buildScene wipes the
-     SVG), rebuilds everything for the new orientation, and replays
-     the entrance animation. State is reset because positions change
-     and a stale selection might point at a now-misplaced element.
+     Panel-close listener — only top-level interaction left now that
+     the orientation toggle is gone.
      ============================================================ */
-  function setOrientation(orientation) {
-    if (orientation === currentOrientation) return
-    currentOrientation = orientation
-    stageEl.dataset.orientation = orientation
-    orientationButtons.forEach(b =>
-      b.classList.toggle('is-active', b.dataset.orientation === orientation)
-    )
-    state = { selectedDomain: null, selectedProject: null }
-    clearPanel()
-    scene = buildScene(orientation)
-    attachInteractions()
-    attachSpringHovers()
-    applyAppearance()
-    playEntrance()
-  }
-
-  /* ============================================================
-     Toolbar + panel-close listeners — added once at mount, tracked
-     in `toggleListeners` so cleanup can remove them. (The cleanup
-     symmetry matters because the React shell may unmount/remount
-     under StrictMode in dev, and we don't want orphan listeners
-     accumulating on the DOM nodes.)
-     ============================================================ */
-  const toggleListeners: Array<[HTMLButtonElement, () => void]> = []
-  orientationButtons.forEach(b => {
-    const handler = () => setOrientation(b.dataset.orientation)
-    b.addEventListener('click', handler)
-    toggleListeners.push([b, handler])
-  })
   const onPanelClose = () => onSelect(null, null)
   panelCloseBtn.addEventListener('click', onPanelClose)
 
   /* ============================================================
-     Initial mount sequence — same calls as setOrientation but
-     without the teardown. After this returns, the helix is alive,
-     interactive, and the entrance timeline is playing.
+     Initial mount sequence — builds the scene, wires interactions,
+     paints initial appearance, and kicks off the entrance timeline.
+     After this returns, the helix is alive and interactive.
      ============================================================ */
   scene = buildScene(currentOrientation)
   attachInteractions()
@@ -1592,10 +1595,7 @@ export function mountHelix(refs: HelixRefs): () => void {
     projectBreaths.clear()
     if (panelOpenAnim) { panelOpenAnim.pause(); panelOpenAnim = null }
 
-    stageEl.removeEventListener('pointerenter', onStageEnter)
-    stageEl.removeEventListener('pointerleave', onStageLeave)
     panelCloseBtn.removeEventListener('click', onPanelClose)
-    toggleListeners.forEach(([btn, handler]) => btn.removeEventListener('click', handler))
 
     // SVG-internal listeners are GC'd when nodes are removed.
     stageEl.querySelectorAll('svg').forEach(s => s.remove())
