@@ -118,7 +118,18 @@ interface HelixRefs {
   panelCloseBtn: HTMLElement
 }
 
-export function mountHelix(refs: HelixRefs): () => void {
+export interface HelixHandle {
+  /** Called by Helix.tsx's useEffect cleanup. */
+  cleanup: () => void
+  /** Each project's bead/capsule midpoint Y in viewBox units (root coords). */
+  getProjectViewboxYs: () => Record<string, number>
+  /** Drive selection from outside (R&D Strands button click). null = clear. */
+  setSelected: (rdStrandsId: string | null) => void
+  /** SVG viewBox height in viewBox units (used for px↔viewBox scaling). */
+  viewBoxHeight: number
+}
+
+export function mountHelix(refs: HelixRefs): HelixHandle {
   /* ============================================================
      CONTENT DATA — three parallel lists describing what's drawn.
 
@@ -169,8 +180,12 @@ export function mountHelix(refs: HelixRefs): () => void {
       ] },
   ]
 
+  // `rdStrandsId` bridges to the existing R&D Strands button IDs in
+  // src/data/strands.ts (kindred / vitalis / vitrix). The helix uses its
+  // own naming (kindreon / aevorix / acumentra); the bridge lets a
+  // helix snap fire selection on the right R&D Strands button.
   const PROJECTS = [
-    { id: 'kindreon',  name: 'Kindreon',
+    { id: 'kindreon',  rdStrandsId: 'kindred', name: 'Kindreon',
       tagline: 'Family-centred digital tools for paediatric care',
       summary: 'Family-centred digital tools for paediatric care, with safeguarding-by-design as a foundational constraint rather than an afterthought.',
       domainIds: ['research', 'design', 'development'], position: 0.2, status: 'active',
@@ -179,7 +194,7 @@ export function mountHelix(refs: HelixRefs): () => void {
         { n:'02', t:'Safeguarding by design',  d:'Vulnerability-aware interaction patterns, with safety treated as a foundational constraint rather than a feature added late.' },
         { n:'03', t:'Longitudinal continuity', d:'Tracking development through paediatric care with study architectures designed for re-consent, attrition, and continuity of measurement.' },
       ] },
-    { id: 'aevorix',   name: 'Aevorix',
+    { id: 'aevorix',   rdStrandsId: 'vitalis', name: 'Aevorix',
       tagline: 'Technology for enduring vitality',
       summary: 'Technology for enduring vitality \u2014 longitudinal modelling of healthspan and frailty, with cognitive preservation as the central question.',
       domainIds: ['research', 'design', 'development', 'regulatory'], position: 0.55, status: 'active',
@@ -189,7 +204,7 @@ export function mountHelix(refs: HelixRefs): () => void {
         { n:'03', t:'Assistive innovation',    d:'Devices and software for independence and dignity in later life, regulated as SaMD where the clinical claim warrants it.' },
         { n:'04', t:'Deployment ethics',       d:'When is a longevity tool ready, and for whom? Standards for the leap from research artefact to clinical instrument.' },
       ] },
-    { id: 'acumentra', name: 'Acumentra',
+    { id: 'acumentra', rdStrandsId: 'vitrix',  name: 'Acumentra',
       tagline: 'Sharper signals from clinical noise',
       summary: 'Sharper signals from clinical noise. Decision-support models built with subgroup auditing as a first-class concern, not a compliance step.',
       domainIds: ['development'], position: 0.95, status: 'active',
@@ -202,6 +217,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
   const domainById = (id) => DOMAINS.find(d => d.id === id)
   const projectById = (id) => PROJECTS.find(p => p.id === id)
+  const projectByRdStrandsId = (rdId) => PROJECTS.find(p => p.rdStrandsId === rdId)
 
   /* ============================================================
      GEOMETRY PRIMITIVES — the math for placing things on the spiral.
@@ -1456,22 +1472,23 @@ export function mountHelix(refs: HelixRefs): () => void {
   }
 
   /* ============================================================
-     AMBIENT BREATH — a tiny scale loop on the stage as a whole.
+     AMBIENT BREATH — a tiny scale loop on the SVG root.
      ============================================================
      animate() with a 3-stop array [1, 1.005, 1] tells anime.js to
      keyframe the property: scale 1 → 1.005 → 1 over `duration` ms.
      `loop: true` repeats forever. inOutSine gives a gentle in/out.
 
-     We target the .helix-stage div (HTMLElement) rather than the
-     SVG root, because <svg> elements have their own transform
-     semantics that don't always cooperate with the browser's CSS
-     transform matrix. The div has predictable transform-origin.
+     We target the SVG root (scene.svgEl) rather than the stage div,
+     because the stage is now a SCROLL CONTAINER — scaling the stage
+     itself causes scroll-position glitches as the box dimensions
+     animate. The inner SVG can scale freely without affecting scroll.
      ============================================================ */
   function startAmbientBreath() {
     if (ambientBreath) ambientBreath.pause()
-    if (!stageEl) return
-    stageEl.style.transformOrigin = 'center'
-    ambientBreath = animate(stageEl, {
+    const target: SVGSVGElement | HTMLElement | null = (scene && scene.svgEl) || stageEl
+    if (!target) return
+    target.style.transformOrigin = 'center'
+    ambientBreath = animate(target, {
       scale: [1, 1.005, 1],
       duration: 8000,
       ease: 'inOutSine',
@@ -1588,24 +1605,64 @@ export function mountHelix(refs: HelixRefs): () => void {
        3. Wipe the DOM contents we created so the React shell sees
           clean refs if it re-mounts.
      ============================================================ */
-  return () => {
-    stopIdleDrift()
-    if (ambientBreath) { ambientBreath.pause(); ambientBreath = null }
-    projectBreaths.forEach(a => a.pause())
-    projectBreaths.clear()
-    if (panelOpenAnim) { panelOpenAnim.pause(); panelOpenAnim = null }
+  /* ============================================================
+     PUBLIC HANDLE — what Helix.tsx receives from mountHelix.
+     ============================================================
+     getProjectViewboxYs   Each project's bead/capsule Y in viewBox
+                           coords (single source of truth for the
+                           scroll-snap math in Helix.tsx).
+     setSelected           Drive selection from outside (e.g. when an
+                           R&D Strands button is clicked the helix
+                           appearance should also light up the matching
+                           project bead).
+     viewBoxHeight         The H value used in buildScene — needed by
+                           the React shell to convert px ↔ viewBox.
+     cleanup               Stops everything; called from React effect
+                           teardown.
+     ============================================================ */
+  return {
+    cleanup: () => {
+      stopIdleDrift()
+      if (ambientBreath) { ambientBreath.pause(); ambientBreath = null }
+      projectBreaths.forEach(a => a.pause())
+      projectBreaths.clear()
+      if (panelOpenAnim) { panelOpenAnim.pause(); panelOpenAnim = null }
 
-    panelCloseBtn.removeEventListener('click', onPanelClose)
+      panelCloseBtn.removeEventListener('click', onPanelClose)
 
-    // SVG-internal listeners are GC'd when nodes are removed.
-    stageEl.querySelectorAll('svg').forEach(s => s.remove())
-    legendEl.innerHTML = ''
-    panelThemesEl.innerHTML = ''
-    tooltipEl.classList.remove('is-visible')
-    panelEl.classList.remove('open')
-    panelEl.style.maxHeight = ''
-    panelEl.style.opacity = ''
-    panelEl.style.transform = ''
-    stageEl.style.transform = ''
+      // SVG-internal listeners are GC'd when nodes are removed.
+      stageEl.querySelectorAll('svg').forEach(s => s.remove())
+      legendEl.innerHTML = ''
+      panelThemesEl.innerHTML = ''
+      tooltipEl.classList.remove('is-visible')
+      panelEl.classList.remove('open')
+      panelEl.style.maxHeight = ''
+      panelEl.style.opacity = ''
+      panelEl.style.transform = ''
+      stageEl.style.transform = ''
+    },
+
+    getProjectViewboxYs: () => {
+      // Each project's stored y (pe.py for single-domain bead, pe.my for
+      // multi-domain capsule midpoint) is in strand-coord space (the
+      // layer's local coords). The strand layer is rendered with a
+      // translate(0, startOffset) transform, so root viewBox Y is the
+      // stored value PLUS startOffset.
+      const out: Record<string, number> = {}
+      if (!scene) return out
+      scene.projectEls.forEach(pe => {
+        const yStrand = pe.shape ? pe.py : pe.my
+        out[pe.project.id] = yStrand + scene.startOffset
+      })
+      return out
+    },
+
+    setSelected: (rdStrandsId) => {
+      if (rdStrandsId == null) { onSelect(null, null); return }
+      const proj = projectByRdStrandsId(rdStrandsId)
+      if (proj) onSelect(null, proj.id)
+    },
+
+    viewBoxHeight: scene ? scene.viewBox.H : 0,
   }
 }

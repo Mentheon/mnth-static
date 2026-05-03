@@ -62,15 +62,70 @@ section.helix {
   display: inline-flex; align-items: center; justify-content: center;
 }
 
+/* Wrapper that anchors the absolutely-positioned selector indicator
+   on top of the scrollable stage. */
+.helix-viewport { position: relative; }
+
+/* The stage is now a SCROLL CONTAINER. The SVG inside is taller than
+   the visible viewport, so the user can scroll up/down through the
+   helix. Helix.tsx handles the JS-driven snap-to-nearest-project on
+   scroll-end, so CSS scroll-snap is intentionally not used. */
 .helix-stage {
   width: 100%; position: relative;
-  display: flex; align-items: center; justify-content: center;
-  transition: height 0.4s ease;
+  height: 70vh;
+  min-height: 560px;
+  max-height: 900px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-.helix-stage[data-orientation="vertical"]   { height: 1080px; }
-.helix-stage[data-orientation="horizontal"] { height: 560px; }
+.helix-stage[data-orientation="horizontal"] { height: 560px; overflow-y: hidden; }
 
-.helix-svg { max-width: 100%; max-height: 100%; display: block; overflow: visible; }
+.helix-svg {
+  width: 100%;
+  height: auto;
+  /* Guaranteed scrollable: SVG intrinsic height (width × viewBox aspect)
+     is usually a touch over the stage height anyway, but a min-height
+     ensures projects stay at least one viewport apart so the snap UX
+     feels deliberate even on very wide containers. */
+  min-height: 1500px;
+  display: block;
+  overflow: visible;
+}
+
+/* ============================================================
+   Selection indicator — a horizontal hairline + chevrons centered
+   in the helix viewport. Sits OUTSIDE the scrollable stage so it
+   stays put while the SVG scrolls underneath.
+   ============================================================ */
+.helix-selector {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+  pointer-events: none;
+  z-index: 5;
+}
+.helix-selector-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--crimson) 10%,
+    var(--crimson) 90%,
+    transparent
+  );
+  opacity: 0.5;
+}
+.helix-selector-chev {
+  color: var(--crimson);
+  font-weight: 700;
+  font-size: 1.2rem;
+  line-height: 1;
+  opacity: 0.8;
+}
 
 .staff { stroke: var(--ink); stroke-width: 2.5; opacity: 1; stroke-linecap: round; }
 

@@ -1,14 +1,16 @@
-import { useState } from 'react'
 import { STRANDS } from '../data/strands'
 import StrandIcon from './StrandIcon'
 import StrandPanel from './StrandPanel'
 import styles from './RDStrands.module.css'
 
-export default function RDStrands() {
-  const [openId, setOpenId] = useState<string | null>(null)
+interface RDStrandsProps {
+  openId: string | null
+  onSelect: (id: string | null) => void
+}
 
+export default function RDStrands({ openId, onSelect }: RDStrandsProps) {
   function toggle(id: string) {
-    setOpenId((prev) => (prev === id ? null : id))
+    onSelect(openId === id ? null : id)
   }
 
   const openStrand = STRANDS.find((s) => s.id === openId) ?? null
@@ -60,7 +62,7 @@ export default function RDStrands() {
           key={openStrand.id}
           strand={openStrand}
           isOpen={openId !== null}
-          onClose={() => setOpenId(null)}
+          onClose={() => onSelect(null)}
         />
       )}
     </section>
