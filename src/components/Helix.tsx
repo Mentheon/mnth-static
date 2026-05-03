@@ -9,13 +9,18 @@ interface HelixProps {
   onSelect: (id: string | null) => void
 }
 
-// Rod logo size bounds (px). Driven by PAGE scroll: largest when the
-// helix section first enters the viewport — sized to "protrude" well
-// down into the scrollable strand area — shrinking to SMALL as the
-// user keeps page-scrolling so by the time the section is fully
-// pinned in view the rod is a compact mark above the labels.
+// Rod logo size — discrete (NOT a proportional lerp on scroll). The
+// rod sits at exactly one of two sizes: large (when the helix section
+// has just entered the viewport) or small (once the user has page-
+// scrolled past the trigger threshold). CSS transition handles the
+// visible morph between the two snapshots.
 const LARGE_ROD = 180
 const SMALL_ROD = 56
+// Page-scroll progress at which the rod flips from large → small.
+// progress 0 = section just entering view; 1 = section's top has
+// reached viewport top. ~0.45 means the rod minimises about halfway
+// into the scroll-in.
+const ROD_SHRINK_AT = 0.45
 
 export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
   const sectionRef = useRef<HTMLElement>(null)
@@ -202,7 +207,9 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       // rect.top < 0    → progress 1 (clamped; we're past the trigger zone)
       const raw = (vh - rect.top) / vh
       const progress = Math.max(0, Math.min(1, raw))
-      setRodSize(LARGE_ROD - (LARGE_ROD - SMALL_ROD) * progress)
+      // BINARY size — flip from large to small once we cross the
+      // shrink threshold. CSS transition smooths the visible morph.
+      setRodSize(progress < ROD_SHRINK_AT ? LARGE_ROD : SMALL_ROD)
     }
     window.addEventListener('scroll', onWindowScroll, { passive: true })
     window.addEventListener('resize', onWindowScroll)
@@ -281,23 +288,23 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       </div>
 
       <div className="helix-viewport">
-        {/* Static header overlay — labels CAP the very top with a solid
-            bg, rod logo hangs below them with TRANSPARENT bg so its
-            visible vertical staff continues into the spiral's central
-            staff line, "protruding through" the scrollable area. */}
+        {/* Static header overlay — rod logo at very top, domain labels
+            below it. Both stay put while the spiral scrolls underneath.
+            The rod sits at one of two discrete sizes (LARGE / SMALL),
+            flipping when the user has page-scrolled past the threshold. */}
         <div className="helix-header" aria-hidden="true">
-          <div className="helix-header-labels">
-            <span className="helix-header-label" style={{ color: '#6B1F4D' }}>Regulatory</span>
-            <span className="helix-header-label" style={{ color: '#A30B37' }}>Research</span>
-            <span className="helix-header-label" style={{ color: '#3F0247' }}>Development</span>
-            <span className="helix-header-label" style={{ color: '#9C528B' }}>Design</span>
-          </div>
           <img
             className="helix-header-rod"
             src={`${import.meta.env.BASE_URL}rod-only.svg`}
             alt=""
             style={{ width: rodSize, height: rodSize }}
           />
+          <div className="helix-header-labels">
+            <span className="helix-header-label" style={{ color: '#6B1F4D' }}>Regulatory</span>
+            <span className="helix-header-label" style={{ color: '#A30B37' }}>Research</span>
+            <span className="helix-header-label" style={{ color: '#3F0247' }}>Development</span>
+            <span className="helix-header-label" style={{ color: '#9C528B' }}>Design</span>
+          </div>
         </div>
         <div className="helix-selector" aria-hidden="true">
           <span className="helix-selector-chev">&rsaquo;</span>

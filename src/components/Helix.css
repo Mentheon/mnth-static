@@ -104,46 +104,39 @@ section.helix {
 }
 
 /* ============================================================
-   Static header overlay — labels at very top, rod logo below
-   them, sized via Helix.tsx based on page scroll. The rod sits
-   centred over the scrollable stage so its visible vertical staff
-   appears continuous with the SVG's central staff line below — i.e.
-   the rod "protrudes through" the top of the helix scroll area.
+   Static header overlay — rod logo at top, domain labels below.
+   Both have solid cream bg so they visually CAP the top of the
+   helix and occlude whatever in the SVG scrolls up behind them.
    ============================================================ */
 .helix-header {
   position: absolute;
   top: 0; left: 0; right: 0;
   z-index: 10;
-  /* No background: only the labels area gets a solid bg so the
-     transparent SVG ground shows through around the rod. */
   display: flex; flex-direction: column; align-items: center; gap: 0;
   pointer-events: none;
+  background: var(--bg);
+  padding: 6px 16px 6px;
+}
+.helix-header-rod {
+  /* Width / height are set inline by Helix.tsx — flips DISCRETELY
+     between LARGE_ROD and SMALL_ROD when the page-scroll progress
+     crosses ROD_SHRINK_AT. The transition timing here makes the
+     visible morph between the two snapshots smooth (~280ms ease). */
+  display: block;
+  transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1),
+              height 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .helix-header-labels {
-  /* Solid cream bg so the strand-labels row visually CAPS the top of
-     the helix and occludes whatever in the SVG scrolls up behind it. */
-  background: var(--bg);
   width: 100%;
   display: flex; flex-wrap: wrap; justify-content: center;
   gap: 4px 18px;
-  padding: 8px 16px 6px;
+  padding-top: 6px;
   font-size: 0.72rem; letter-spacing: 0.16em;
   text-transform: uppercase; font-weight: 700;
   opacity: 0.92;
 }
 .helix-header-label {
   /* per-label colour applied inline in Helix.tsx */
-}
-.helix-header-rod {
-  /* Width / height are set inline by Helix.tsx based on the page-scroll
-     position of the helix section in the viewport — large when the
-     section first comes into view, shrinking down to ~SMALL_ROD as the
-     user page-scrolls past it. The rod has TRANSPARENT bg (rod-only.svg
-     is now ink paths on transparent), so the spiral visible behind it
-     reads as the rod's continuation downward into the scroll area. */
-  display: block;
-  margin-top: 4px;
-  transition: width 90ms linear, height 90ms linear;
 }
 
 /* ============================================================
