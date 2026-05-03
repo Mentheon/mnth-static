@@ -66,7 +66,7 @@ section.helix {
 
 .helix-svg { max-width: 100%; max-height: 100%; display: block; overflow: visible; }
 
-.staff { stroke: var(--ink); stroke-width: 1.25; opacity: 0.35; stroke-linecap: round; }
+.staff { stroke: var(--ink); stroke-width: 2.5; opacity: 1; stroke-linecap: round; }
 
 /* Strands — quieter background carriers */
 .strand-segment {
@@ -88,23 +88,6 @@ section.helix {
   stroke: var(--ink); stroke-width: 1; opacity: 0.3;
   fill: none; pointer-events: none;
 }
-
-.rung-line {
-  stroke: var(--ink); stroke-width: 1.25; stroke-dasharray: 2 4;
-  opacity: 0.4; fill: none; pointer-events: none;
-  transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s, stroke-dasharray 0.25s;
-}
-.rung-bead {
-  fill: var(--bg); stroke: var(--ink); stroke-width: 1.25;
-  transition: fill 0.25s, stroke 0.25s; cursor: pointer;
-}
-.rung-group:hover .rung-line,
-.rung-group.is-active .rung-line {
-  stroke: var(--ink); stroke-width: 1.75; opacity: 1; stroke-dasharray: none;
-}
-.rung-group:hover .rung-bead,
-.rung-group.is-active .rung-bead { fill: var(--ink); stroke: var(--ink); }
-.rung-group.is-dim { opacity: 0.18; }
 
 .project-bead { cursor: pointer; transition: opacity 0.3s, transform 0.2s; transform-box: fill-box; transform-origin: center; }
 .project-bead-shape { stroke-width: 3; transition: fill 0.25s, stroke 0.25s, stroke-width 0.25s; }

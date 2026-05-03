@@ -13,11 +13,9 @@
      - PROJECTS — the headline content. A "bead" if a project lives
        on a single domain; a "capsule" (gradient line spanning two or
        more strand points at the same height) for multi-domain ones.
-     - CONVERGENCES — small dashed "rungs" between two strands marking
-       a place where two domains share a research conversation.
 
-   Click any strand, project, or rung → a panel opens below the
-   helix with theme cards describing that thing.
+   Click any strand or project → a panel opens below the helix with
+   theme cards describing that thing.
 
    ARCHITECTURE
    ------------
@@ -83,7 +81,7 @@
                           going so the helix feels alive).
      4. Project breath — pulses ONLY the currently-selected bead's
                           radius; cleared the moment selection changes.
-     5. Hover springs  — bouncy size-pop on rung/project beads using
+     5. Hover springs  — bouncy size-pop on project beads using
                           createSpring. Suppressed if the same bead is
                           already running its selection breath, so we
                           don't get conflicting `r` animations on the
@@ -92,7 +90,7 @@
                           strand's phase (one revolution ≈ 120s) and
                           subtly breathes the amplitude. Re-samples
                           every strand and re-positions every project
-                          + rung that depends on those strand points.
+                          that depends on those strand points.
 
    WHY @ts-nocheck
    ---------------
@@ -134,13 +132,8 @@ export function mountHelix(refs: HelixRefs): () => void {
                   that single strand. Two or more → renders as a
                   capsule (gradient line) bridging those strands at
                   the same height.
-     CONVERGENCES Conceptual rungs between two strands at a given
-                  position — drawn as a curved dashed line with a
-                  small bead at the staff midpoint.
 
      `position` is a parameter t ∈ [0, 1] along the strand.
-     `nudgeProjectPositions()` later nudges any project too close to
-     a convergence away by `minGap` so they don't visually overlap.
      ============================================================ */
   const DOMAINS = [
     { id: 'research', name: 'Research', shortName: 'Research',
@@ -208,24 +201,8 @@ export function mountHelix(refs: HelixRefs): () => void {
       ] },
   ]
 
-  const CONVERGENCES = [
-    { id: 'validation-on-cohorts', title: 'Validating models on cohort data',
-      description: 'Where Research meets Development. How do you know a clinical model works in the world it will actually be deployed in? The answer requires longitudinal, real-world cohort data — and a research conversation between the people who build models and the people who design studies.',
-      domainIds: ['research', 'development'], position: 0.18 },
-    { id: 'lifespan-continuity', title: 'Lifespan continuity',
-      description: 'Where Research meets Design. The same person ages through paediatric care into later life. The methods we build to track development at one end inform the design choices at the other. It is one continuous question.',
-      domainIds: ['research', 'design'], position: 0.42 },
-    { id: 'who-does-this-fail', title: 'Who does this fail?',
-      description: 'Where Development meets Regulatory. A model that works on average can still fail systematically for the people it was meant to help. Subgroup auditing is not a compliance step — it is the question that determines whether a tool is ready.',
-      domainIds: ['development', 'regulatory'], position: 0.65 },
-    { id: 'safeguarding-by-design', title: 'Safeguarding by design',
-      description: 'Where Design meets Regulatory. Tools that recognise children, families, and people in vulnerable states must be designed with safety as a foundational constraint, not a feature added late.',
-      domainIds: ['design', 'regulatory'], position: 0.85 },
-  ]
-
   const domainById = (id) => DOMAINS.find(d => d.id === id)
   const projectById = (id) => PROJECTS.find(p => p.id === id)
-  const convergenceById = (id) => CONVERGENCES.find(c => c.id === id)
 
   /* ============================================================
      GEOMETRY PRIMITIVES — the math for placing things on the spiral.
@@ -353,8 +330,8 @@ export function mountHelix(refs: HelixRefs): () => void {
      replaced wholesale on every orientation flip.
 
      `state` is the user-selection state: at most ONE of selectedDomain
-     /selectedProject/selectedConvergence is non-null at a time.
-     applyAppearance() reads it to decide what to dim/highlight.
+     /selectedProject is non-null at a time. applyAppearance() reads
+     it to decide what to dim/highlight.
 
      `currentOrientation` is the current layout mode ('vertical' or
      'horizontal'). Toolbar buttons in the React shell flip it.
@@ -367,7 +344,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
   let currentOrientation = 'vertical'
   let scene = null
-  let state = { selectedDomain: null, selectedProject: null, selectedConvergence: null }
+  let state = { selectedDomain: null, selectedProject: null }
 
   /**
    * Where to anchor the small "Research / Design / Development /
@@ -390,28 +367,6 @@ export function mountHelix(refs: HelixRefs): () => void {
   }
 
   /**
-   * Move any project whose position lands within `minGap` of a
-   * convergence rung's position. Walks in steps of minGap away from
-   * the nearest convergence, clamped to [0.05, 0.95], up to 8 tries.
-   * Returns a NEW array of project objects (originals untouched).
-   * Without this nudge, a project bead can sit on top of a rung bead
-   * and the user can't tell them apart.
-   */
-  function nudgeProjectPositions(projects, convergences, minGap = 0.05) {
-    return projects.map(p => {
-      let pos = p.position, attempts = 0
-      while (attempts < 8 && convergences.some(c => Math.abs(c.position - pos) < minGap)) {
-        const closer = convergences.reduce((a, b) =>
-          Math.abs(a.position - pos) < Math.abs(b.position - pos) ? a : b)
-        pos += pos < closer.position ? -minGap : +minGap
-        pos = Math.max(0.05, Math.min(0.95, pos))
-        attempts++
-      }
-      return Object.assign({}, p, { position: pos })
-    })
-  }
-
-  /**
    * Tiny helper to create an SVG element with attributes. SVG elements
    * MUST be created with createElementNS (not createElement) or the
    * browser treats them as unknown HTML and they don't render.
@@ -426,7 +381,7 @@ export function mountHelix(refs: HelixRefs): () => void {
      buildScene(orientation)
      ============================================================
      Wipes the stage, creates a fresh SVG root, and populates it with
-     every visual layer (staff, strands, rungs, projects, labels) for
+     every visual layer (staff, strands, projects, labels) for
      the given orientation. Returns a "scene" record holding refs to
      all the things downstream code needs to update or query.
 
@@ -459,27 +414,26 @@ export function mountHelix(refs: HelixRefs): () => void {
 
     /* -------- Layer groups (z-order top-to-bottom) -------- */
     /* The order we APPEND determines paint order: later = on top. So:
-         rungs (bottom) → strandBack → staff → strandFront → projects
-         → labels → hitboxes (invisible, picks up clicks).
+         strandBack (bottom) → staff → strandFront → projects → labels
+         → hitboxes (invisible, picks up clicks).
        Projects sit above strand-front so beads never get hidden by a
        strand crossing over them. */
     function group(cls) {
       return svgEl('g', { class: 'layer-' + cls })
     }
-    const layerRungs       = group('rungs')
     const layerStrandBack  = group('strand-back')
     const layerStaff       = group('staff')
     const layerStrandFront = group('strand-front')
     const layerProjects    = group('projects')
     const layerLabels      = group('labels')
     const layerHitboxes    = group('hitboxes')
-    ;[layerRungs, layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerLabels, layerHitboxes].forEach(g => root.appendChild(g))
+    ;[layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerLabels, layerHitboxes].forEach(g => root.appendChild(g))
 
     // Shift everything except the strand labels by `startOffset` along
     // the staff axis. That leaves the labelGap zone free at the top
     // (or left) for "Research / Design / ..." labels with their leaders.
     const transformAttr = orientation === 'vertical' ? 'translate(0,' + startOffset + ')' : 'translate(' + startOffset + ',0)'
-    ;[layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerHitboxes, layerRungs].forEach(g => g.setAttribute('transform', transformAttr))
+    ;[layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerHitboxes].forEach(g => g.setAttribute('transform', transformAttr))
 
     /* -------- Per-strand configs --------
        Each strand starts at a different phase so they brace the staff
@@ -510,6 +464,24 @@ export function mountHelix(refs: HelixRefs): () => void {
       staff.setAttribute('x2', lengthAxis); staff.setAttribute('y2', axisOffset)
     }
     layerStaff.appendChild(staff)
+
+    /* -------- Rod-of-Asclepius icon at the top of the staff --------
+       /public/rod-only.svg is the brand mark (dark plum block + white
+       snake/rod glyph). We embed it as an SVG <image> centred on the
+       staff axis at the leading edge of the strand area. Front strands
+       (depth ≥ 0) render in front of the rod, back strands behind it,
+       so the spiral visually appears to wrap around the icon. */
+    const ROD_SIZE = 100
+    const rodIcon = svgEl('image', {
+      href: import.meta.env.BASE_URL + 'rod-only.svg',
+      width: ROD_SIZE,
+      height: ROD_SIZE,
+      x: orientation === 'vertical' ? axisOffset - ROD_SIZE / 2 : -ROD_SIZE / 2,
+      y: orientation === 'vertical' ? -ROD_SIZE / 2 : axisOffset - ROD_SIZE / 2,
+      preserveAspectRatio: 'xMidYMid meet',
+      class: 'rod-icon',
+    })
+    layerStaff.appendChild(rodIcon)
 
     /* -------- Strands ----------------------------------------------
        For each domain, we ask sampleStrand() for three things:
@@ -586,35 +558,6 @@ export function mountHelix(refs: HelixRefs): () => void {
       strandLabels[d.id] = g
     })
 
-    /* -------- Convergence rungs --------------------------------------
-       For each conceptual convergence between two strands, draw a
-       small dashed quadratic curve from one strand's point at the
-       convergence position to the other, with a clickable bead at the
-       staff midpoint. Q (quadratic Bezier) curves bow toward the staff
-       to feel like rungs of a ladder. */
-    const rungEls = []
-    CONVERGENCES.forEach(c => {
-      const a = strandConfigs[c.domainIds[0]], b = strandConfigs[c.domainIds[1]]
-      if (!a || !b) return
-      const ptA = strandPointAt(orientation, a, c.position)
-      const ptB = strandPointAt(orientation, b, c.position)
-      const ax = ptA.x, ay = ptA.y, bx = ptB.x, by = ptB.y
-      const mx = (ax + bx) / 2, my = (ay + by) / 2
-      // Control point sits on the staff axis so the rung curls toward
-      // the centre — visually it reads as connecting "through" the
-      // staff like a real ladder rung.
-      const cx = orientation === 'vertical' ? axisOffset : mx
-      const cy = orientation === 'vertical' ? my : axisOffset
-      const g = svgEl('g', { class: 'rung-group' })
-      g.dataset.convergenceId = c.id
-      const path = svgEl('path', { d: 'M' + ax + ',' + ay + ' Q' + cx + ',' + cy + ' ' + bx + ',' + by, class: 'rung-line' })
-      g.appendChild(path)
-      const bead = svgEl('circle', { cx: cx, cy: cy, r: 5, class: 'rung-bead' })
-      g.appendChild(bead)
-      layerRungs.appendChild(g)
-      rungEls.push({ g, line: path, bead, convergence: c, cx, cy })
-    })
-
     /* -------- Projects -----------------------------------------------
        Two flavours, dispatched by the inner `if`:
 
@@ -627,13 +570,10 @@ export function mountHelix(refs: HelixRefs): () => void {
                             at each strand. Label sits in the OUTBOARD
                             column with its own ink leader from the
                             capsule midpoint.
-
-       nudgeProjectPositions() runs first so projects don't overlap
-       with rungs (which use the same `position` parameter). */
-    const adjustedProjects = nudgeProjectPositions(PROJECTS, CONVERGENCES)
+    */
     const projectEls = []
 
-    adjustedProjects.forEach(proj => {
+    PROJECTS.forEach(proj => {
       if (proj.domainIds.length === 1) {
         // Single-domain bead — bead and label both sit OUTSIDE the spiral
         // in the outboard column, at the same row as the strand intersection.
@@ -793,18 +733,17 @@ export function mountHelix(refs: HelixRefs): () => void {
       }
     })
 
-    return { svgEl: root, strandObjects, strandLabels, rungEls, projectEls, viewBox: { W, H }, startOffset, strandConfigs }
+    return { svgEl: root, strandObjects, strandLabels, projectEls, viewBox: { W, H }, startOffset, strandConfigs }
   }
 
   /* ============================================================
      SELECTION-STATE DERIVATIONS
      ============================================================
-     These small helpers translate `state` (one of three IDs is set)
+     These small helpers translate `state` (one of two IDs is set)
      into the question every renderer wants to ask:
         "Which domains should be highlighted right now?"
      A selected DOMAIN highlights itself.
      A selected PROJECT highlights all the domains it spans.
-     A selected CONVERGENCE highlights both endpoint domains.
      Nothing selected → empty set (everything renders normally).
      ============================================================ */
   function highlightedDomainIds() {
@@ -813,14 +752,10 @@ export function mountHelix(refs: HelixRefs): () => void {
       const p = projectById(state.selectedProject)
       return p ? new Set(p.domainIds) : new Set()
     }
-    if (state.selectedConvergence) {
-      const c = convergenceById(state.selectedConvergence)
-      return c ? new Set(c.domainIds) : new Set()
-    }
     return new Set()
   }
   function isAnythingSelected() {
-    return !!(state.selectedDomain || state.selectedProject || state.selectedConvergence)
+    return !!(state.selectedDomain || state.selectedProject)
   }
   /**
    * Push opacity/stroke-width directly onto a strand's path elements
@@ -848,8 +783,8 @@ export function mountHelix(refs: HelixRefs): () => void {
      ============================================================
      Called every time `state` changes. It:
 
-       1. Walks every visual class of element (strands, rungs,
-          projects) and toggles the dim/active CSS classes plus
+       1. Walks every visual class of element (strands, projects)
+          and toggles the dim/active CSS classes plus
           inline opacity/stroke-width to match the current selection.
        2. Re-renders the legend buttons (cheap — just a few buttons).
        3. Reconciles the project-breath animations: the SET of
@@ -873,14 +808,6 @@ export function mountHelix(refs: HelixRefs): () => void {
       const isD = anySelected && !highlighted.has(d.id)
       applyStrandStateClasses(so, { dim: isD, highlight: isH })
       lg.classList.toggle('is-dim', isD)
-    })
-    scene.rungEls.forEach(r => {
-      r.g.classList.remove('is-active', 'is-dim')
-      if (state.selectedConvergence === r.convergence.id) r.g.classList.add('is-active')
-      if (anySelected && state.selectedConvergence !== r.convergence.id) {
-        const bothLit = r.convergence.domainIds.every(id => highlighted.has(id))
-        if (!bothLit) r.g.classList.add('is-dim')
-      }
     })
     scene.projectEls.forEach(pe => {
       pe.g.classList.remove('is-active', 'is-dim')
@@ -1018,7 +945,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
   /**
    * Single entry point for ALL selection changes. Pass exactly one
-   * non-null id (the others null) to select that thing; pass three
+   * non-null id (the other null) to select that thing; pass two
    * nulls to clear. We then:
    *   - update state
    *   - either build + show the panel for the new selection, OR
@@ -1026,10 +953,9 @@ export function mountHelix(refs: HelixRefs): () => void {
    *   - call applyAppearance() to update every visual element +
    *     coordinate the animation behaviours.
    */
-  function onSelect(domainId, projectId, convergenceId) {
+  function onSelect(domainId, projectId) {
     state.selectedDomain = domainId || null
     state.selectedProject = projectId || null
-    state.selectedConvergence = convergenceId || null
 
     if (domainId) {
       const d = domainById(domainId)
@@ -1046,16 +972,6 @@ export function mountHelix(refs: HelixRefs): () => void {
         themes: p.themes || [],
         color: projDomains[0] ? projDomains[0].color : null,
         cta: { label: 'See full project', href: '#/projects/' + p.id },
-      })
-    } else if (convergenceId) {
-      const c = convergenceById(convergenceId)
-      const conDomains = c.domainIds.map(domainById).filter(Boolean)
-      showPanel({
-        name: c.title,
-        tagline: 'A convergence between ' + conDomains.map(d => d.name).join(' & '),
-        themes: [{ n: 'CONVERGENCE', t: 'Why it matters', d: c.description }],
-        color: 'var(--ink)',
-        cta: null,
       })
     } else {
       clearPanel()
@@ -1074,7 +990,7 @@ export function mountHelix(refs: HelixRefs): () => void {
       if (anySelected && !highlighted.has(d.id)) btn.classList.add('is-dim')
       if (state.selectedDomain === d.id) btn.classList.add('is-active')
       btn.innerHTML = '<span class="legend-swatch" style="background:' + d.color + ';"></span>' + d.shortName
-      btn.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null))
+      btn.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null))
       legendEl.appendChild(btn)
     })
   }
@@ -1106,15 +1022,13 @@ export function mountHelix(refs: HelixRefs): () => void {
                                     else is selected; otherwise the
                                     selection state owns appearance)
        - Click a strand label   → same as clicking the strand
-       - Click a rung           → select that convergence (toggle)
-       - Hover a rung bead      → tooltip + spring grow (in attachSpringHovers)
        - Click a project bead   → select that project (toggle)
        - Hover a project        → tooltip + spring grow (in attachSpringHovers)
      ============================================================ */
   function attachInteractions() {
     DOMAINS.forEach(d => {
       const so = scene.strandObjects[d.id]
-      so.hitbox.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null))
+      so.hitbox.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null))
       so.hitbox.addEventListener('pointerenter', () => {
         if (!isAnythingSelected()) {
           so.frontEls.forEach(el => el.style.strokeWidth = '4.8')
@@ -1132,18 +1046,10 @@ export function mountHelix(refs: HelixRefs): () => void {
       const lg = scene.strandLabels[d.id]
       lg.style.cursor = 'pointer'
       lg.style.pointerEvents = 'auto'
-      lg.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null))
-    })
-    scene.rungEls.forEach(r => {
-      r.g.addEventListener('click', () => onSelect(null, null, state.selectedConvergence === r.convergence.id ? null : r.convergence.id))
-      r.bead.addEventListener('pointerenter', () => {
-        const rect = r.bead.getBoundingClientRect()
-        showTooltip(r.convergence.title, rect.left + rect.width/2 + window.scrollX, rect.top + window.scrollY)
-      })
-      r.bead.addEventListener('pointerleave', hideTooltip)
+      lg.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null))
     })
     scene.projectEls.forEach(pe => {
-      pe.g.addEventListener('click', () => onSelect(null, state.selectedProject === pe.project.id ? null : pe.project.id, null))
+      pe.g.addEventListener('click', () => onSelect(null, state.selectedProject === pe.project.id ? null : pe.project.id))
       pe.g.addEventListener('pointerenter', () => {
         const rect = pe.g.getBoundingClientRect()
         showTooltip(pe.project.name, rect.left + rect.width/2 + window.scrollX, rect.top + window.scrollY)
@@ -1195,7 +1101,6 @@ export function mountHelix(refs: HelixRefs): () => void {
                we set strokeDasharray + strokeDashoffset to the
                total path length, then animate dashoffset to 0.
        1100ms  domain labels fade in (staggered)
-       1300ms  rung groups fade in (staggered)
        1500ms  project beads/capsules fade in (staggered)
        1600ms  project labels fade in (staggered)
        ~2200ms timeline.onComplete fires → ambient breath + idle
@@ -1221,6 +1126,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
     // Collect the things we'll animate.
     const staff = scene.svgEl.querySelector('.staff')
+    const rodIcon = scene.svgEl.querySelector('.rod-icon')
     const allFront = [], allBack = []
     DOMAINS.forEach(d => {
       const so = scene.strandObjects[d.id]
@@ -1233,6 +1139,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
     // Pre-stage initial state with utils.set (no animation).
     if (staff) utils.set(staff, { opacity: 0 })
+    if (rodIcon) utils.set(rodIcon, { opacity: 0 })
     allSegs.forEach(p => {
       try {
         // The "draw a path" trick: set dasharray = full length, dashoffset
@@ -1245,8 +1152,7 @@ export function mountHelix(refs: HelixRefs): () => void {
     const labels = Object.values(scene.strandLabels)
     const projGroups = scene.projectEls.map(p => p.g)
     const projLabels = scene.projectEls.map(p => p.label)
-    const rungGroups = scene.rungEls.map(r => r.g)
-    utils.set([...labels, ...projGroups, ...projLabels, ...rungGroups], { opacity: 0 })
+    utils.set([...labels, ...projGroups, ...projLabels], { opacity: 0 })
 
     // Build the timeline. `defaults` applies to every .add() unless
     // overridden. `onComplete` fires when the LAST step finishes —
@@ -1260,9 +1166,15 @@ export function mountHelix(refs: HelixRefs): () => void {
       },
     })
 
-    // Step 1: staff fades up to its quiet 0.55 opacity.
+    // Step 1: staff fades up to full opacity to match the rod-icon's
+    // solid ink fill — together they read as one continuous anchor.
     if (staff) {
-      tl.add(staff, { opacity: [0, 0.55], duration: 600 })
+      tl.add(staff, { opacity: [0, 1], duration: 600 })
+    }
+    if (rodIcon) {
+      // Run in parallel with the staff fade: '-=600' starts this 600ms
+      // before the previous step ends → same start time, same duration.
+      tl.add(rodIcon, { opacity: [0, 1], duration: 600 }, '-=600')
     }
     // Step 2: all strand segments draw in. stagger(18, {start:0}) gives
     // each segment delay = i*18ms, starting at 0ms. '-=300' starts the
@@ -1272,10 +1184,9 @@ export function mountHelix(refs: HelixRefs): () => void {
       duration: 1100,
       delay: stagger(18, { start: 0 }),
     }, '-=300')
-    // Steps 3–6: fades, each starting partway through the previous
+    // Steps 3–5: fades, each starting partway through the previous
     // step so the reveal flows smoothly instead of marching in beats.
     tl.add(labels,     { opacity: [0, 1], duration: 500, delay: stagger(80) }, '-=600')
-    tl.add(rungGroups, { opacity: [0, 1], duration: 500, delay: stagger(80) }, '-=400')
     tl.add(projGroups, { opacity: [0, 1], duration: 500, delay: stagger(100) }, '-=300')
     tl.add(projLabels, { opacity: [0, 1], duration: 400, delay: stagger(80) }, '-=400')
   }
@@ -1311,7 +1222,7 @@ export function mountHelix(refs: HelixRefs): () => void {
 
      Each tick mutates the strand cfg's `phase` and `amplitude`,
      then calls rebuildStrandSegments() to overwrite every strand
-     path's `d` attribute and re-position projects/rungs that depend
+     path's `d` attribute and re-position projects that depend
      on those points.
      ============================================================ */
   const PHASE_DRIFT_PER_MS = 0.00024
@@ -1377,27 +1288,11 @@ export function mountHelix(refs: HelixRefs): () => void {
       syncList(so.backEls,  backPaths)
       so.hitbox.setAttribute('d', fullPath)
     })
-    rebuildRungsAndProjects()
+    rebuildProjects()
   }
 
-  function rebuildRungsAndProjects() {
+  function rebuildProjects() {
     const orientation = currentOrientation
-    scene.rungEls.forEach(r => {
-      const c = r.convergence
-      const a = scene.strandConfigs[c.domainIds[0]]
-      const b = scene.strandConfigs[c.domainIds[1]]
-      if (!a || !b) return
-      const ptA = strandPointAt(orientation, a, c.position)
-      const ptB = strandPointAt(orientation, b, c.position)
-      const ax = ptA.x, ay = ptA.y, bx = ptB.x, by = ptB.y
-      const mx = (ax + bx) / 2, my = (ay + by) / 2
-      const cx = orientation === 'vertical' ? a.axisOffset : mx
-      const cy = orientation === 'vertical' ? my : a.axisOffset
-      r.line.setAttribute('d', 'M' + ax + ',' + ay + ' Q' + cx + ',' + cy + ' ' + bx + ',' + by)
-      r.bead.setAttribute('cx', cx)
-      r.bead.setAttribute('cy', cy)
-      r.cx = cx; r.cy = cy
-    })
     scene.projectEls.forEach(pe => {
       const proj = pe.project
       if (proj.domainIds.length === 1) {
@@ -1542,7 +1437,7 @@ export function mountHelix(refs: HelixRefs): () => void {
   }
 
   /* ============================================================
-     HOVER SPRINGS — bouncy size-pop on rung beads + project beads.
+     HOVER SPRINGS — bouncy size-pop on project beads.
      ============================================================
      createSpring({ stiffness, damping }) returns an EASE FUNCTION
      modelling a spring. Higher stiffness → snappier; higher damping
@@ -1561,14 +1456,6 @@ export function mountHelix(refs: HelixRefs): () => void {
      ============================================================ */
   function attachSpringHovers() {
     const spring = createSpring({ stiffness: 220, damping: 18 })
-    scene.rungEls.forEach(r => {
-      r.bead.addEventListener('pointerenter', () => {
-        animate(r.bead, { r: 8, duration: 600, ease: spring })
-      })
-      r.bead.addEventListener('pointerleave', () => {
-        animate(r.bead, { r: 5, duration: 600, ease: spring })
-      })
-    })
     scene.projectEls.forEach(pe => {
       const target = pe.shape
       if (!target) return  // multi-domain capsules don't have a circle to spring
@@ -1598,7 +1485,7 @@ export function mountHelix(refs: HelixRefs): () => void {
     orientationButtons.forEach(b =>
       b.classList.toggle('is-active', b.dataset.orientation === orientation)
     )
-    state = { selectedDomain: null, selectedProject: null, selectedConvergence: null }
+    state = { selectedDomain: null, selectedProject: null }
     clearPanel()
     scene = buildScene(orientation)
     attachInteractions()
@@ -1620,7 +1507,7 @@ export function mountHelix(refs: HelixRefs): () => void {
     b.addEventListener('click', handler)
     toggleListeners.push([b, handler])
   })
-  const onPanelClose = () => onSelect(null, null, null)
+  const onPanelClose = () => onSelect(null, null)
   panelCloseBtn.addEventListener('click', onPanelClose)
 
   /* ============================================================

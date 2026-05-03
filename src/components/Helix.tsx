@@ -54,8 +54,7 @@ export default function Helix() {
           <p className="helix-blurb">
             The four disciplines we work in wrap around a central axis &mdash; alternating
             front and back as they descend, the way a single strand wraps a physician&rsquo;s
-            staff. Where two disciplines share a research conversation, a small dashed rung
-            marks it. Concrete projects sit on (and sometimes between) the strands.
+            staff. Concrete projects sit on (and sometimes between) the strands.
           </p>
         </div>
         <div className="helix-toolbar">
@@ -88,15 +87,6 @@ export default function Helix() {
             </svg>
           </span>
           <span><strong>Capsule</strong> = project bridging two or more domains</span>
-        </div>
-        <div className="helix-key-item">
-          <span className="helix-key-glyph">
-            <svg width="30" height="14">
-              <line x1="0" y1="7" x2="30" y2="7" stroke="#2F0147" strokeWidth="1.25" strokeDasharray="2 4" />
-              <circle cx="15" cy="7" r="3.5" fill="#FFECE1" stroke="#2F0147" strokeWidth="1.25" />
-            </svg>
-          </span>
-          <span><strong>Rung</strong> = conceptual convergence</span>
         </div>
       </div>
 
