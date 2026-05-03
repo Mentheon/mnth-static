@@ -86,7 +86,7 @@
                           already running its selection breath, so we
                           don't get conflicting `r` animations on the
                           same circle.
-     6. Idle drift     — ~12fps recompute that very slowly rotates each
+     6. Idle drift     — 60fps recompute that very slowly rotates each
                           strand's phase (one revolution ≈ 120s) and
                           subtly breathes the amplitude. Re-samples
                           every strand and re-positions every project
@@ -230,7 +230,14 @@ export function mountHelix(refs: HelixRefs): () => void {
      LABEL_GUTTER                  Clearance between the spiral's reach
                                    and the outboard label column.
      ============================================================ */
-  const SEGMENTS_PER_STRAND = 28
+  const SEGMENTS_PER_STRAND = 40
+  // Pre-allocated slot pool per strand-side. The number of front/back
+  // segments returned by sampleStrand() varies as the phase drifts (each
+  // depth crossing splits or merges a segment). If we don't have enough
+  // SVG path elements to hold every segment the sampler returns, the
+  // overflow is silently dropped — that's exactly the "gaps appearing"
+  // glitch. 12 covers any realistic configuration of 1.8 turns + drift.
+  const SEGMENT_SLOTS_PER_SIDE = 12
   // Project beads (single-domain) and project labels (all kinds) sit in two
   // columns OUTSIDE the strand cluster, at the same row as the project's
   // strand intersection. LABEL_GUTTER is the clearance between the spiral's
@@ -499,18 +506,25 @@ export function mountHelix(refs: HelixRefs): () => void {
     DOMAINS.forEach((d) => {
       const cfg = strandConfigs[d.id]
       const { frontPaths, backPaths, fullPath } = sampleStrand(orientation, cfg)
-      const backEls = backPaths.map(p => {
-        const el = svgEl('path', { d: p, class: 'strand-segment is-back', stroke: d.color })
+      // Allocate a FIXED pool of SEGMENT_SLOTS_PER_SIDE path elements per
+      // strand-side, even if the initial sample only fills a few. Empty
+      // slots get d="" (renders nothing). Idle drift can then write into
+      // any slot freely — no overflow drops, no DOM thrash from creating
+      // / removing nodes mid-flight.
+      const backEls = []
+      for (let i = 0; i < SEGMENT_SLOTS_PER_SIDE; i++) {
+        const el = svgEl('path', { d: backPaths[i] || '', class: 'strand-segment is-back', stroke: d.color })
         el.dataset.domainId = d.id
         layerStrandBack.appendChild(el)
-        return el
-      })
-      const frontEls = frontPaths.map(p => {
-        const el = svgEl('path', { d: p, class: 'strand-segment', stroke: d.color })
+        backEls.push(el)
+      }
+      const frontEls = []
+      for (let i = 0; i < SEGMENT_SLOTS_PER_SIDE; i++) {
+        const el = svgEl('path', { d: frontPaths[i] || '', class: 'strand-segment', stroke: d.color })
         el.dataset.domainId = d.id
         layerStrandFront.appendChild(el)
-        return el
-      })
+        frontEls.push(el)
+      }
       const hit = svgEl('path', { d: fullPath, class: 'strand-hitbox' })
       hit.dataset.domainId = d.id
       layerHitboxes.appendChild(hit)
@@ -1161,6 +1175,18 @@ export function mountHelix(refs: HelixRefs): () => void {
       defaults: { ease: 'inOutQuad' },
       onComplete: () => {
         entranceFinishedAt = performance.now()
+        // Critical: the draw-on entrance set inline strokeDasharray =
+        // initial-path-length on every segment. Once drift starts
+        // mutating the path-d, segments that grow LONGER than that
+        // initial length get clipped by the dasharray (the part beyond
+        // initial length falls into a 0-length "dash" that renders
+        // nothing). Result: random invisible gaps as drift goes on.
+        // Clearing dasharray here lets segments render in full at
+        // whatever length they happen to be, frame to frame.
+        allSegs.forEach(p => {
+          p.style.strokeDasharray = 'none'
+          p.style.strokeDashoffset = ''
+        })
         startAmbientBreath()
         startIdleDrift()
       },
@@ -1200,22 +1226,22 @@ export function mountHelix(refs: HelixRefs): () => void {
      turning.
 
      We don't use anime.js for this — we drive it with a manual
-     requestAnimationFrame loop, capped at ~12fps, because:
-       1. Re-deriving every strand's path from scratch every tick
-          is the expensive part. Doing it 12×/sec gives smooth
-          enough motion without burning CPU.
-       2. anime.js is built for finite or per-target animations.
-          Continuously regenerating SVG attribute strings doesn't
-          fit its model.
+     requestAnimationFrame loop, because:
+       1. anime.js is built for finite or per-target animations.
+          Continuously regenerating SVG attribute strings on every
+          frame doesn't fit its model.
+       2. The recompute is a few hundred sin/cos calls + some short
+          string concatenations. At 60fps that's well under 1ms per
+          frame on modern hardware.
 
      Constants:
        PHASE_DRIFT_PER_MS  Radians the phase advances per millisecond.
-                            0.00012 rad/ms × 1000 ms × 60 s × 2 = full
-                            revolution in ~120s. Tweak smaller for
+                            0.00024 rad/ms × 1000 ms × 60 s × 2 = full
+                            revolution in ~60s. Tweak smaller for
                             slower drift.
-       DRIFT_TICK_MIN_MS   Min interval between recomputes. 80ms ≈
-                            12.5fps cap. The RAF still fires every
-                            frame but we skip the work.
+       DRIFT_TICK_MIN_MS   Min interval between recomputes (16ms ≈
+                            60fps cap). The RAF still fires every
+                            frame but we skip the work if it's too soon.
        DRIFT_AMP_HZ        How many full breath cycles per second
                             for the amplitude wobble.
        DRIFT_AMP_RANGE     Amplitude varies by ±2.5% of base.
@@ -1226,23 +1252,43 @@ export function mountHelix(refs: HelixRefs): () => void {
      on those points.
      ============================================================ */
   const PHASE_DRIFT_PER_MS = 0.00024
-  const DRIFT_TICK_MIN_MS  = 80
+  // ~60fps cap. The per-frame work (re-sampling 4 strands × 160 points
+  // and writing a few dozen short SVG path attributes) is well under 1ms
+  // on modern hardware, so there's no real cost to running it every RAF.
+  // The previous 80ms (~12fps) cap was the visible-stepping cause.
+  const DRIFT_TICK_MIN_MS  = 16
   const DRIFT_AMP_HZ       = 0.05
   const DRIFT_AMP_RANGE    = 0.025
 
   function startIdleDrift() {
     stopIdleDrift()
     let lastTick = performance.now()
-    const startTime = lastTick
+    // Drift clock — total UN-PAUSED elapsed ms. Used by the amplitude
+    // breath so it stays in sync with the phase (both pause together
+    // and resume together with no jump).
+    let driftClock = 0
+    // If anything pauses the loop for longer than this (hover, tab
+    // backgrounded, GC stall, debugger break…) we cap dt so the strand
+    // doesn't leap forward by all the skipped-frame motion in one go.
+    // 50ms ≈ 3 frames worth — small enough that a brief stall isn't
+    // visible, large enough that normal frame jitter doesn't get clipped.
+    const MAX_DT = 50
     function tick(now) {
       // Always re-schedule first so a thrown error doesn't kill the loop.
       idleDriftRAF = requestAnimationFrame(tick)
       // Coordination guards: skip work if any selection or hover is active.
-      if (idleDriftPaused || isAnythingSelected()) return
-      // Throttle: skip if we ticked recently (12fps cap).
+      // CRITICAL: keep `lastTick` fresh during the pause so the next live
+      // tick doesn't compute a multi-second `dt` and warp the strands
+      // forward by minutes of accumulated drift in a single frame.
+      if (idleDriftPaused || isAnythingSelected()) {
+        lastTick = now
+        return
+      }
+      // Throttle: skip if we ticked recently (60fps cap).
       if (now - lastTick < DRIFT_TICK_MIN_MS) return
-      const dt = now - lastTick
+      const dt = Math.min(now - lastTick, MAX_DT)
       lastTick = now
+      driftClock += dt
       // Mutate each strand's phase by the dt-scaled drift, and breathe
       // amplitude with a sine offset by the strand's basePhase so each
       // strand breathes in its own rhythm.
@@ -1250,7 +1296,7 @@ export function mountHelix(refs: HelixRefs): () => void {
         const cfg = scene.strandConfigs[d.id]
         if (!cfg) return
         cfg.phase += PHASE_DRIFT_PER_MS * dt
-        const tSec = (now - startTime) / 1000
+        const tSec = driftClock / 1000
         cfg.amplitude = cfg.baseAmplitude * (1 + DRIFT_AMP_RANGE * Math.sin(2 * Math.PI * DRIFT_AMP_HZ * tSec + cfg.basePhase))
       })
       rebuildStrandSegments()
@@ -1266,11 +1312,11 @@ export function mountHelix(refs: HelixRefs): () => void {
 
   /**
    * Re-sample every strand and overwrite its existing path elements'
-   * `d` attributes in place. The number of front/back segments can
-   * change between ticks (as the depth crossings shift), so we keep a
-   * stable count of DOM nodes by setting any "extra" nodes' `d` to
-   * empty string. This avoids creating/removing SVG nodes 12 times a
-   * second, which would thrash the document's element list.
+   * `d` attributes in place. The segment count varies between ticks
+   * (depth crossings shift, splitting/merging segments), so we work
+   * against a fixed pool of SEGMENT_SLOTS_PER_SIDE pre-allocated path
+   * nodes per strand-side: fill the first N with the live path-d
+   * strings, blank the rest. No DOM node create/remove churn at 60fps.
    */
   function rebuildStrandSegments() {
     DOMAINS.forEach(d => {
