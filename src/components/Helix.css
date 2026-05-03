@@ -65,67 +65,85 @@ section.helix {
 
 /* Wrapper that anchors the absolutely-positioned selector indicator
    AND the static header overlay on top of the scrollable stage.
-   Sized to centre on the page (matches the .rd container above). */
+   Narrower than the .rd container below so the helix reads as a
+   compact column rather than a full-width band; this also keeps the
+   scroll-capture region focused. */
 .helix-viewport {
   position: relative;
-  max-width: 1100px;
+  max-width: 640px;
   margin: 0 auto;
 }
 
-/* Compact scroll window. The SVG inside is much taller, so the user
-   can scroll up/down through the helix. Helix.tsx handles JS-driven
-   snap-to-nearest-project on scroll-end. overscroll-behavior:contain
-   keeps page scrolling free outside the helix and stops the page
-   from scrolling once the helix's own scroll has more content to show. */
+/* Compact scroll window — slightly taller than before. The SVG inside
+   is taller still (via min-height), so the user can scroll up/down
+   through the helix. Helix.tsx handles JS-driven snap-to-nearest-
+   project on scroll-end. overscroll-behavior:contain keeps page
+   scrolling free outside the helix and stops the page from being
+   hijacked once the helix's own scroll still has content to show. */
 .helix-stage {
   width: 100%; position: relative;
-  height: 300px;
-  min-height: 240px;
-  max-height: 360px;
+  height: 400px;
+  min-height: 320px;
+  max-height: 460px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.helix-stage[data-orientation="horizontal"] { height: 300px; overflow-y: hidden; }
+.helix-stage[data-orientation="horizontal"] { height: 400px; overflow-y: hidden; }
 
 .helix-svg {
   width: 100%;
   height: auto;
-  min-height: 1100px;          /* taller than stage → scrollable */
+  /* Tuned so all three projects fall within reachable scrollTop range
+     for the narrower 540 px viewport: width 540, viewBox 820 → scale
+     ≈ 0.659 → projects in SVG-px at ~280/440/620, scroll range 0-500. */
+  min-height: 900px;
   display: block;
   overflow: visible;
 }
 
 /* ============================================================
-   Static header overlay — rod logo + four strand labels.
-   Sits over the top of the scrollable stage so the user always
-   sees the helix's identity (rod + colour-coded labels) regardless
-   of scroll position. Solid bg occludes the SVG's own rod/labels
-   that scroll up behind it.
+   Static header overlay — labels at very top, rod logo below
+   them, sized via Helix.tsx based on page scroll. The rod sits
+   centred over the scrollable stage so its visible vertical staff
+   appears continuous with the SVG's central staff line below — i.e.
+   the rod "protrudes through" the top of the helix scroll area.
    ============================================================ */
 .helix-header {
   position: absolute;
   top: 0; left: 0; right: 0;
   z-index: 10;
-  background: var(--bg);
-  padding: 8px 16px 10px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  pointer-events: none;        /* clicks/scroll pass through to stage below */
-}
-.helix-header-rod {
-  width: 56px; height: 56px;
-  display: block;
+  /* No background: only the labels area gets a solid bg so the
+     transparent SVG ground shows through around the rod. */
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  pointer-events: none;
 }
 .helix-header-labels {
+  /* Solid cream bg so the strand-labels row visually CAPS the top of
+     the helix and occludes whatever in the SVG scrolls up behind it. */
+  background: var(--bg);
+  width: 100%;
   display: flex; flex-wrap: wrap; justify-content: center;
   gap: 4px 18px;
-  font-size: 0.7rem; letter-spacing: 0.16em;
+  padding: 8px 16px 6px;
+  font-size: 0.72rem; letter-spacing: 0.16em;
   text-transform: uppercase; font-weight: 700;
-  opacity: 0.85;
+  opacity: 0.92;
 }
 .helix-header-label {
   /* per-label colour applied inline in Helix.tsx */
+}
+.helix-header-rod {
+  /* Width / height are set inline by Helix.tsx based on the page-scroll
+     position of the helix section in the viewport — large when the
+     section first comes into view, shrinking down to ~SMALL_ROD as the
+     user page-scrolls past it. The rod has TRANSPARENT bg (rod-only.svg
+     is now ink paths on transparent), so the spiral visible behind it
+     reads as the rod's continuation downward into the scroll area. */
+  display: block;
+  margin-top: 4px;
+  transition: width 90ms linear, height 90ms linear;
 }
 
 /* ============================================================

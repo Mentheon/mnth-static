@@ -127,6 +127,10 @@ export interface HelixHandle {
   setSelected: (rdStrandsId: string | null) => void
   /** SVG viewBox height in viewBox units (used for px↔viewBox scaling). */
   viewBoxHeight: number
+  /** SVG viewBox width — needed alongside height to compute the actual
+   *  preserveAspectRatio="meet" scale (= min of width-fit, height-fit)
+   *  so the snap math accounts for the centred bands. */
+  viewBoxWidth: number
 }
 
 export function mountHelix(refs: HelixRefs): HelixHandle {
@@ -421,8 +425,12 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
 
     /* -------- Layout constants for THIS orientation -------- */
     const W = orientation === 'vertical' ? 820 : 1280  // SVG viewBox width
-    const H = orientation === 'vertical' ? 1050 : 540  // SVG viewBox height — vertical bumped to make room for the elongated rod above the labels
-    const labelGap   = orientation === 'vertical' ? 280 : 80   // Reserved at the leading edge for rod + labels (vertical only)
+    // The rod logo and strand labels are now rendered by the React shell
+    // as a static header overlay (Helix.tsx → .helix-header). The SVG no
+    // longer needs vertical room above the strand area for them, so H
+    // drops back to roughly lengthAxis + small margins.
+    const H = orientation === 'vertical' ? 810 : 540  // SVG viewBox height
+    const labelGap   = orientation === 'vertical' ? 40 : 80    // Just a small top margin (no labels in SVG anymore)
     const tailMargin = 80                                       // Reserved at the trailing edge so strands don't touch it
     // Length of the staff axis (the "along" dimension).
     const lengthAxis = orientation === 'vertical' ? H - labelGap - tailMargin : W - labelGap - tailMargin
@@ -478,39 +486,25 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     })
 
     /* -------- The central staff --------
-       In vertical mode the staff line extends UP past the labels and
-       up into the rod logo (ROD_ELEVATION pixels above the strand area
-       top, where the rod's centre sits). The labels then visually sit
-       AROUND a single elongated rod, with the rod glyph capping the top.
-       Horizontal mode keeps the original behaviour (staff confined to
-       the strand area). */
-    const ROD_SIZE = 100
-    const ROD_ELEVATION = 200   // px above strand area top (vertical only)
+       The continuous vertical line down the middle of the helix. With
+       the rod logo now lifted to the React shell's static header, the
+       staff starts at strand-area top (y = 0) and descends through the
+       full strand area. The static rod overlay sits above this line
+       and its own internal staff visually flows into this one — they
+       share the same horizontal centre, so the user reads them as one
+       continuous rod from the snake glyph down through the strands. */
     const staff = svgEl('line', { class: 'staff' })
     if (orientation === 'vertical') {
-      staff.setAttribute('x1', axisOffset); staff.setAttribute('y1', -ROD_ELEVATION)
+      staff.setAttribute('x1', axisOffset); staff.setAttribute('y1', 0)
       staff.setAttribute('x2', axisOffset); staff.setAttribute('y2', lengthAxis)
     } else {
       staff.setAttribute('x1', 0); staff.setAttribute('y1', axisOffset)
       staff.setAttribute('x2', lengthAxis); staff.setAttribute('y2', axisOffset)
     }
     layerStaff.appendChild(staff)
-
-    /* -------- Rod-of-Asclepius icon capping the top of the staff -----
-       /public/rod-only.svg — ink-coloured glyph on a transparent ground.
-       In vertical mode the rod sits well above the strand-label row so
-       the elongated staff line carries the eye down from the logo
-       through the labels and into the spiral itself. */
-    const rodIcon = svgEl('image', {
-      href: import.meta.env.BASE_URL + 'rod-only.svg',
-      width: ROD_SIZE,
-      height: ROD_SIZE,
-      x: orientation === 'vertical' ? axisOffset - ROD_SIZE / 2 : -ROD_SIZE / 2,
-      y: orientation === 'vertical' ? -ROD_ELEVATION - ROD_SIZE / 2 : axisOffset - ROD_SIZE / 2,
-      preserveAspectRatio: 'xMidYMid meet',
-      class: 'rod-icon',
-    })
-    layerStaff.appendChild(rodIcon)
+    // (Rod-of-Asclepius icon is no longer rendered here — see
+    // <img class="helix-header-rod"> in Helix.tsx for the static
+    // header-overlay version.)
 
     /* -------- Strands ----------------------------------------------
        For each domain, we ask sampleStrand() for three things:
@@ -553,46 +547,12 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
       strandObjects[d.id] = { backEls, frontEls, hitbox: hit }
     })
 
-    /* -------- Strand labels with leaders -----------------------------
-       Each strand gets a "Research", "Design", etc. label anchored in
-       the leading-edge label gap, with a thin ink leader bending out
-       to where the strand actually emerges from. Sorting by the
-       starting point's x (or y in horizontal mode) keeps the labels
-       in the same left-to-right order as the strands themselves —
-       otherwise the leaders criss-cross. */
-    const startSamples = DOMAINS.map(d => ({ d, pt: strandPointAt(orientation, strandConfigs[d.id], 0) }))
-    startSamples.sort((a, b) => orientation === 'vertical' ? a.pt.x - b.pt.x : a.pt.y - b.pt.y)
-
-    const strandLabels = {}
-    startSamples.forEach((entry, idx) => {
-      const d = entry.d, start = entry.pt
-      const anchor = getStrandLabelAnchor(orientation, { W, H }, idx, startSamples.length)
-      const g = svgEl('g', { class: 'strand-label-group' })
-      g.dataset.domainId = d.id
-      const startX = orientation === 'vertical' ? start.x : start.x + startOffset
-      const startY = orientation === 'vertical' ? start.y + startOffset : start.y
-      const leader = svgEl('path', { class: 'strand-leader' })
-      let dPath
-      if (orientation === 'vertical') {
-        const midY = startOffset - 18
-        dPath = 'M' + anchor.x + ',' + (anchor.y + 6) + ' L' + anchor.x + ',' + midY + ' L' + startX + ',' + midY + ' L' + startX + ',' + (startY - 4)
-      } else {
-        const midX = startOffset - 18
-        dPath = 'M' + (anchor.x + 4) + ',' + anchor.y + ' L' + midX + ',' + anchor.y + ' L' + midX + ',' + startY + ' L' + (startX - 4) + ',' + startY
-      }
-      leader.setAttribute('d', dPath)
-      g.appendChild(leader)
-      const text = svgEl('text', { class: 'strand-label' })
-      if (orientation === 'vertical') {
-        text.setAttribute('x', anchor.x); text.setAttribute('y', anchor.y); text.setAttribute('text-anchor', 'middle')
-      } else {
-        text.setAttribute('x', anchor.x); text.setAttribute('y', anchor.y + 4); text.setAttribute('text-anchor', 'start')
-      }
-      text.textContent = d.shortName
-      g.appendChild(text)
-      layerLabels.appendChild(g)
-      strandLabels[d.id] = g
-    })
+    // Strand labels ("Research / Design / Development / Regulatory")
+    // are now rendered by the React shell as part of the static header
+    // overlay (.helix-header-labels). The empty `strandLabels` dict is
+    // returned for API compatibility; downstream code that reads
+    // scene.strandLabels[d.id] guards on undefined.
+    const strandLabels: Record<string, SVGGElement> = {}
 
     /* -------- Projects -----------------------------------------------
        Two flavours, dispatched by the inner `if`:
@@ -843,7 +803,9 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
       const isH = anySelected && highlighted.has(d.id)
       const isD = anySelected && !highlighted.has(d.id)
       applyStrandStateClasses(so, { dim: isD, highlight: isH })
-      lg.classList.toggle('is-dim', isD)
+      // lg may be undefined now that strand labels live in the React
+      // shell's static header instead of inside the SVG.
+      if (lg) lg.classList.toggle('is-dim', isD)
     })
     scene.projectEls.forEach(pe => {
       pe.g.classList.remove('is-active', 'is-dim')
@@ -1098,7 +1060,10 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
       })
     })
     DOMAINS.forEach(d => {
+      // Strand labels now live in the React shell's static header overlay;
+      // no in-SVG label group to wire a click on.
       const lg = scene.strandLabels[d.id]
+      if (!lg) return
       lg.style.cursor = 'pointer'
       lg.style.pointerEvents = 'auto'
       lg.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null))
@@ -1264,7 +1229,7 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     }, '-=300')
     // Steps 3–5: fades, each starting partway through the previous
     // step so the reveal flows smoothly instead of marching in beats.
-    tl.add(labels,     { opacity: [0, 1], duration: 500, delay: stagger(80) }, '-=600')
+    if (labels.length) tl.add(labels, { opacity: [0, 1], duration: 500, delay: stagger(80) }, '-=600')
     tl.add(projGroups, { opacity: [0, 1], duration: 500, delay: stagger(100) }, '-=300')
     tl.add(projLabels, { opacity: [0, 1], duration: 400, delay: stagger(80) }, '-=400')
   }
@@ -1664,5 +1629,6 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     },
 
     viewBoxHeight: scene ? scene.viewBox.H : 0,
+    viewBoxWidth:  scene ? scene.viewBox.W : 0,
   }
 }

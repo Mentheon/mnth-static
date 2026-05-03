@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { mountHelix, type HelixHandle } from './helixScene'
 import './Helix.css'
 
@@ -9,7 +9,16 @@ interface HelixProps {
   onSelect: (id: string | null) => void
 }
 
+// Rod logo size bounds (px). Driven by PAGE scroll: largest when the
+// helix section first enters the viewport — sized to "protrude" well
+// down into the scrollable strand area — shrinking to SMALL as the
+// user keeps page-scrolling so by the time the section is fully
+// pinned in view the rod is a compact mark above the labels.
+const LARGE_ROD = 180
+const SMALL_ROD = 56
+
 export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
+  const sectionRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const legendRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -51,6 +60,11 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
   // header overlay so it lands inside the visible scroll area.
   const SELECTOR_FRAC = 0.6
 
+  // Rod logo size, driven by PAGE scroll (window.scrollY) — see effect
+  // below. Initial state assumes the section hasn't entered view yet,
+  // so logo starts large; it'll be set correctly on first scroll fire.
+  const [rodSize, setRodSize] = useState(LARGE_ROD)
+
   /* ----------------------------------------------------------------
      Mount the helix scene + wire scroll-snap. Run ONCE on mount.
      ---------------------------------------------------------------- */
@@ -81,32 +95,43 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     const stage = stageRef.current
     let snapTimer: number | null = null
 
+    function getProjectPxY(h: HelixHandle, vbY: number): number | null {
+      const svg = stage.querySelector('.helix-svg') as SVGSVGElement | null
+      if (!svg) return null
+      const r = svg.getBoundingClientRect()
+      if (r.width <= 0 || r.height <= 0) return null
+      // preserveAspectRatio="xMidYMid meet" → uniform scale = min of the
+      // two fits. The unused dimension gets centred bands. Account for
+      // the top band offset so projects map to the right pixel Y.
+      const scale = Math.min(r.width / h.viewBoxWidth, r.height / h.viewBoxHeight)
+      const contentH = h.viewBoxHeight * scale
+      const bandY = (r.height - contentH) / 2
+      return bandY + vbY * scale
+    }
+
     function snapToNearest() {
       const h = handleRef.current
       if (!h || !stage) return
       const ys = h.getProjectViewboxYs()
       const ids = Object.keys(ys)
       if (ids.length === 0) return
-      const svg = stage.querySelector('.helix-svg') as SVGSVGElement | null
-      if (!svg) return
-      const svgPxH = svg.getBoundingClientRect().height
-      if (svgPxH <= 0) return
-      const scale = svgPxH / h.viewBoxHeight
       const stageH = stage.getBoundingClientRect().height
       const selectorOffset = stageH * SELECTOR_FRAC
       const selectorScroll = stage.scrollTop + selectorOffset
 
       let bestHelixId: string | null = null
+      let bestPxY = 0
       let bestDist = Infinity
       for (const pid of ids) {
-        const pxY = ys[pid] * scale
+        const pxY = getProjectPxY(h, ys[pid])
+        if (pxY == null) continue
         const dist = Math.abs(pxY - selectorScroll)
-        if (dist < bestDist) { bestDist = dist; bestHelixId = pid }
+        if (dist < bestDist) { bestDist = dist; bestHelixId = pid; bestPxY = pxY }
       }
       if (!bestHelixId) return
 
       // Smooth-scroll the chosen project to align with the selector line.
-      const targetScroll = ys[bestHelixId] * scale - selectorOffset
+      const targetScroll = bestPxY - selectorOffset
       programmaticScrollUntil.current = Date.now() + 700
       stage.scrollTo({ top: targetScroll, behavior: 'smooth' })
 
@@ -126,6 +151,24 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
 
     stage.addEventListener('scroll', onScroll, { passive: true })
 
+    // Initial scrollTop: position the FIRST project (kindreon) at the
+    // selector line. Two reasons:
+    //   1. Lets the user see the helix's primary project the moment
+    //      the section comes into view (before they scroll inside).
+    //   2. Pushes the SVG's own rod-icon (which still lives at the top
+    //      of the viewBox) above the visible scroll area, so only the
+    //      static header rod is visible — no duplicate rod glyph.
+    requestAnimationFrame(() => {
+      const ys = handle.getProjectViewboxYs()
+      const firstY = ys.kindreon ?? Object.values(ys)[0]
+      if (firstY == null) return
+      const pxY = getProjectPxY(handle, firstY)
+      if (pxY == null) return
+      const stageH = stage.getBoundingClientRect().height
+      programmaticScrollUntil.current = Date.now() + 700
+      stage.scrollTop = pxY - stageH * SELECTOR_FRAC
+    })
+
     return () => {
       stage.removeEventListener('scroll', onScroll)
       if (snapTimer) window.clearTimeout(snapTimer)
@@ -133,6 +176,41 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       handleRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ----------------------------------------------------------------
+     Page-scroll-driven rod size. Independent of the helix's own
+     internal scroll: this is THE PAGE'S scrollY position.
+
+     Progress = 0   when the section's top edge is at viewport bottom
+                    (just entering view) → rod at LARGE_ROD.
+     Progress = 1   when the section's top edge has reached viewport
+                    top (section fully scrolled into / past view)
+                    → rod at SMALL_ROD.
+     Linear lerp in between, clamped at both ends so further scrolling
+     past doesn't keep shrinking.
+     ---------------------------------------------------------------- */
+  useEffect(() => {
+    function onWindowScroll() {
+      const section = sectionRef.current
+      if (!section) return
+      const rect = section.getBoundingClientRect()
+      const vh = window.innerHeight || document.documentElement.clientHeight
+      // Progress: how far the section has scrolled UP relative to viewport.
+      // rect.top = vh   → progress 0 (just entering)
+      // rect.top = 0    → progress 1 (top hit viewport top)
+      // rect.top < 0    → progress 1 (clamped; we're past the trigger zone)
+      const raw = (vh - rect.top) / vh
+      const progress = Math.max(0, Math.min(1, raw))
+      setRodSize(LARGE_ROD - (LARGE_ROD - SMALL_ROD) * progress)
+    }
+    window.addEventListener('scroll', onWindowScroll, { passive: true })
+    window.addEventListener('resize', onWindowScroll)
+    onWindowScroll()
+    return () => {
+      window.removeEventListener('scroll', onWindowScroll)
+      window.removeEventListener('resize', onWindowScroll)
+    }
   }, [])
 
   /* ----------------------------------------------------------------
@@ -161,11 +239,14 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     if (vbY == null) return
     const svg = stage.querySelector('.helix-svg') as SVGSVGElement | null
     if (!svg) return
-    const svgPxH = svg.getBoundingClientRect().height
-    if (svgPxH <= 0) return
-    const scale = svgPxH / h.viewBoxHeight
+    const r = svg.getBoundingClientRect()
+    if (r.width <= 0 || r.height <= 0) return
+    const scale = Math.min(r.width / h.viewBoxWidth, r.height / h.viewBoxHeight)
+    const contentH = h.viewBoxHeight * scale
+    const bandY = (r.height - contentH) / 2
+    const pxY = bandY + vbY * scale
     const stageH = stage.getBoundingClientRect().height
-    const targetScroll = vbY * scale - stageH * SELECTOR_FRAC
+    const targetScroll = pxY - stageH * SELECTOR_FRAC
 
     programmaticScrollUntil.current = Date.now() + 700
     lastReportedRdId.current = selectedStrandId
@@ -173,7 +254,7 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
   }, [selectedStrandId])
 
   return (
-    <section className="helix" id="helix">
+    <section className="helix" id="helix" ref={sectionRef}>
       <div className="helix-key">
         <div className="helix-key-item">
           <span className="helix-key-glyph">
@@ -200,18 +281,23 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       </div>
 
       <div className="helix-viewport">
-        {/* Static header overlay — rod logo + colour-coded strand labels.
-            Stays put while the spiral scrolls underneath. Solid bg
-            occludes whatever in the SVG scrolls into the same space. */}
+        {/* Static header overlay — labels CAP the very top with a solid
+            bg, rod logo hangs below them with TRANSPARENT bg so its
+            visible vertical staff continues into the spiral's central
+            staff line, "protruding through" the scrollable area. */}
         <div className="helix-header" aria-hidden="true">
-          <img className="helix-header-rod" src={`${import.meta.env.BASE_URL}rod-only.svg`} alt="" />
           <div className="helix-header-labels">
-            {/* Order + colours match the strand layout at the top of the SVG */}
             <span className="helix-header-label" style={{ color: '#6B1F4D' }}>Regulatory</span>
             <span className="helix-header-label" style={{ color: '#A30B37' }}>Research</span>
             <span className="helix-header-label" style={{ color: '#3F0247' }}>Development</span>
             <span className="helix-header-label" style={{ color: '#9C528B' }}>Design</span>
           </div>
+          <img
+            className="helix-header-rod"
+            src={`${import.meta.env.BASE_URL}rod-only.svg`}
+            alt=""
+            style={{ width: rodSize, height: rodSize }}
+          />
         </div>
         <div className="helix-selector" aria-hidden="true">
           <span className="helix-selector-chev">&rsaquo;</span>
