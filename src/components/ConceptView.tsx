@@ -122,7 +122,54 @@ export default function ConceptView() {
       } catch (_) { /* zero-length — skip */ }
     })
 
-    const tl = createTimeline({ defaults: { ease: 'outQuad' } })
+    const tl = createTimeline({
+      defaults: { ease: 'outQuad' },
+      onComplete: () => {
+        // Once the static layout has settled, kick off the slow
+        // travelling pulse along the timeline (Research → Design →
+        // Development → loop). Two looping animations run in parallel:
+        //   1. Traversal — translates cx between the three node x's
+        //      with brief pauses at each, then warps back to start.
+        //   2. Breath — pulses the dot's r and the aura's r/opacity
+        //      on a separate inOutSine loop, independent of position.
+        const dot  = root.querySelector('.timeline-pulse-dot')  as SVGCircleElement | null
+        const aura = root.querySelector('.timeline-pulse-aura') as SVGCircleElement | null
+        if (!dot || !aura) return
+
+        // Fade the traveller in
+        utils.set([dot, aura], { opacity: 0 })
+        animate(dot,  { opacity: [0, 1],   duration: 600 })
+        animate(aura, { opacity: [0, 0.3], duration: 600 })
+
+        // Slow traversal — Research (130) → Design (400) → Development
+        // (670), with brief pauses at each, then a quick warp back.
+        const traverse = createTimeline({
+          loop: true,
+          defaults: { ease: 'inOutQuad' },
+        })
+        traverse.add([dot, aura], { cx: 400, duration: 5500 })  // R → D
+        traverse.add([dot, aura], { cx: 400, duration: 1400 })  // hold at Design
+        traverse.add([dot, aura], { cx: 670, duration: 5500 })  // D → Dev
+        traverse.add([dot, aura], { cx: 670, duration: 1400 })  // hold at Dev
+        traverse.add([dot, aura], { cx: 130, duration: 1400 })  // warp back to R
+
+        // Breathing pulse — independent loop. Dot subtly grows; aura
+        // grows further and fades to give the "breath halo" feel.
+        animate(dot, {
+          r: [6, 8.5, 6],
+          duration: 2200,
+          ease: 'inOutSine',
+          loop: true,
+        })
+        animate(aura, {
+          r:       [12, 22, 12],
+          opacity: [0.35, 0.05, 0.35],
+          duration: 2200,
+          ease: 'inOutSine',
+          loop: true,
+        })
+      },
+    })
     // 1. Main timeline draws on first
     if (line) {
       tl.add(line, { strokeDashoffset: 0, duration: 900, ease: 'inOutQuad' })
@@ -231,6 +278,14 @@ export default function ConceptView() {
             {/* Direction chevrons — flow indicators along the timeline */}
             <path d="M 200 304 L 212 310 L 200 316" className="roadmap-chevron" />
             <path d="M 470 304 L 482 310 L 470 316" className="roadmap-chevron" />
+
+            {/* Pulsing traveller — slow loop along the timeline,
+                breathing as it goes. Two circles: a soft outer aura
+                that grows/shrinks with opacity flicker, and a sharp
+                ink/crimson dot at the centre. Both share cx so they
+                move together. */}
+            <circle cx={130} cy={310} r={14} className="timeline-pulse-aura" />
+            <circle cx={130} cy={310} r={6}  className="timeline-pulse-dot"  />
 
             {/* `}` brace above the three primary nodes, indicating that
                 Consultancy COVERS all of them. Two smooth quadratic

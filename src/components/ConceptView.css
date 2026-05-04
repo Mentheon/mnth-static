@@ -135,6 +135,24 @@
   opacity: 0;
 }
 
+/* Pulsing traveller — two SVG circles. The dot is the sharp visible
+   centre; the aura is a soft halo behind it that grows further and
+   fades on the same beat to give the "breath" pulse. Both share the
+   same cx so they move together along the timeline. Driven entirely
+   by anime.js loops in playSectionB. */
+.timeline-pulse-dot {
+  fill: var(--crimson);
+  stroke: var(--bg);
+  stroke-width: 2;
+  pointer-events: none;
+  opacity: 0;
+}
+.timeline-pulse-aura {
+  fill: var(--crimson);
+  pointer-events: none;
+  opacity: 0;
+}
+
 /* The `}` brace above the three primary nodes — visualises that
    Consultancy spans all of them. Drawn on via stroke-dasharray. */
 .roadmap-brace {
