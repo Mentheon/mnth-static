@@ -7,11 +7,9 @@ interface RDStrandsProps {
   onSelect: (id: string | null) => void
 }
 
-// StrandPanel is rendered in App.tsx — placed between the HeroSection
-// and the Helix above this component, so the user sees a selected
-// project's details right under the hero icons (above the scrollable
-// helix and these buttons), keeping the panel + helix + buttons
-// readable as one column.
+// StrandPanel is rendered by ConceptView, immediately beneath this
+// component and above the Helix, so a selected project's detail card
+// opens directly under the strand circle the user clicked.
 export default function RDStrands({ openId, onSelect }: RDStrandsProps) {
   function toggle(id: string) {
     onSelect(openId === id ? null : id)

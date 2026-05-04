@@ -114,20 +114,6 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       return bandY + vbY * scale
     }
 
-    /** scrollTop value that aligns Kindreon (the topmost project) with
-     *  the selector line. The user is not allowed to scroll above this. */
-    function getMinScroll(): number {
-      const h = handleRef.current
-      if (!h) return 0
-      const ys = h.getProjectViewboxYs()
-      const firstY = ys.kindreon ?? Object.values(ys)[0]
-      if (firstY == null) return 0
-      const pxY = getProjectPxY(h, firstY)
-      if (pxY == null) return 0
-      const stageH = stage.getBoundingClientRect().height
-      return Math.max(0, pxY - stageH * SELECTOR_FRAC)
-    }
-
     function snapToNearest() {
       const h = handleRef.current
       if (!h || !stage) return
@@ -136,25 +122,50 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       if (ids.length === 0) return
       const stageH = stage.getBoundingClientRect().height
       const selectorOffset = stageH * SELECTOR_FRAC
-      const selectorScroll = stage.scrollTop + selectorOffset
+      const maxScroll = Math.max(0, stage.scrollHeight - stage.clientHeight)
 
-      let bestHelixId: string | null = null
-      let bestPxY = 0
-      let bestDist = Infinity
-      for (const pid of ids) {
-        const pxY = getProjectPxY(h, ys[pid])
-        if (pxY == null) continue
-        const dist = Math.abs(pxY - selectorScroll)
-        if (dist < bestDist) { bestDist = dist; bestHelixId = pid; bestPxY = pxY }
+      // For each project, compute the scrollTop that aligns its bead
+      // with the selector line. CLAMP to the achievable [0, maxScroll]
+      // window — projects whose natural ideal sits outside that window
+      // (e.g. the topmost project on a compact SVG, whose ideal would
+      // be negative) still get a usable snap point at the boundary.
+      // Without clamping, the topmost project never wins the
+      // distance-to-selector contest because its target is unreachable.
+      const projects = ids
+        .map(pid => {
+          const pxY = getProjectPxY(h, ys[pid])
+          if (pxY == null) return null
+          const idealScroll = Math.max(0, Math.min(maxScroll, pxY - selectorOffset))
+          return { id: pid, vbY: ys[pid], pxY, idealScroll }
+        })
+        .filter((p): p is NonNullable<typeof p> => p != null)
+      if (!projects.length) return
+      projects.sort((a, b) => a.idealScroll - b.idealScroll)
+
+      // Partition [0, maxScroll] at midpoints between adjacent ideal
+      // scrolls, so each project owns the range of scroll positions
+      // that are closer to its ideal than to its neighbours'. Using
+      // clamped ideals here guarantees each project — including any
+      // topmost one whose natural ideal is negative — owns a non-empty
+      // zone at one of the boundaries.
+      let chosen = projects[0]
+      for (let i = 0; i < projects.length; i++) {
+        const start = i === 0
+          ? 0
+          : (projects[i - 1].idealScroll + projects[i].idealScroll) / 2
+        const end = i === projects.length - 1
+          ? Number.POSITIVE_INFINITY
+          : (projects[i].idealScroll + projects[i + 1].idealScroll) / 2
+        if (stage.scrollTop >= start && stage.scrollTop < end) {
+          chosen = projects[i]
+          break
+        }
       }
-      if (!bestHelixId) return
 
-      // Smooth-scroll the chosen project to align with the selector line.
-      const targetScroll = bestPxY - selectorOffset
       programmaticScrollUntil.current = Date.now() + 700
-      stage.scrollTo({ top: targetScroll, behavior: 'smooth' })
+      stage.scrollTo({ top: chosen.idealScroll, behavior: 'smooth' })
 
-      const rdId = HELIX_TO_RD[bestHelixId] ?? bestHelixId
+      const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
       if (rdId !== lastReportedRdId.current) {
         lastReportedRdId.current = rdId
         onSelect(rdId)
@@ -162,15 +173,15 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     }
 
     function onScroll() {
-      // Clamp at the Kindreon position — the user can't scroll above
-      // the first project. Done first, before the programmatic-scroll
-      // guard, so any bounce-back fires regardless of how scrollTop got
-      // below the floor.
-      const minScroll = getMinScroll()
-      if (stage.scrollTop < minScroll) {
-        stage.scrollTop = minScroll
-        return
-      }
+      // No upper-bound clamp on scrolling above the topmost project:
+      // the snap-zoning algorithm in snapToNearest already pulls the
+      // user back to whichever project owns the current scroll
+      // position, including Kindreon when scrollTop is at 0. The old
+      // clamp here forced scrollTop back UP to Kindreon's snap target
+      // and early-returned without scheduling a snap, which on narrow
+      // viewports (where the stage height shrinks below the assumed
+      // 400 px and Kindreon's snap target becomes positive) silently
+      // blocked Kindreon from ever being selected.
       if (Date.now() < programmaticScrollUntil.current) return
       if (snapTimer) window.clearTimeout(snapTimer)
       // Wait until scroll has been idle for ~150 ms before snapping.

@@ -192,7 +192,7 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     { id: 'kindreon',  rdStrandsId: 'kindred', name: 'Kindreon',
       tagline: 'Family-centred digital tools for paediatric care',
       summary: 'Family-centred digital tools for paediatric care, with safeguarding-by-design as a foundational constraint rather than an afterthought.',
-      domainIds: ['research', 'design', 'development'], position: 0.2, status: 'active',
+      domainIds: ['research', 'design', 'development'], position: 0.3, status: 'active',
       themes: [
         { n:'01', t:'Family-centred care',     d:'Tools built for the unit of paediatric care \u2014 child, parent, clinician \u2014 not a single screen-based user.' },
         { n:'02', t:'Safeguarding by design',  d:'Vulnerability-aware interaction patterns, with safety treated as a foundational constraint rather than a feature added late.' },
@@ -211,7 +211,7 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     { id: 'acumentra', rdStrandsId: 'vitrix',  name: 'Acumentra',
       tagline: 'Sharper signals from clinical noise',
       summary: 'Sharper signals from clinical noise. Decision-support models built with subgroup auditing as a first-class concern, not a compliance step.',
-      domainIds: ['development'], position: 0.95, status: 'active',
+      domainIds: ['development'], position: 0.8, status: 'active',
       themes: [
         { n:'01', t:'Signal intelligence',  d:'Pipelines that turn continuous physiological and behavioural data into clinical signal a clinician can act on.' },
         { n:'02', t:'Predictive analytics', d:'Risk stratification and outcome forecasting for clinical decision support, validated on cohort data.' },
@@ -606,7 +606,12 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', side === 'right' ? px + 22 : px - 22)
-          label.setAttribute('y', py + 285)
+          // Beside the bead — `+ 6` shifts the text baseline down so
+          // the label visually centres on the bead. The previous +285
+          // was a botched port from the prototype (where labels lived
+          // in an untranslated layer and used a much larger offset);
+          // it dropped each label ~280 px below its real bead.
+          label.setAttribute('y', py + 6)
           label.setAttribute('text-anchor', side === 'right' ? 'start' : 'end')
         } else {
           label.setAttribute('x', px)
@@ -617,8 +622,7 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         layerProjects.appendChild(g)
         // Label MUST go into layerProjects (which has the strand-coord
         // translate) and not layerLabels (untransformed). With the wrong
-        // layer the label renders startOffset px ABOVE its bead — that's
-        // why labels were "referring to incorrect sections".
+        // layer the label renders startOffset px ABOVE its bead.
         layerProjects.appendChild(label)
         projectEls.push({ g, shape: circle, leader, label, project: proj, px, py, anchorPt: pt, sideSign })
       } else {
@@ -719,7 +723,11 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', labelX + (sideSign > 0 ? 6 : -6))
-          label.setAttribute('y', labelY + 285)
+          // Sit beside the leader's outboard endpoint — `+ 6` is a
+          // baseline-centring nudge, same fix as the single-domain
+          // bead label above. The previous +285 misalignment dropped
+          // each capsule's name far below its actual capsule.
+          label.setAttribute('y', labelY + 6)
           label.setAttribute('text-anchor', sideSign > 0 ? 'start' : 'end')
         } else {
           label.setAttribute('x', labelX)

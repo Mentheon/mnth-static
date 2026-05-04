@@ -126,17 +126,14 @@ export default function ConceptView() {
       defaults: { ease: 'outQuad' },
       onComplete: () => {
         // Once the static layout has settled, kick off the slow
-        // travelling pulse along the timeline. Two looping animations
-        // run in parallel:
+        // travelling blob along the timeline. Two loops run in parallel:
         //   1. Traversal — translates cx between the three node x's
         //      with brief pauses at each, then warps back to start.
-        //      The arrive/depart of each bubble fires "join" effects
-        //      below so the bubble distorts + recolours organically.
-        //   2. Breath — pulses the dot's r and the aura's r/opacity
-        //      on a separate inOutSine loop, independent of position.
-        const dot  = root.querySelector('.timeline-pulse-dot')  as SVGCircleElement | null
-        const aura = root.querySelector('.timeline-pulse-aura') as SVGCircleElement | null
-        if (!dot || !aura) return
+        //      Arrive/depart fire the bubble "join" effects below.
+        //   2. Breath — gently pulses the blob's r on its own
+        //      inOutSine loop, independent of position.
+        const dot = root.querySelector('.timeline-pulse-dot') as SVGCircleElement | null
+        if (!dot) return
 
         // Bubble (circle) refs for the three primary nodes.
         const researchCircle    = root.querySelector('.roadmap-node[data-node="research"] .roadmap-node-circle')    as SVGCircleElement | null
@@ -161,7 +158,7 @@ export default function ConceptView() {
             duration: 600,
             ease: 'outElastic(1.2, 0.5)',
           })
-          animate([dot, aura], {
+          animate(dot, {
             opacity: 0,
             duration: 280,
             ease: 'inQuad',
@@ -184,16 +181,10 @@ export default function ConceptView() {
             duration: 700,
             ease: 'outQuad',
           })
-          // Dot + aura emerge from inside the bubble, with a small
-          // delay so they appear around the moment the bubble peaks.
+          // Blob re-emerges from inside the bubble, with a small
+          // delay so it appears around the moment the bubble peaks.
           animate(dot, {
             opacity: [0, 1],
-            duration: 420,
-            delay: 220,
-            ease: 'outQuad',
-          })
-          animate(aura, {
-            opacity: [0, 0.35],
             duration: 420,
             delay: 220,
             ease: 'outQuad',
@@ -216,9 +207,9 @@ export default function ConceptView() {
           })
         }
 
-        // Initial state: dot is INVISIBLE (assimilated into Research)
+        // Initial state: blob is INVISIBLE (assimilated into Research)
         // and Research is already coloured crimson + slightly swollen.
-        utils.set([dot, aura], { opacity: 0 })
+        utils.set(dot, { opacity: 0 })
         arriveAt(researchCircle)
 
         /* Build a transit step:
@@ -263,26 +254,20 @@ export default function ConceptView() {
           defaults: { ease: 'inOutQuad' },
         })
         // Hold at Research (also fires once per loop iteration).
-        traverse.add([dot, aura], { cx: 130, duration: 1400 })
-        traverse.add([dot, aura], makeTransit(researchCircle, 130, designCircle,      400, 5500))
-        traverse.add([dot, aura], { cx: 400, duration: 1400 })  // hold at Design
-        traverse.add([dot, aura], makeTransit(designCircle,   400, developmentCircle, 670, 5500))
-        traverse.add([dot, aura], { cx: 670, duration: 1400 })  // hold at Development
-        traverse.add([dot, aura], makeTransit(developmentCircle, 670, researchCircle, 130, 1800))  // warp back
+        traverse.add(dot, { cx: 130, duration: 1400 })
+        traverse.add(dot, makeTransit(researchCircle, 130, designCircle,      400, 5500))
+        traverse.add(dot, { cx: 400, duration: 1400 })  // hold at Design
+        traverse.add(dot, makeTransit(designCircle,   400, developmentCircle, 670, 5500))
+        traverse.add(dot, { cx: 670, duration: 1400 })  // hold at Development
+        traverse.add(dot, makeTransit(developmentCircle, 670, researchCircle, 130, 1800))  // warp back
 
-        // Breathing pulse — independent loops. Dot subtly grows; aura
-        // grows further. Opacity is NO LONGER driven by the breath
-        // (arriveAt / releaseFrom now own it) so the assimilation /
-        // re-emergence transitions don't fight the breath cycle.
+        // Breathing pulse — independent infinite loop on r only. The
+        // blob gently swells then settles, like a soft heartbeat.
+        // Opacity is NOT touched by the breath; arriveAt / releaseFrom
+        // own opacity so the assimilation transitions stay clean.
         animate(dot, {
-          r: [6, 8.5, 6],
-          duration: 2200,
-          ease: 'inOutSine',
-          loop: true,
-        })
-        animate(aura, {
-          r: [12, 22, 12],
-          duration: 2200,
+          r: [7, 10, 7],
+          duration: 2400,
           ease: 'inOutSine',
           loop: true,
         })
@@ -397,13 +382,10 @@ export default function ConceptView() {
             <path d="M 200 304 L 212 310 L 200 316" className="roadmap-chevron" />
             <path d="M 470 304 L 482 310 L 470 316" className="roadmap-chevron" />
 
-            {/* Pulsing traveller — slow loop along the timeline,
-                breathing as it goes. Two circles: a soft outer aura
-                that grows/shrinks with opacity flicker, and a sharp
-                ink/crimson dot at the centre. Both share cx so they
-                move together. */}
-            <circle cx={130} cy={310} r={14} className="timeline-pulse-aura" />
-            <circle cx={130} cy={310} r={6}  className="timeline-pulse-dot"  />
+            {/* Solid breathing blob that traverses the timeline.
+                Single filled circle — gently pulses its radius for
+                the "alive" feel. No outer halo / flicker. */}
+            <circle cx={130} cy={310} r={8} className="timeline-pulse-dot" />
 
             {/* `}` brace above the three primary nodes, indicating that
                 Consultancy COVERS all of them. Two smooth quadratic
@@ -470,16 +452,29 @@ export default function ConceptView() {
         data-section="c"
       >
         <p className="concept-c-eyebrow">Our ongoing R&amp;D strands</p>
-        <div className="concept-c-host">
-          <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
-          <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
+        <div className={`concept-c-host ${openStrand ? 'concept-c-host--split' : ''}`}>
+          {/* Grid layout — single column when no strand is selected
+              (strands above helix, classic stack); a 2-column grid when
+              a strand opens, with the helix on the LEFT spanning both
+              grid rows and the strand picker + info panel stacked on
+              the RIGHT. The remaining strand circles end up directly
+              above the panel they relate to, instead of floating alone
+              at the top of the section. */}
+          <div className="concept-c-strands-area">
+            <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
+          </div>
+          <div className="concept-c-helix-area">
+            <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
+          </div>
           {openStrand && (
-            <StrandPanel
-              key={openStrand.id}
-              strand={openStrand}
-              isOpen={openStrandId !== null}
-              onClose={() => setOpenStrandId(null)}
-            />
+            <div className="concept-c-panel-area">
+              <StrandPanel
+                key={openStrand.id}
+                strand={openStrand}
+                isOpen={openStrandId !== null}
+                onClose={() => setOpenStrandId(null)}
+              />
+            </div>
           )}
         </div>
       </section>

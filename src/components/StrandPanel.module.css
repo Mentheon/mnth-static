@@ -10,7 +10,11 @@
 }
 
 .panel.open {
-  max-height: 900px;
+  /* Bumped from 900 px — in the side-by-side helix+panel layout the
+     panel sits in a narrower column, so the theme grid drops to a
+     single column and the four-theme strands (Aevorix) need more
+     vertical room than the previous full-width ceiling allowed. */
+  max-height: 1500px;
   opacity: 1;
   pointer-events: auto;
 }

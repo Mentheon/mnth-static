@@ -135,20 +135,14 @@
   opacity: 0;
 }
 
-/* Pulsing traveller — two SVG circles. The dot is the sharp visible
-   centre; the aura is a soft halo behind it that grows further and
-   fades on the same beat to give the "breath" pulse. Both share the
-   same cx so they move together along the timeline. Driven entirely
-   by anime.js loops in playSectionB. */
+/* Solid breathing blob that traverses the timeline. One filled
+   circle, no stroke / no halo. anime.js (playSectionB) drives:
+     - cx (traversal between node x's, with brief pauses)
+     - r  (gentle infinite breath)
+     - opacity (assimilation into / release from each bubble) */
 .timeline-pulse-dot {
   fill: var(--crimson);
-  stroke: var(--bg);
-  stroke-width: 2;
-  pointer-events: none;
-  opacity: 0;
-}
-.timeline-pulse-aura {
-  fill: var(--crimson);
+  stroke: none;
   pointer-events: none;
   opacity: 0;
 }
@@ -249,6 +243,13 @@
   background: var(--bg);
   flex-direction: column;
   gap: 1rem;
+  /* Anchor content to the top of the section. The default
+     .concept-section centres vertically, which is fine when no panel
+     is open but causes the strand circles to drift off the viewport
+     top once the side-by-side helix+panel row grows tall. Top-
+     anchoring keeps the strand row pinned where the user clicked. */
+  justify-content: flex-start;
+  padding-top: 3rem;
 }
 .concept-c-eyebrow {
   font-size: 0.78rem;
@@ -268,7 +269,61 @@
   margin: 0 0 1rem;
 }
 .concept-c-host {
+  /* Wider than other sections so the helix + strands + panel can sit
+     in a 2-column grid without crowding. */
   width: 100%;
-  max-width: 1100px;
-  /* Embedded sub-experience — the existing Helix + RDStrands. */
+  max-width: 1280px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "strands"
+    "helix";
+  gap: 2rem;
+  align-items: start;
+  justify-items: center;
+}
+
+.concept-c-strands-area { grid-area: strands; width: 100%; }
+.concept-c-helix-area   { grid-area: helix;   width: 100%; display: flex; justify-content: center; }
+.concept-c-panel-area   { grid-area: panel;   width: 100%; }
+
+/* ---------- Section C: split layout ---------- */
+
+/* When a strand is selected, the helix takes the LEFT column and
+   spans both rows; the strand picker (collapsed to two circles) sits
+   top-right, with the info panel directly beneath it. This pulls the
+   remaining strand circles into the same column as the panel they
+   describe, and opens up generous breathing room around the helix's
+   project bubbles in the middle. */
+.concept-c-host--split {
+  grid-template-columns: minmax(0, 460px) minmax(0, 620px);
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "helix strands"
+    "helix panel";
+  /* Bigger column gap → more space between the helix project bubbles
+     and the strands/panel column. Row gap keeps strands and panel
+     visually grouped without crowding. */
+  gap: 1.5rem 5rem;
+  justify-items: stretch;
+}
+
+.concept-c-host--split .concept-c-helix-area {
+  align-self: center;
+}
+
+/* On narrower viewports, the side-by-side grid collapses back to a
+   single column (strands → helix → panel). Threshold roughly matches
+   the smallest width at which 460 + 620 + 5rem gap (≈ 1160 px) still
+   fits with section padding. */
+@media (max-width: 1100px) {
+  .concept-c-host--split {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "strands"
+      "helix"
+      "panel";
+    gap: 2rem;
+    justify-items: center;
+  }
 }

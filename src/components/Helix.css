@@ -99,10 +99,12 @@ section.helix {
 .helix-svg {
   width: 100%;
   height: auto;
-  /* Tuned so all three projects fall within reachable scrollTop range
-     for the narrower 540 px viewport: width 540, viewBox 820 → scale
-     ≈ 0.659 → projects in SVG-px at ~280/440/620, scroll range 0-500. */
-  min-height: 900px;
+  /* Reduced from 660 px to keep the helix compact in the side-by-
+     side layout where it sits in a ~460 px column next to the info
+     panel. At that column width the viewBox naturally renders ~455 px
+     tall, so a 540 px floor leaves modest top/bottom margin without
+     reintroducing the dead space the old 900 px ceiling caused. */
+  min-height: 540px;
   display: block;
   overflow: visible;
 }
