@@ -126,34 +126,84 @@ export default function ConceptView() {
       defaults: { ease: 'outQuad' },
       onComplete: () => {
         // Once the static layout has settled, kick off the slow
-        // travelling pulse along the timeline (Research → Design →
-        // Development → loop). Two looping animations run in parallel:
+        // travelling pulse along the timeline. Two looping animations
+        // run in parallel:
         //   1. Traversal — translates cx between the three node x's
         //      with brief pauses at each, then warps back to start.
+        //      The arrive/depart of each bubble fires "join" effects
+        //      below so the bubble distorts + recolours organically.
         //   2. Breath — pulses the dot's r and the aura's r/opacity
         //      on a separate inOutSine loop, independent of position.
         const dot  = root.querySelector('.timeline-pulse-dot')  as SVGCircleElement | null
         const aura = root.querySelector('.timeline-pulse-aura') as SVGCircleElement | null
         if (!dot || !aura) return
 
-        // Fade the traveller in
+        // Bubble (circle) refs for the three primary nodes.
+        const researchCircle    = root.querySelector('.roadmap-node[data-node="research"] .roadmap-node-circle')    as SVGCircleElement | null
+        const designCircle      = root.querySelector('.roadmap-node[data-node="design"] .roadmap-node-circle')      as SVGCircleElement | null
+        const developmentCircle = root.querySelector('.roadmap-node[data-node="development"] .roadmap-node-circle') as SVGCircleElement | null
+
+        /* arriveAt — dot has reached this bubble. Bubble swells with
+           an organic squish (scale via outElastic), and fill switches
+           to crimson via inline style (CSS transition on .roadmap-node-
+           circle smooths the colour change in 0.2s). */
+        function arriveAt(circle: SVGCircleElement | null) {
+          if (!circle) return
+          circle.style.fill = '#A30B37'
+          animate(circle, {
+            scale: [1, 1.22, 1.06],
+            duration: 700,
+            ease: 'outElastic(1.2, 0.5)',
+          })
+        }
+        /* departFrom — dot is leaving this bubble. A second, slightly
+           inverted squish (compress then settle), and fill reverts by
+           clearing the inline style so it falls back to var(--grape). */
+        function departFrom(circle: SVGCircleElement | null) {
+          if (!circle) return
+          circle.style.fill = ''
+          animate(circle, {
+            scale: [1.06, 0.9, 1],
+            duration: 600,
+            ease: 'outElastic(1.2, 0.5)',
+          })
+        }
+
+        // Fade the traveller in. Dot starts at Research, so colour
+        // Research crimson immediately to match the dot's position.
         utils.set([dot, aura], { opacity: 0 })
         animate(dot,  { opacity: [0, 1],   duration: 600 })
         animate(aura, { opacity: [0, 0.3], duration: 600 })
+        arriveAt(researchCircle)
 
         // Slow traversal — Research (130) → Design (400) → Development
-        // (670), with brief pauses at each, then a quick warp back.
+        // (670) → warp back. Each transit step uses onBegin to depart
+        // the bubble it's leaving and onComplete to arrive at the next.
         const traverse = createTimeline({
           loop: true,
           defaults: { ease: 'inOutQuad' },
         })
-        traverse.add([dot, aura], { cx: 400, duration: 5500 })  // R → D
+        // Initial hold at Research (also fires every loop iteration).
+        traverse.add([dot, aura], { cx: 130, duration: 1400 })
+        traverse.add([dot, aura], {
+          cx: 400, duration: 5500,
+          onBegin:    () => departFrom(researchCircle),
+          onComplete: () => arriveAt(designCircle),
+        })
         traverse.add([dot, aura], { cx: 400, duration: 1400 })  // hold at Design
-        traverse.add([dot, aura], { cx: 670, duration: 5500 })  // D → Dev
-        traverse.add([dot, aura], { cx: 670, duration: 1400 })  // hold at Dev
-        traverse.add([dot, aura], { cx: 130, duration: 1400 })  // warp back to R
+        traverse.add([dot, aura], {
+          cx: 670, duration: 5500,
+          onBegin:    () => departFrom(designCircle),
+          onComplete: () => arriveAt(developmentCircle),
+        })
+        traverse.add([dot, aura], { cx: 670, duration: 1400 })  // hold at Development
+        traverse.add([dot, aura], {
+          cx: 130, duration: 1400,
+          onBegin:    () => departFrom(developmentCircle),
+          onComplete: () => arriveAt(researchCircle),       // wraps loop
+        })
 
-        // Breathing pulse — independent loop. Dot subtly grows; aura
+        // Breathing pulse — independent loops. Dot subtly grows; aura
         // grows further and fades to give the "breath halo" feel.
         animate(dot, {
           r: [6, 8.5, 6],
