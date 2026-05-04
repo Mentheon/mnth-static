@@ -5,6 +5,7 @@ import RDStrands from './components/RDStrands'
 import StrandPanel from './components/StrandPanel'
 import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
+import ConceptView from './components/ConceptView'
 import { STRANDS } from './data/strands'
 
 function useHash() {
@@ -19,7 +20,10 @@ function useHash() {
 
 export default function App() {
   const hash = useHash()
-  const page = hash === '#who' ? 'who' : 'home'
+  const page =
+    hash === '#who'     ? 'who'     :
+    hash === '#concept' ? 'concept' :
+    'home'
 
   // Selected R&D Strand id, shared between the StrandPanel, the
   // RDStrands buttons, and the Helix — scrolling the helix snaps to a
@@ -33,6 +37,8 @@ export default function App() {
       <Header currentHash={hash} />
       {page === 'who' ? (
         <WhoPage />
+      ) : page === 'concept' ? (
+        <ConceptView />
       ) : (
         <>
           <HeroSection />

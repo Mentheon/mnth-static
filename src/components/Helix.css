@@ -11,11 +11,11 @@
 section.helix {
   max-width: 1280px;
   margin: 0 auto;
-  /* Helix sits ABOVE the R&D Strand buttons now and reads as one
-     section with them. Bottom padding is tight (0) so the helix
-     flows directly into the "Our ongoing R&D strands" title that
-     follows. Top padding gives it some breathing room from the hero. */
-  padding: 2rem 2rem 0;
+  /* Helix sits BELOW the R&D Strand buttons and ABOVE the StrandPanel.
+     Top padding tight (0) so the helix flows directly out of the
+     product circles row above. Bottom padding is small for breathing
+     room before the panel below. */
+  padding: 0 2rem 1rem;
 }
 .helix-head {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -72,6 +72,9 @@ section.helix {
   position: relative;
   max-width: 640px;
   margin: 0 auto;
+  /* Clips the .helix-line that intentionally extends past the viewport
+     bottom so it cleanly stops at the visible scroll area's edge. */
+  overflow: hidden;
 }
 
 /* Compact scroll window — slightly taller than before. The SVG inside
@@ -106,7 +109,11 @@ section.helix {
 
 /* ============================================================
    Static header overlay — rod logo only (label row hidden for now).
-   Solid cream bg so the rod visually caps the top of the helix.
+   Solid cream bg occludes the scrolling SVG behind the rod so the
+   rod reads as a fixed brand mark, not part of the scroll content.
+   The .helix-line lives INSIDE this header with z-index above the
+   header bg but below the rod img, so the line passes "through" the
+   rod's transparent pixels and continues unbroken below the header.
    ============================================================ */
 .helix-header {
   position: absolute;
@@ -115,16 +122,15 @@ section.helix {
   display: flex; flex-direction: column; align-items: center; gap: 0;
   pointer-events: none;
   background: var(--bg);
-  padding: 6px 16px 6px;
+  padding: 0;
 }
 .helix-header-rod {
   /* Discrete LARGE_ROD / SMALL_ROD via inline width/height (Helix.tsx).
-     Transparent areas of rod-only.svg let the .helix-line behind it
-     show through, so the rod's internal staff reads as continuous
-     with the protruding line below. */
+     z-index 3 sits ABOVE the .helix-line (z 2) so the rod's ink
+     occludes the line where the snake glyph is opaque. */
   display: block;
   position: relative;
-  z-index: 2;
+  z-index: 3;
   transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1),
               height 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -144,12 +150,22 @@ section.helix {
    opaque and lets it show through where the rod is transparent.
    ============================================================ */
 .helix-line {
+  /* Lives INSIDE .helix-header so it shares the header's stacking
+     context. z-index 2 sits above the header's solid bg (auto/0)
+     but below the rod img (z 3) — the rod ink occludes the line
+     where the snake glyph is opaque, but the line is visible through
+     the rod's transparent pixels and continues uninterrupted below
+     the header bounds (clipped at viewport bottom by .helix-viewport
+     overflow:hidden). The result: rod's internal staff and the line
+     read as one continuous vertical, FLUSH at the rod's bottom edge. */
   position: absolute;
-  left: 50%; top: 4px; bottom: 0;
+  left: 50%;
+  top: 0;
+  height: 100vh;
   width: 2.5px;
   background: var(--ink);
   transform: translateX(-50%);
-  z-index: 5;
+  z-index: 2;
   pointer-events: none;
 }
 

@@ -311,14 +311,14 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       </div>
 
       <div className="helix-viewport">
-        {/* Vertical hairline that protrudes through the rod logo and
-            extends down through the entire helix viewport — the SOLE
-            element that crosses the panel. Sits behind the rod img
-            (which occludes it where the rod is opaque) and over the
-            scrolling SVG (so the strands wrap around it visually). */}
-        <div className="helix-line" aria-hidden="true" />
-        {/* Static header overlay — rod logo only (label row hidden). */}
+        {/* Static header overlay — rod logo + the protruding line.
+            The line sits INSIDE the header so it shares the header's
+            stacking context (z above bg, below rod img), letting the
+            line pass through the rod's transparent pixels and continue
+            unbroken below the header. The rod stays an OVERLAY (outside
+            the scrollable stage); the line just visually overlaps it. */}
         <div className="helix-header" aria-hidden="true">
+          <div className="helix-line" />
           <img
             className="helix-header-rod"
             src={`${import.meta.env.BASE_URL}rod-only.svg`}

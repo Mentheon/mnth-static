@@ -1,0 +1,186 @@
+/* ============================================================
+   ConceptView — WIP scroll-snap carousel concept.
+   Apple-style: each section is a full viewport, scroll snaps to
+   one section at a time. anime.js drives section entrance + the
+   roadmap reveal. Reachable at #concept.
+   ============================================================ */
+
+.concept-scroller {
+  /* Header above is 170px (desktop). Use viewport minus that. */
+  height: calc(100vh - 170px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+.concept-section {
+  min-height: calc(100vh - 170px);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+/* ---------- Section A: "Digital health is moving... fast" ---------- */
+
+.concept-a {
+  background: var(--bg);
+}
+.concept-a-headline {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  color: var(--ink);
+  line-height: 1.05;
+  text-align: center;
+  letter-spacing: -0.01em;
+  max-width: 1100px;
+}
+.concept-a-word { display: inline-block; opacity: 0; transform: translateY(28px); }
+.concept-a-word--fast {
+  font-weight: 900;
+  color: var(--crimson);
+  display: inline-block;
+  transform-origin: left center;
+  position: relative;
+}
+/* Speed lines that streak past the "fast" word */
+.concept-a-streaks {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 0;
+  pointer-events: none;
+}
+.concept-a-streak {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--crimson), transparent);
+  opacity: 0;
+  transform-origin: left center;
+}
+
+/* ---------- Section B: "We get it" + roadmap ---------- */
+
+.concept-b {
+  background: var(--bg);
+  flex-direction: column;
+  gap: 2rem;
+}
+.concept-b-eyebrow {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0.55;
+  margin: 0;
+}
+.concept-b-tagline {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--ink);
+  text-align: center;
+  margin: 0;
+  max-width: 800px;
+  line-height: 1.2;
+}
+.roadmap {
+  width: 100%;
+  max-width: 1100px;
+  position: relative;
+}
+.roadmap-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.roadmap-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  opacity: 0.4;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+.roadmap-line--dashed {
+  stroke-dasharray: 6 6;
+  stroke-dashoffset: 0;        /* dashed, not draw-on */
+  opacity: 0;
+}
+.roadmap-node {
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: filter 0.25s, opacity 0.2s;
+}
+.roadmap-node-circle {
+  fill: var(--grape);
+  stroke: var(--ink);
+  stroke-width: 3;
+  transition: fill 0.2s, transform 0.2s;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.roadmap-node:hover .roadmap-node-circle {
+  fill: var(--crimson);
+  transform: scale(1.08);
+}
+.roadmap-node--satellite .roadmap-node-circle {
+  fill: var(--bg);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+.roadmap-node--satellite:hover .roadmap-node-circle {
+  fill: var(--crimson);
+  stroke-dasharray: none;
+}
+.roadmap-node-label {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  fill: #FFECE1;
+  text-anchor: middle;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+.roadmap-node--satellite .roadmap-node-label { fill: var(--ink); }
+.roadmap-node--satellite:hover .roadmap-node-label { fill: #FFECE1; }
+
+/* ---------- Section C: existing helix ---------- */
+
+.concept-c {
+  background: var(--bg);
+  flex-direction: column;
+  gap: 1rem;
+}
+.concept-c-eyebrow {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0.55;
+  margin: 0 0 0.5rem;
+}
+.concept-c-headline {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--ink);
+  text-align: center;
+  margin: 0 0 1rem;
+}
+.concept-c-host {
+  width: 100%;
+  max-width: 1100px;
+  /* Embedded sub-experience — the existing Helix + RDStrands. */
+}
