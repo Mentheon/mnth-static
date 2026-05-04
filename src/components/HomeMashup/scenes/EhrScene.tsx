@@ -40,6 +40,7 @@ const INSTANT_KINDS: ReadonlySet<LineKind> = new Set(['banner', 'comment', 'ok',
 const LINES: Line[] = [
   { kind: 'banner',  text: 'MENTHEON-OS  v0.9.4-rc2  (build 20260504.b3a1)' },
   { kind: 'banner',  text: 'state of the art in digital health since 2024' },
+  { kind: 'comment', text: '// authored by quentjr · bloem · for the long road ahead' },
   { kind: 'spacer',  text: '' },
   { kind: 'ok',      text: '[ OK ]  kernel handoff           0.041s' },
   { kind: 'ok',      text: '[ OK ]  identity service         0.118s' },

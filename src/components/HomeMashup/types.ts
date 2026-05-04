@@ -13,6 +13,7 @@ export type SceneId =
   | 'mri'
   | 'rings'
   | 'pills'
+  | 'vrPose'
   | 'ehr'
   | 'defib'
   | 'ecg'

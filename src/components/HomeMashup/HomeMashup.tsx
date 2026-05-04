@@ -9,6 +9,7 @@ import NeuralScene from './scenes/NeuralScene'
 import MriScene from './scenes/MriScene'
 import RingsScene from './scenes/RingsScene'
 import PillsScene from './scenes/PillsScene'
+import VrPoseScene from './scenes/VrPoseScene'
 import EhrScene from './scenes/EhrScene'
 import DefibScene from './scenes/DefibScene'
 import EcgScene from './scenes/EcgScene'
@@ -41,6 +42,7 @@ const SCENES: SceneDescriptor[] = [
   { id: 'ehr',      label: 'EHR terminal',       duration: 6000, Component: EhrScene },
   { id: 'defib',    label: 'Defibrillator',      duration: 3600, Component: DefibScene },
   { id: 'ecg',      label: 'Cardiac monitor',    duration: 4600, Component: EcgScene },
+  { id: 'vrPose',   label: 'XR pose tracking',   duration: 6500, Component: VrPoseScene },
 ]
 
 interface HomeMashupProps {
