@@ -124,73 +124,103 @@ export default function ConceptView() {
     const VIEW_W       = 1600
     const VIEW_H       = 120
     const BASELINE_Y   = VIEW_H / 2
-    const SEGMENT_W    = 110
-    const PIXEL_SPEED  = 140    // viewBox units per second (faster scroll
-                                // = newly appended beats reach view sooner)
-    const BUFFER_AHEAD = 1      // only ONE segment queued past the right
-                                // edge, so amplitude changes are visible
-                                // within ~1s rather than ~9s
+    const BEAT_W       = 86      // width of a single PQRST segment
+    const PIXEL_SPEED  = 240     // viewBox units per second (faster scroll
+                                 // = newly-amplified beats reach the eye sooner)
+    const BUFFER_AHEAD = 0.4     // < 1 beat queued past the right edge,
+                                 // so the live-amplitude rebake (below)
+                                 // affects the very next beat to appear
     // Vertical scale — multiplies all Y-offsets so the heartbeat fills
     // the taller viewBox without having to retune every coefficient.
     const Y_SCALE      = 2.1
 
     type Pt = [number, number]
-    interface Segment { pts: Pt[]; startX: number; width: number }
+    interface Segment {
+      pts: Pt[]
+      startX: number
+      width: number
+      isBeat: boolean
+    }
 
     const queue: Segment[] = []
     let pathOffset    = 0
     let segmentCursor = 0
-    let amplitude     = 0.3       // smoothed amp used by next PQRST
-    let displacement  = 0         // accumulated px moved, decays over time
+    let amplitude     = 0           // smoothed amp; 0 = totally flat trace
+    let displacement  = 0           // accumulated px moved, decays over time
+
+    /* Flat-segment width is INVERSELY proportional to amplitude — this
+       is what gives the trace a higher beat frequency when the cursor
+       moves a lot. amp 0   → flat 260 (long inter-beat gap, but the
+       beats themselves are flat too so it doesn't matter visually);
+       amp 1.6 → flat 12   (rapid rhythm, beats almost back-to-back). */
+    function currentFlatWidth(): number {
+      return Math.max(12, 260 - amplitude * 155)
+    }
 
     function pqrstSegment(amp: number): Pt[] {
-      const padLeft = 18
+      const padLeft = 6
       const x0 = padLeft
       const A = amp * Y_SCALE
       return [
         [0,           BASELINE_Y],
         [padLeft,     BASELINE_Y],
         // P wave
-        [x0 + 6,      BASELINE_Y - 2 * A],
-        [x0 + 12,     BASELINE_Y - 3 * A],
-        [x0 + 18,     BASELINE_Y],
+        [x0 + 4,      BASELINE_Y - 2 * A],
+        [x0 + 8,      BASELINE_Y - 3 * A],
+        [x0 + 12,     BASELINE_Y],
         // PR
-        [x0 + 24,     BASELINE_Y],
+        [x0 + 16,     BASELINE_Y],
         // Q
-        [x0 + 30,     BASELINE_Y + 3 * A],
-        // R (signature spike)
-        [x0 + 36,     BASELINE_Y - 22 * A],
+        [x0 + 20,     BASELINE_Y + 3 * A],
+        // R (signature spike) — at x0 + 22 = 28 from segment start
+        [x0 + 22,     BASELINE_Y - 22 * A],
         // S
-        [x0 + 42,     BASELINE_Y + 6 * A],
+        [x0 + 26,     BASELINE_Y + 6 * A],
         // ST
-        [x0 + 50,     BASELINE_Y],
+        [x0 + 32,     BASELINE_Y],
         // T wave
-        [x0 + 58,     BASELINE_Y - 4 * A],
-        [x0 + 66,     BASELINE_Y - 5 * A],
-        [x0 + 74,     BASELINE_Y - 2 * A],
-        [x0 + 80,     BASELINE_Y],
-        [SEGMENT_W,   BASELINE_Y],
+        [x0 + 40,     BASELINE_Y - 4 * A],
+        [x0 + 50,     BASELINE_Y - 5 * A],
+        [x0 + 60,     BASELINE_Y - 2 * A],
+        [x0 + 70,     BASELINE_Y],
+        [BEAT_W,      BASELINE_Y],
       ]
     }
 
-    function flatSegment(): Pt[] {
+    function flatSegment(width: number): Pt[] {
       const pts: Pt[] = []
-      const steps = 8
+      const steps = Math.max(4, Math.round(width / 14))
+      // Baseline jitter scales with amplitude — at rest (amp 0) the line
+      // is dead flat; only when the cursor is moving do we get any noise.
+      const jitter = 1.2 * amplitude
       for (let i = 0; i <= steps; i++) {
-        const x = (i / steps) * SEGMENT_W
-        const y = BASELINE_Y + (Math.random() - 0.5) * 1.2
+        const x = (i / steps) * width
+        const y = BASELINE_Y + (Math.random() - 0.5) * jitter
         pts.push([x, y])
       }
       return pts
     }
 
     function appendSegment() {
-      // Alternate heartbeat / flat for a steady rhythm — the heartbeat
-      // amplitude varies live with cursor velocity.
       const isBeat = (queue.length % 2) === 0
-      const pts = isBeat ? pqrstSegment(amplitude) : flatSegment()
-      queue.push({ pts, startX: segmentCursor, width: SEGMENT_W })
-      segmentCursor += SEGMENT_W
+      if (isBeat) {
+        queue.push({
+          pts: pqrstSegment(amplitude),
+          startX: segmentCursor,
+          width: BEAT_W,
+          isBeat: true,
+        })
+        segmentCursor += BEAT_W
+      } else {
+        const fw = currentFlatWidth()
+        queue.push({
+          pts: flatSegment(fw),
+          startX: segmentCursor,
+          width: fw,
+          isBeat: false,
+        })
+        segmentCursor += fw
+      }
     }
 
     function rebuildPath(): string {
@@ -209,25 +239,50 @@ export default function ConceptView() {
       pathOffset += (PIXEL_SPEED * dtMs) / 1000
 
       // Map accumulated cursor displacement → target amplitude.
-      //   no recent movement → 0.3 (baseline ripples)
-      //   ~30 px accumulated → ~1.0
+      //   no movement       → 0   (trace is dead flat — no pulses)
+      //   ~45 px accumulated → ~1.0
       //   ~70 px accumulated → clamped at 1.6 (tall R-spikes)
-      const targetAmp = Math.min(1.6, 0.3 + displacement * 0.022)
-      // Snap amplitude toward target quickly — the user-facing change
-      // already has the buffer-latency hidden in it; smoothing too hard
-      // here makes the cursor feel disconnected.
-      amplitude += (targetAmp - amplitude) * Math.min(1, dtMs / 80)
-      // Bleed off accumulated displacement so the trace settles once the
-      // cursor stops moving (~900 ms half-life).
-      displacement *= Math.max(0, 1 - dtMs / 900)
+      const targetAmp = Math.min(1.6, displacement * 0.022)
+      // Snap fast — the user is looking for a 1:1 cursor-to-trace feel,
+      // so don't over-smooth.
+      amplitude += (targetAmp - amplitude) * Math.min(1, dtMs / 35)
+      // Bleed off accumulated displacement so the trace settles back to
+      // flat once the cursor stops moving (~350 ms half-life).
+      displacement *= Math.max(0, 1 - dtMs / 350)
+      // Snap to dead-flat once we're below a perceptible threshold —
+      // prevents a long tail of micro-ripples after motion stops.
+      if (displacement < 0.5) displacement = 0
+      if (amplitude   < 0.02) amplitude   = 0
 
       // Drop segments that have scrolled fully off-screen on the left.
       while (queue.length > 0 && queue[0].startX + queue[0].width - pathOffset < -20) {
         queue.shift()
       }
       // Append new segments to keep the right-edge buffer full.
-      while (segmentCursor - pathOffset < VIEW_W + BUFFER_AHEAD * SEGMENT_W) {
+      while (segmentCursor - pathOffset < VIEW_W + BUFFER_AHEAD * BEAT_W) {
         appendSegment()
+      }
+      // Re-bake the most recent un-revealed beat AND flat with the
+      // current live amplitude — moving the cursor immediately reshapes
+      // the next beat to enter view (and the gap before it), instead of
+      // having to wait for the next append cycle.
+      for (let i = queue.length - 1; i >= 0; i--) {
+        const seg = queue[i]
+        // Only rebake segments still entirely off-screen (right of view).
+        if (seg.startX - pathOffset < VIEW_W) break
+        if (seg.isBeat) {
+          seg.pts = pqrstSegment(amplitude)
+        } else {
+          const fw = currentFlatWidth()
+          // Width changed → shift any later segments by the delta.
+          const delta = fw - seg.width
+          seg.pts = flatSegment(fw)
+          seg.width = fw
+          if (delta !== 0) {
+            for (let j = i + 1; j < queue.length; j++) queue[j].startX += delta
+            segmentCursor += delta
+          }
+        }
       }
       tracePath.setAttribute('d', rebuildPath())
     }
@@ -243,7 +298,7 @@ export default function ConceptView() {
 
     // Pre-fill the queue so the trace appears already-running, not
     // crawling in from the right edge.
-    while (segmentCursor < VIEW_W + BUFFER_AHEAD * SEGMENT_W) appendSegment()
+    while (segmentCursor < VIEW_W + BUFFER_AHEAD * BEAT_W) appendSegment()
     tracePath.setAttribute('d', rebuildPath())
     requestAnimationFrame(loop)
 
