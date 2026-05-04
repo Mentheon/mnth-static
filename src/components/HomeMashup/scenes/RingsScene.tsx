@@ -18,10 +18,19 @@ export default function RingsScene({ onReadoutChange }: SceneProps) {
 
     const SVG_NS = 'http://www.w3.org/2000/svg'
 
+    /* Each ring's fill represents its stat's progress against a
+       sensible daily goal:
+         · Steps        12,847 / 10,000 = 128% → fully filled
+         · Active kcal     642 /    500 = 128% → fully filled
+         · HRV (ms)         78 / typical-100  ≈ 78% → ~3/4 filled
+       Previously the targets were placeholder offsets (`base - 0`,
+       `base - 30`, `base - 60`) that bore no relation to the
+       displayed numbers; in particular Steps animated `base → base`
+       and so the outer ring never filled at all. */
     const ringDefs = [
-      { r: 80, color: 'var(--crimson)', target: 502.6 - 0,  base: 502.6 },
-      { r: 60, color: 'var(--plum)',    target: 376.99 - 30, base: 376.99 },
-      { r: 40, color: 'var(--ink)',     target: 251.32 - 60, base: 251.32 },
+      { r: 80, color: 'var(--crimson)', base: 502.65, fillPct: 1.00 },
+      { r: 60, color: 'var(--plum)',    base: 376.99, fillPct: 0.95 },
+      { r: 40, color: 'var(--ink)',     base: 251.33, fillPct: 0.78 },
     ]
 
     const group = document.createElementNS(SVG_NS, 'g')
@@ -51,7 +60,7 @@ export default function RingsScene({ onReadoutChange }: SceneProps) {
 
       animations.push(
         animate(ring, {
-          strokeDashoffset: [def.base, def.target],
+          strokeDashoffset: [def.base, def.base * (1 - def.fillPct)],
           duration: 1500,
           delay: 100,
           ease: 'outQuart',
@@ -103,6 +112,12 @@ export default function RingsScene({ onReadoutChange }: SceneProps) {
 
     return () => {
       animations.forEach(a => a.pause())
+      // Wipe any element we appended directly to the SVG. React
+      // StrictMode (dev) re-invokes the effect after first cleanup;
+      // without this the second run stacks fresh text/ring nodes on
+      // top of the first run's leftovers — visible as a "0" overlaid
+      // on the already-final "12,847".
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

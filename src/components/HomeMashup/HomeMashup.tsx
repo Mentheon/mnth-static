@@ -38,7 +38,7 @@ const SCENES: SceneDescriptor[] = [
   { id: 'mri',      label: 'MRI sweep',          duration: 3600, Component: MriScene },
   { id: 'rings',    label: 'Wearable rings',     duration: 3600, Component: RingsScene },
   { id: 'pills',    label: 'Pill cascade',       duration: 3200, Component: PillsScene },
-  { id: 'ehr',      label: 'EHR terminal',       duration: 3800, Component: EhrScene },
+  { id: 'ehr',      label: 'EHR terminal',       duration: 6000, Component: EhrScene },
   { id: 'defib',    label: 'Defibrillator',      duration: 3600, Component: DefibScene },
   { id: 'ecg',      label: 'Cardiac monitor',    duration: 4600, Component: EcgScene },
 ]

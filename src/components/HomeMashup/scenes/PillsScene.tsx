@@ -16,7 +16,7 @@ export default function PillsScene({ onReadoutChange }: SceneProps) {
     if (!svg) return
 
     const SVG_NS = 'http://www.w3.org/2000/svg'
-    const N = 12
+    const N = 36
     const colors: [string, string][] = [
       ['var(--ink)', 'var(--crimson)'],
       ['var(--crimson)', 'var(--bg)'],
@@ -88,6 +88,7 @@ export default function PillsScene({ onReadoutChange }: SceneProps) {
 
     return () => {
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

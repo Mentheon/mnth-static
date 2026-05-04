@@ -130,6 +130,7 @@ export default function NeuralScene({ onReadoutChange }: SceneProps) {
     return () => {
       timers.forEach(id => clearTimeout(id))
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

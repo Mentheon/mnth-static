@@ -9,7 +9,6 @@ import styles from './Scene.module.css'
    ============================================================ */
 export default function HelixScene({ onReadoutChange }: SceneProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const counterRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     onReadoutChange('Sequencing', '0 / 3,200 bp')
@@ -72,9 +71,6 @@ export default function HelixScene({ onReadoutChange }: SceneProps) {
         ease: 'outQuad',
         onUpdate: (anim) => {
           const v = Math.round((anim.targets[0] as { v: number }).v)
-          if (counterRef.current) {
-            counterRef.current.textContent = v.toLocaleString()
-          }
           onReadoutChange('Sequencing', `${v.toLocaleString()} / 3,200 bp`)
         },
       }),
@@ -90,6 +86,7 @@ export default function HelixScene({ onReadoutChange }: SceneProps) {
 
     return () => {
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 
@@ -99,8 +96,6 @@ export default function HelixScene({ onReadoutChange }: SceneProps) {
       className={styles.canvas}
       viewBox="0 0 800 520"
       preserveAspectRatio="xMidYMid meet"
-    >
-      <span ref={counterRef} style={{ display: 'none' }} />
-    </svg>
+    />
   )
 }

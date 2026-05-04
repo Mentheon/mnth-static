@@ -107,6 +107,7 @@ export default function DefibScene({ onReadoutChange }: SceneProps) {
     return () => {
       clearTimeout(shockTimer)
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

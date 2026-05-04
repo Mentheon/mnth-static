@@ -106,6 +106,7 @@ export default function MoleculeScene({ onReadoutChange }: SceneProps) {
     return () => {
       clearTimeout(bondTimer)
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

@@ -79,6 +79,7 @@ export default function EcgScene({ onReadoutChange }: SceneProps) {
       clearTimeout(flatlineTimer)
       clearTimeout(dropTimer)
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

@@ -100,6 +100,7 @@ export default function MriScene({ onReadoutChange }: SceneProps) {
 
     return () => {
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 

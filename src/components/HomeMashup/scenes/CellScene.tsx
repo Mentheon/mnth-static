@@ -38,7 +38,7 @@ export default function CellScene({ onReadoutChange }: SceneProps) {
     svg.appendChild(initial.el)
     cells.push(initial)
 
-    const generations = 5
+    const generations = 7
     let elapsed = 0
     let step = 0
     const animations: ReturnType<typeof animate>[] = []
@@ -111,6 +111,7 @@ export default function CellScene({ onReadoutChange }: SceneProps) {
       alive = false
       timers.forEach(id => clearTimeout(id))
       animations.forEach(a => a.pause())
+      while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
   }, [onReadoutChange])
 
