@@ -301,9 +301,21 @@ export default function VrPoseScene({ onReadoutChange }: SceneProps) {
       /* 3500 ms: play has been "hit" — happy face pops in next to the
          headset and idle-bobs alongside it. */
       timers.push(window.setTimeout(() => {
+        /* Two-layer group: the OUTER <g> owns the placement via the
+           SVG `transform` attribute (translate to next-to-headset).
+           The INNER <g> is what anime animates — its CSS transforms
+           (scale, translateY) compose on top of the outer placement
+           instead of overriding it. Without this split, animating
+           transform on the placed group blanks the SVG-attribute
+           translate and the face jumps to (0,0). */
+        const placementG = document.createElementNS(SVG_NS, 'g')
+        /* Headset visor right edge sits at headX + 28; placing face
+           centre at headX + 50 (face radius 18) leaves a small gap
+           between the visor and the face — visually right next to it. */
+        placementG.setAttribute('transform', `translate(${headX + 50} ${headY})`)
+
         const faceG = document.createElementNS(SVG_NS, 'g')
         faceG.setAttribute('opacity', '0')
-        faceG.setAttribute('transform', `translate(${headX + 70} ${headY - 5})`)
 
         const face = document.createElementNS(SVG_NS, 'circle')
         face.setAttribute('r', '18')
@@ -330,7 +342,9 @@ export default function VrPoseScene({ onReadoutChange }: SceneProps) {
         smile.setAttribute('stroke-linecap', 'round')
         faceG.appendChild(smile)
 
-        svg.appendChild(faceG)
+        placementG.appendChild(faceG)
+        svg.appendChild(placementG)
+
         animations.push(
           animate(faceG, {
             opacity: [0, 1],
