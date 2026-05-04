@@ -114,14 +114,26 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       return bandY + vbY * scale
     }
 
+    /** Selector line's actual top-of-line distance from the stage's top
+     *  edge, in pixels. Reading this from the DOM (instead of trusting
+     *  `stageH * SELECTOR_FRAC`) makes the snap pixel-perfect even when
+     *  the selector's CSS positioning, the chevron line-height, or
+     *  sub-pixel rendering nudges its true centre off the assumed mark. */
+    function measuredSelectorOffset(): number {
+      const sel = stage.parentElement?.querySelector('.helix-selector-line') as HTMLElement | null
+      if (!sel) return stage.getBoundingClientRect().height * SELECTOR_FRAC
+      const r = sel.getBoundingClientRect()
+      const stageRect = stage.getBoundingClientRect()
+      return (r.top + r.height / 2) - stageRect.top
+    }
+
     function snapToNearest() {
       const h = handleRef.current
       if (!h || !stage) return
       const ys = h.getProjectViewboxYs()
       const ids = Object.keys(ys)
       if (ids.length === 0) return
-      const stageH = stage.getBoundingClientRect().height
-      const selectorOffset = stageH * SELECTOR_FRAC
+      const selectorOffset = measuredSelectorOffset()
       const maxScroll = Math.max(0, stage.scrollHeight - stage.clientHeight)
 
       // For each project, compute the scrollTop that aligns its bead
@@ -163,6 +175,11 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       }
 
       programmaticScrollUntil.current = Date.now() + 700
+      // Pass the fractional `idealScroll` straight through — modern
+      // browsers honour sub-pixel scrollTop and will land the bead
+      // exactly on the selector line. Rounding to integer here was the
+      // last source of "almost-but-not-quite" misalignment for projects
+      // whose pxY (= viewBox-Y × non-integer scale) fell on a fraction.
       stage.scrollTo({ top: chosen.idealScroll, behavior: 'smooth' })
 
       const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
@@ -203,9 +220,9 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       if (firstY == null) return
       const pxY = getProjectPxY(handle, firstY)
       if (pxY == null) return
-      const stageH = stage.getBoundingClientRect().height
       programmaticScrollUntil.current = Date.now() + 700
-      stage.scrollTop = pxY - stageH * SELECTOR_FRAC
+      // Sub-pixel scrollTop preserves perfect Kindreon alignment.
+      stage.scrollTop = pxY - measuredSelectorOffset()
     })
 
     return () => {
@@ -286,8 +303,17 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
     const contentH = h.viewBoxHeight * scale
     const bandY = (r.height - contentH) / 2
     const pxY = bandY + vbY * scale
-    const stageH = stage.getBoundingClientRect().height
-    const targetScroll = pxY - stageH * SELECTOR_FRAC
+    // Measure the actual selector-line position rather than assuming
+    // stageH * SELECTOR_FRAC, so a click on a strand button lands the
+    // bead exactly on the line (not 0.5–2 px off due to subpixel
+    // rendering or selector flex-container sizing).
+    const sel = stage.parentElement?.querySelector('.helix-selector-line') as HTMLElement | null
+    const stageRect = stage.getBoundingClientRect()
+    const selectorOffset = sel
+      ? (sel.getBoundingClientRect().top + sel.getBoundingClientRect().height / 2) - stageRect.top
+      : stageRect.height * SELECTOR_FRAC
+    // Fractional scrollTop on purpose — see snapToNearest.
+    const targetScroll = pxY - selectorOffset
 
     programmaticScrollUntil.current = Date.now() + 700
     lastReportedRdId.current = selectedStrandId
@@ -319,6 +345,17 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
           </span>
           <span><strong>Capsule</strong> = project bridging two or more domains</span>
         </div>
+      </div>
+
+      {/* Strand-domain key — colour-coded labels for the four research
+          domains the helix's strands represent. Lets users decode
+          which strand of a project capsule corresponds to which
+          domain, since the SVG's intrinsic strand labels are off. */}
+      <div className="helix-strand-key" aria-label="Research domains">
+        <span className="helix-strand-name" style={{ color: '#A30B37' }}>Research</span>
+        <span className="helix-strand-name" style={{ color: '#9C528B' }}>Design</span>
+        <span className="helix-strand-name" style={{ color: '#3F0247' }}>Development</span>
+        <span className="helix-strand-name" style={{ color: '#6B1F4D' }}>Regulatory</span>
       </div>
 
       <div className="helix-viewport">

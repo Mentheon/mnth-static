@@ -616,12 +616,14 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', side === 'right' ? px + 22 : px - 22)
-          // Beside the bead — `+ 6` shifts the text baseline down so
-          // the label visually centres on the bead. The previous +285
-          // was a botched port from the prototype (where labels lived
-          // in an untranslated layer and used a much larger offset);
-          // it dropped each label ~280 px below its real bead.
-          label.setAttribute('y', py + 6)
+          // Visual centre on the bead — y is the bead's y, and
+          // dominant-baseline=middle vertically centres the glyphs
+          // around that point. A previous +6 baseline nudge dropped
+          // the label ~5 px below the bead, which read as "the snap
+          // is off" because the user judges the bead's position by
+          // the visible label text, not the SVG bead itself.
+          label.setAttribute('y', py)
+          label.setAttribute('dominant-baseline', 'middle')
           label.setAttribute('text-anchor', side === 'right' ? 'start' : 'end')
         } else {
           label.setAttribute('x', px)
@@ -733,11 +735,13 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
           label.setAttribute('x', labelX + (sideSign > 0 ? 6 : -6))
-          // Sit beside the leader's outboard endpoint — `+ 6` is a
-          // baseline-centring nudge, same fix as the single-domain
-          // bead label above. The previous +285 misalignment dropped
-          // each capsule's name far below its actual capsule.
-          label.setAttribute('y', labelY + 6)
+          // Vertical centre on the capsule's y — same baseline fix as
+          // the single-domain bead branch. With a +6 baseline nudge
+          // (the prior value) the label read 5 px below the capsule,
+          // and since users judge "where the project sits" by its
+          // label text, that misalignment cropped onto the snap.
+          label.setAttribute('y', labelY)
+          label.setAttribute('dominant-baseline', 'middle')
           label.setAttribute('text-anchor', sideSign > 0 ? 'start' : 'end')
         } else {
           label.setAttribute('x', labelX)

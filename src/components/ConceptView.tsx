@@ -31,8 +31,13 @@ export default function ConceptView() {
   const [openStrandId, setOpenStrandId] = useState<string | null>(null)
   const openStrand = STRANDS.find(s => s.id === openStrandId) ?? null
 
+  // Which carousel section is currently in view — drives the side-pill
+  // active-state indicator.
+  const [currentSection, setCurrentSection] = useState<'a' | 'b' | 'c'>('a')
+
   /* IntersectionObserver — fires entrance when a section is mostly
-     in view inside the snap scroller. */
+     in view inside the snap scroller, AND tracks which section is
+     active for the pill nav. */
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -47,6 +52,8 @@ export default function ConceptView() {
           if (!entry.isIntersecting) return
           const id = (entry.target as HTMLElement).dataset.section
           if (!id) return
+          // Pill state — fires whenever a section becomes the dominant one.
+          if (id === 'a' || id === 'b' || id === 'c') setCurrentSection(id)
           if (playedRef.current.has(id)) return
           playedRef.current.add(id)
           if (id === 'a') playSectionA()
@@ -547,18 +554,40 @@ export default function ConceptView() {
     console.log('roadmap node clicked:', node)
   }
 
-  /* Snap to next/previous section helpers (button / keyboard) */
-  function snapToSection(idx: number) {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-    const sections = [sectionARef, sectionBRef, sectionCRef]
-    const target = sections[idx]?.current
-    if (!target) return
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  /* Smooth-scroll the snap container to a specific section (used by
+     the side pill nav). */
+  function jumpTo(id: 'a' | 'b' | 'c') {
+    const map = { a: sectionARef, b: sectionBRef, c: sectionCRef }
+    map[id].current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  // Pills metadata — kept in render order top→bottom.
+  const PILLS: Array<{ id: 'a' | 'b' | 'c'; label: string }> = [
+    { id: 'a', label: 'Fast' },
+    { id: 'b', label: 'We get it' },
+    { id: 'c', label: 'R&D strands' },
+  ]
 
   return (
     <div className="concept-scroller" ref={scrollerRef}>
+      {/* Side pill nav — vertically centred against the viewport, shows
+          which section is currently in view; click to jump there. Just a
+          small dot per section; the active one fills crimson. */}
+      <nav className="concept-pillnav" aria-label="Section navigation">
+        {PILLS.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            className={`concept-pill ${currentSection === p.id ? 'concept-pill--active' : ''}`}
+            onClick={() => jumpTo(p.id)}
+            aria-current={currentSection === p.id ? 'true' : undefined}
+            aria-label={`Jump to ${p.label}`}
+          >
+            <span className="concept-pill-dot" aria-hidden="true" />
+          </button>
+        ))}
+      </nav>
+
       {/* ============= a) Digital health is moving... fast ============= */}
       <section
         className="concept-section concept-a"
@@ -608,7 +637,7 @@ export default function ConceptView() {
           From insight to product, we cover the full arc.
         </h2>
         <div className="roadmap">
-          <svg viewBox="0 0 800 440" className="roadmap-svg" aria-label="Service roadmap">
+          <svg viewBox="0 -30 800 470" className="roadmap-svg" aria-label="Service roadmap">
             {/* Main line: Research → Design → Development */}
             <line
               x1={130} y1={310} x2={670} y2={310}
@@ -650,7 +679,7 @@ export default function ConceptView() {
               <circle cx={400} cy={50} r={42} className="roadmap-node-circle" />
               <text x={400} y={50} className="roadmap-node-emoji">📋</text>
             </g>
-            <text x={400} y={120} className="roadmap-node-label-above">Consultancy</text>
+            <text x={400} y={-10} className="roadmap-node-label-above">Consultancy</text>
 
             {/* Three primary nodes along the timeline */}
             <g

@@ -147,6 +147,30 @@ section.helix {
   display: none;
 }
 
+/* Colour-coded strand-domain key — sits above the helix viewport so
+   users can map each strand colour to its research domain. Built as a
+   simple flex row of pill-style labels rather than positioned per-
+   strand, since the strands swirl around the rod and direct anchoring
+   would shift continuously with idle drift. */
+.helix-strand-key {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 0 auto 0.75rem;
+  padding: 0 1rem;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+.helix-strand-name {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
 /* ============================================================
    Static central rod-line — a thin ink hairline at the helix's
    horizontal centre, positioned ABOVE the SVG so it visually
