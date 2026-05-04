@@ -60,39 +60,209 @@ export default function ConceptView() {
     return () => observer.disconnect()
   }, [])
 
-  /* ---------- Section A: word-stagger reveal + speed streaks ----- */
+  /* ---------- Section A: counter rollover + ECG ----- */
   function playSectionA() {
     const root = sectionARef.current
     if (!root) return
-    const words = root.querySelectorAll<HTMLSpanElement>('.concept-a-word')
-    const fast = root.querySelector<HTMLSpanElement>('.concept-a-word--fast')
-    const streaks = root.querySelectorAll<HTMLSpanElement>('.concept-a-streak')
-    if (!words.length) return
+    const words   = Array.from(root.querySelectorAll<HTMLSpanElement>('[data-word]'))
+    const letters = Array.from(root.querySelectorAll<HTMLSpanElement>('[data-letter]'))
+    const ecgRoot = root.querySelector<HTMLSpanElement>('.concept-a-ecg')
+    const ecgPath = root.querySelector<SVGPathElement>('.concept-a-ecg-trace')
+    if (!words.length || !letters.length || !ecgPath) return
 
+    // 1. Lead-up words fade in with stagger.
+    utils.set(words,   { opacity: 0, translateY: 28 })
+    utils.set(letters, { opacity: 0 })
     const tl = createTimeline({ defaults: { ease: 'outQuad' } })
     tl.add(words, {
       opacity: [0, 1],
       translateY: [28, 0],
-      duration: 600,
-      delay: stagger(90),
+      duration: 460,
+      delay: stagger(110),
     })
-    if (fast) {
-      tl.add(fast, {
-        scale: [1, 1.18, 1],
-        color: ['#A30B37', '#A30B37'],
-        duration: 720,
-        ease: 'outElastic(1, .5)',
-      }, '-=200')
+    // 2. Letters fade in shortly after the words land — they appear
+    //    immediately so the rollover has glyphs to scramble.
+    tl.add(letters, { opacity: [0, 1], duration: 100, delay: stagger(100) }, '-=80')
+
+    // 3. Counter rollover — each letter cycles through random
+    //    lowercase glyphs before settling on its final character.
+    const finals = ['f', 'a', 's', 't']
+    const wordsTotal = words.length * 110 + 460
+    letters.forEach((letter, i) => {
+      const startDelay     = wordsTotal + i * 100
+      const rollDurationMs = 600 + i * 200
+      const startedAt      = performance.now()
+      const handle = window.setInterval(() => {
+        const elapsed = performance.now() - startedAt - startDelay
+        if (elapsed < 0) return
+        if (elapsed < rollDurationMs) {
+          letter.textContent = String.fromCharCode(97 + Math.floor(Math.random() * 26))
+        } else {
+          letter.textContent = finals[i]
+          window.clearInterval(handle)
+        }
+      }, 50)
+    })
+
+    // 4. ECG controller — fades in shortly after the punchline lands.
+    startEcg(ecgPath, ecgRoot)
+  }
+
+  /* ---------- ECG: scrolling PQRST trace, amplitude = mouse velocity --
+     The trace is a single SVG path composed from a queue of fixed-
+     width "segments". Each frame:
+       1. translate the whole path leftward at constant speed
+       2. drop segments that have scrolled fully off-screen
+       3. append fresh segments at the right edge to keep the buffer full
+     Each appended segment is a heartbeat (PQRST) whose amplitude is
+     determined by the CURRENT smoothed mouse velocity:
+       cursor still       → tiny baseline ripples (amp ≈ 0.3)
+       cursor moving fast → tall R-wave spikes  (amp ≈ 1.6)
+     A separate mousemove listener computes pixels-per-ms velocity and
+     feeds it into an EMA so the amplitude doesn't twitch frame-to-frame. */
+  function startEcg(tracePath: SVGPathElement, root: HTMLSpanElement | null) {
+    const VIEW_W       = 1600
+    const VIEW_H       = 120
+    const BASELINE_Y   = VIEW_H / 2
+    const SEGMENT_W    = 110
+    const PIXEL_SPEED  = 140    // viewBox units per second (faster scroll
+                                // = newly appended beats reach view sooner)
+    const BUFFER_AHEAD = 1      // only ONE segment queued past the right
+                                // edge, so amplitude changes are visible
+                                // within ~1s rather than ~9s
+    // Vertical scale — multiplies all Y-offsets so the heartbeat fills
+    // the taller viewBox without having to retune every coefficient.
+    const Y_SCALE      = 2.1
+
+    type Pt = [number, number]
+    interface Segment { pts: Pt[]; startX: number; width: number }
+
+    const queue: Segment[] = []
+    let pathOffset    = 0
+    let segmentCursor = 0
+    let amplitude     = 0.3       // smoothed amp used by next PQRST
+    let displacement  = 0         // accumulated px moved, decays over time
+
+    function pqrstSegment(amp: number): Pt[] {
+      const padLeft = 18
+      const x0 = padLeft
+      const A = amp * Y_SCALE
+      return [
+        [0,           BASELINE_Y],
+        [padLeft,     BASELINE_Y],
+        // P wave
+        [x0 + 6,      BASELINE_Y - 2 * A],
+        [x0 + 12,     BASELINE_Y - 3 * A],
+        [x0 + 18,     BASELINE_Y],
+        // PR
+        [x0 + 24,     BASELINE_Y],
+        // Q
+        [x0 + 30,     BASELINE_Y + 3 * A],
+        // R (signature spike)
+        [x0 + 36,     BASELINE_Y - 22 * A],
+        // S
+        [x0 + 42,     BASELINE_Y + 6 * A],
+        // ST
+        [x0 + 50,     BASELINE_Y],
+        // T wave
+        [x0 + 58,     BASELINE_Y - 4 * A],
+        [x0 + 66,     BASELINE_Y - 5 * A],
+        [x0 + 74,     BASELINE_Y - 2 * A],
+        [x0 + 80,     BASELINE_Y],
+        [SEGMENT_W,   BASELINE_Y],
+      ]
     }
-    if (streaks.length) {
-      tl.add(streaks, {
-        opacity: [0, 0.85, 0],
-        translateX: [() => -200, () => 600],
-        duration: 700,
-        delay: stagger(60, { from: 'first' }),
-        ease: 'inOutQuad',
-      }, '-=500')
+
+    function flatSegment(): Pt[] {
+      const pts: Pt[] = []
+      const steps = 8
+      for (let i = 0; i <= steps; i++) {
+        const x = (i / steps) * SEGMENT_W
+        const y = BASELINE_Y + (Math.random() - 0.5) * 1.2
+        pts.push([x, y])
+      }
+      return pts
     }
+
+    function appendSegment() {
+      // Alternate heartbeat / flat for a steady rhythm — the heartbeat
+      // amplitude varies live with cursor velocity.
+      const isBeat = (queue.length % 2) === 0
+      const pts = isBeat ? pqrstSegment(amplitude) : flatSegment()
+      queue.push({ pts, startX: segmentCursor, width: SEGMENT_W })
+      segmentCursor += SEGMENT_W
+    }
+
+    function rebuildPath(): string {
+      let d = ''
+      for (const seg of queue) {
+        for (let i = 0; i < seg.pts.length; i++) {
+          const x = seg.startX + seg.pts[i][0] - pathOffset
+          const y = seg.pts[i][1]
+          d += (d === '' ? `M${x.toFixed(2)},${y.toFixed(2)}` : ` L${x.toFixed(2)},${y.toFixed(2)}`)
+        }
+      }
+      return d
+    }
+
+    function tick(dtMs: number) {
+      pathOffset += (PIXEL_SPEED * dtMs) / 1000
+
+      // Map accumulated cursor displacement → target amplitude.
+      //   no recent movement → 0.3 (baseline ripples)
+      //   ~30 px accumulated → ~1.0
+      //   ~70 px accumulated → clamped at 1.6 (tall R-spikes)
+      const targetAmp = Math.min(1.6, 0.3 + displacement * 0.022)
+      // Snap amplitude toward target quickly — the user-facing change
+      // already has the buffer-latency hidden in it; smoothing too hard
+      // here makes the cursor feel disconnected.
+      amplitude += (targetAmp - amplitude) * Math.min(1, dtMs / 80)
+      // Bleed off accumulated displacement so the trace settles once the
+      // cursor stops moving (~900 ms half-life).
+      displacement *= Math.max(0, 1 - dtMs / 900)
+
+      // Drop segments that have scrolled fully off-screen on the left.
+      while (queue.length > 0 && queue[0].startX + queue[0].width - pathOffset < -20) {
+        queue.shift()
+      }
+      // Append new segments to keep the right-edge buffer full.
+      while (segmentCursor - pathOffset < VIEW_W + BUFFER_AHEAD * SEGMENT_W) {
+        appendSegment()
+      }
+      tracePath.setAttribute('d', rebuildPath())
+    }
+
+    let lastFrame = 0
+    function loop(ts: number) {
+      if (!lastFrame) lastFrame = ts
+      const dt = ts - lastFrame
+      lastFrame = ts
+      tick(dt)
+      requestAnimationFrame(loop)
+    }
+
+    // Pre-fill the queue so the trace appears already-running, not
+    // crawling in from the right edge.
+    while (segmentCursor < VIEW_W + BUFFER_AHEAD * SEGMENT_W) appendSegment()
+    tracePath.setAttribute('d', rebuildPath())
+    requestAnimationFrame(loop)
+
+    // Cursor displacement tracking — accumulate raw px moved between
+    // mousemove events (no time normalization). The tick loop bleeds
+    // this off, so amplitude reflects HOW FAR the cursor has recently
+    // travelled rather than how fast.
+    let lastMouse: { x: number; y: number; seen: boolean } = { x: 0, y: 0, seen: false }
+    window.addEventListener('mousemove', (e) => {
+      if (lastMouse.seen) {
+        const dx = e.clientX - lastMouse.x
+        const dy = e.clientY - lastMouse.y
+        displacement += Math.hypot(dx, dy)
+      }
+      lastMouse = { x: e.clientX, y: e.clientY, seen: true }
+    }, { passive: true })
+
+    // Fade the strip in once the punchline has settled.
+    setTimeout(() => root?.classList.add('is-visible'), 1500)
   }
 
   /* ---------- Section B: roadmap reveal ----- */
@@ -341,17 +511,33 @@ export default function ConceptView() {
         data-section="a"
       >
         <h1 className="concept-a-headline">
-          {/* Each word as its own span so anime can stagger reveal */}
-          <span className="concept-a-word">Digital&nbsp;</span>
-          <span className="concept-a-word">health&nbsp;</span>
-          <span className="concept-a-word">is&nbsp;</span>
-          <span className="concept-a-word">moving</span>
-          <span className="concept-a-word">…&nbsp;</span>
-          <span className="concept-a-word concept-a-word--fast">fast</span>
-          <span className="concept-a-streaks" aria-hidden="true">
-            <span className="concept-a-streak" style={{ width: 280, top: -28 }} />
-            <span className="concept-a-streak" style={{ width: 220, top: 0 }} />
-            <span className="concept-a-streak" style={{ width: 320, top: 28 }} />
+          {/* Lead-up: words fade in with a stagger. */}
+          <span className="concept-a-line">
+            <span data-word="0" className="concept-a-word">Digital</span>&nbsp;
+            <span data-word="1" className="concept-a-word">health</span>&nbsp;
+            <span data-word="2" className="concept-a-word">is</span>&nbsp;
+            <span data-word="3" className="concept-a-word">moving</span>
+            <span data-word="4" className="concept-a-word concept-a-word--ellipsis">…</span>
+          </span>
+          {/* Punchline: each letter scrambles before settling on f-a-s-t. */}
+          <span className="concept-a-line concept-a-line--punchline">
+            <span className="concept-a-fast" data-fast="">
+              <span className="concept-a-letter" data-letter="0">f</span>
+              <span className="concept-a-letter" data-letter="1">a</span>
+              <span className="concept-a-letter" data-letter="2">s</span>
+              <span className="concept-a-letter" data-letter="3">t</span>
+            </span>
+          </span>
+          {/* ECG strip immediately below the punchline. Amplitude is
+              driven LIVE by smoothed mouse-cursor velocity (see the
+              ECG controller in playSectionA). */}
+          <span className="concept-a-ecg" aria-hidden="true">
+            <span className="concept-a-ecg-lead">
+              Lead<span className="concept-a-ecg-lead-num">II</span>
+            </span>
+            <svg className="concept-a-ecg-svg" viewBox="0 0 1600 120" preserveAspectRatio="none">
+              <path className="concept-a-ecg-trace" d="" />
+            </svg>
           </span>
         </h1>
       </section>
@@ -452,15 +638,13 @@ export default function ConceptView() {
         data-section="c"
       >
         <p className="concept-c-eyebrow">Our ongoing R&amp;D strands</p>
-        <div className={`concept-c-host ${openStrand ? 'concept-c-host--split' : ''}`}>
-          {/* Grid layout — single column when no strand is selected
-              (strands above helix, classic stack); a 2-column grid when
-              a strand opens, with the helix on the LEFT spanning both
-              grid rows and the strand picker + info panel stacked on
-              the RIGHT. The remaining strand circles end up directly
-              above the panel they relate to, instead of floating alone
-              at the top of the section. */}
-          <div className="concept-c-strands-area">
+        <div className="concept-c-host">
+          {/* Single centred column: strand picker on top, helix in the
+              middle, info panel below. While a strand is open the entire
+              picker row collapses out of view (the panel header itself
+              identifies the active strand), giving the slightly-shorter
+              helix and the info panel enough room to sit together below. */}
+          <div className={`concept-c-strands-area ${openStrand ? 'concept-c-strands-area--hidden' : ''}`}>
             <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
           </div>
           <div className="concept-c-helix-area">

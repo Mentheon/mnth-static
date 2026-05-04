@@ -86,24 +86,29 @@ section.helix {
 .helix-stage {
   width: 100%; position: relative;
   z-index: 1;                 /* under .helix-line and .helix-header */
-  height: 400px;
-  min-height: 320px;
-  max-height: 460px;
+  /* Slightly shorter scroll window (was 400 px) so the helix and the
+     info panel below it can both fit inside one viewport when a
+     strand is open. */
+  height: 360px;
+  min-height: 300px;
+  max-height: 420px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.helix-stage[data-orientation="horizontal"] { height: 400px; overflow-y: hidden; }
+.helix-stage[data-orientation="horizontal"] { height: 360px; overflow-y: hidden; }
 
 .helix-svg {
   width: 100%;
   height: auto;
-  /* Reduced from 660 px to keep the helix compact in the side-by-
-     side layout where it sits in a ~460 px column next to the info
-     panel. At that column width the viewBox naturally renders ~455 px
-     tall, so a 540 px floor leaves modest top/bottom margin without
-     reintroducing the dead space the old 900 px ceiling caused. */
+  /* Restored to 540 px (was 480) so narrower viewports keep enough
+     `bandY` (the empty top band that grows when min-height exceeds
+     the SVG's intrinsic aspect height) to leave Kindreon's pxY below
+     the selector line. Without that, narrow widths starve the band,
+     Kindreon climbs above the selector, and the snap can't pull it
+     down to align. At 640 px wide the intrinsic height (~632) still
+     wins, so the helix isn't visibly any taller in the common case. */
   min-height: 540px;
   display: block;
   overflow: visible;

@@ -192,7 +192,14 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     { id: 'kindreon',  rdStrandsId: 'kindred', name: 'Kindreon',
       tagline: 'Family-centred digital tools for paediatric care',
       summary: 'Family-centred digital tools for paediatric care, with safeguarding-by-design as a foundational constraint rather than an afterthought.',
-      domainIds: ['research', 'design', 'development'], position: 0.3, status: 'active',
+      // Pushed to 0.4 so Kindreon's natural pxY sits BELOW the
+      // selector line at scrollTop=0 — that gives the snap positive
+      // scroll headroom to pull the bead UP onto the line. Earlier
+      // values (0.3 / 0.34) put Kindreon at-or-above the selector,
+      // forcing idealScroll to clamp at 0 and the snap to be invisible
+      // (the selection happened, but the line was visibly below the
+      // bead). Paired with A/C at 0.6 / 0.8 for even gaps.
+      domainIds: ['research', 'design', 'development'], position: 0.4, status: 'active',
       themes: [
         { n:'01', t:'Family-centred care',     d:'Tools built for the unit of paediatric care \u2014 child, parent, clinician \u2014 not a single screen-based user.' },
         { n:'02', t:'Safeguarding by design',  d:'Vulnerability-aware interaction patterns, with safety treated as a foundational constraint rather than a feature added late.' },
@@ -201,7 +208,10 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
     { id: 'aevorix',   rdStrandsId: 'vitalis', name: 'Aevorix',
       tagline: 'Technology for enduring vitality',
       summary: 'Technology for enduring vitality \u2014 longitudinal modelling of healthspan and frailty, with cognitive preservation as the central question.',
-      domainIds: ['research', 'design', 'development', 'regulatory'], position: 0.55, status: 'active',
+      // Aevorix at 0.6 (was 0.55) — keeps an even 0.2 gap from both
+      // K (0.4) and C (0.8) so the bubbles read as evenly spaced
+      // along the strand.
+      domainIds: ['research', 'design', 'development', 'regulatory'], position: 0.6, status: 'active',
       themes: [
         { n:'01', t:'Healthspan modelling',    d:'Quantitative frameworks for healthspan, frailty trajectories, and the points at which preventative intervention is most effective.' },
         { n:'02', t:'Cognitive preservation',  d:'Identifying and protecting the cognitive signal earliest \u2014 long before clinical thresholds are crossed.' },

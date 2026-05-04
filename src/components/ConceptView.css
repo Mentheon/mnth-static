@@ -39,29 +39,79 @@
   text-align: center;
   letter-spacing: -0.01em;
   max-width: 1100px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
 }
+.concept-a-line { display: inline-block; position: relative; }
+.concept-a-line--punchline { position: relative; display: inline-block; }
 .concept-a-word { display: inline-block; opacity: 0; transform: translateY(28px); }
-.concept-a-word--fast {
+.concept-a-word--ellipsis { letter-spacing: 0.05em; margin-left: 0.05em; }
+/* "fast" is a fixed-width container so the scrambling letters don't
+   cause the line to flutter as glyph widths change. */
+.concept-a-fast {
   font-weight: 900;
   color: var(--crimson);
   display: inline-block;
-  transform-origin: left center;
   position: relative;
+  transform-origin: left center;
+  min-width: 2.5em;
+  text-align: center;
 }
-/* Speed lines that streak past the "fast" word */
-.concept-a-streaks {
-  position: absolute;
-  top: 50%;
-  left: 0; right: 0;
-  height: 0;
+.concept-a-fast .concept-a-letter {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+}
+
+/* ECG strip — sits in the headline column directly below "fast". The
+   amplitude of each PQRST complex is driven live by mouse-cursor
+   velocity (see ECG controller in playSectionA). */
+.concept-a-ecg {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 880px;
+  height: 130px;
+  margin-top: 0.6em;
+  opacity: 0;
+  transition: opacity 600ms ease-out;
   pointer-events: none;
 }
-.concept-a-streak {
+.concept-a-ecg.is-visible { opacity: 1; }
+.concept-a-ecg-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.concept-a-ecg-trace {
+  fill: none;
+  stroke: var(--crimson);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Monitor-style "LEAD II" label, top-left of the ECG strip. Mimics
+   the corner annotation seen on hospital cardiac monitors. */
+.concept-a-ecg-lead {
   position: absolute;
-  height: 2px;
-  background: linear-gradient(to right, transparent, var(--crimson), transparent);
-  opacity: 0;
-  transform-origin: left center;
+  top: 6px;
+  left: 10px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  opacity: 0.85;
+  line-height: 1;
+  pointer-events: none;
+}
+.concept-a-ecg-lead-num {
+  margin-left: 0.35em;
+  font-weight: 900;
 }
 
 /* ---------- Section B: "We get it" + roadmap ---------- */
@@ -269,61 +319,57 @@
   margin: 0 0 1rem;
 }
 .concept-c-host {
-  /* Wider than other sections so the helix + strands + panel can sit
-     in a 2-column grid without crowding. */
+  /* Single centred column. Three rows — strand picker, helix, info
+     panel — with each row's content slotted into the matching grid
+     area. When no strand is open the panel area is unrendered (its
+     row collapses to 0 height); when one IS open the strand-picker
+     row is hidden via `--hidden` so the helix stays anchored at the
+     top of the host and the panel sits directly underneath. */
   width: 100%;
-  max-width: 1280px;
+  max-width: 1100px;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-areas:
     "strands"
-    "helix";
-  gap: 2rem;
+    "helix"
+    "panel";
+  gap: 1.5rem;
   align-items: start;
   justify-items: center;
 }
 
-.concept-c-strands-area { grid-area: strands; width: 100%; }
-.concept-c-helix-area   { grid-area: helix;   width: 100%; display: flex; justify-content: center; }
-.concept-c-panel-area   { grid-area: panel;   width: 100%; }
-
-/* ---------- Section C: split layout ---------- */
-
-/* When a strand is selected, the helix takes the LEFT column and
-   spans both rows; the strand picker (collapsed to two circles) sits
-   top-right, with the info panel directly beneath it. This pulls the
-   remaining strand circles into the same column as the panel they
-   describe, and opens up generous breathing room around the helix's
-   project bubbles in the middle. */
-.concept-c-host--split {
-  grid-template-columns: minmax(0, 460px) minmax(0, 620px);
-  grid-template-rows: auto auto;
-  grid-template-areas:
-    "helix strands"
-    "helix panel";
-  /* Bigger column gap → more space between the helix project bubbles
-     and the strands/panel column. Row gap keeps strands and panel
-     visually grouped without crowding. */
-  gap: 1.5rem 5rem;
-  justify-items: stretch;
+.concept-c-strands-area {
+  grid-area: strands;
+  width: 100%;
+  /* Animate the picker row collapsing when a strand is selected, so
+     it doesn't pop out of layout abruptly. */
+  overflow: hidden;
+  max-height: 320px;
+  opacity: 1;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
 }
 
-.concept-c-host--split .concept-c-helix-area {
-  align-self: center;
+.concept-c-strands-area--hidden {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* On narrower viewports, the side-by-side grid collapses back to a
-   single column (strands → helix → panel). Threshold roughly matches
-   the smallest width at which 460 + 620 + 5rem gap (≈ 1160 px) still
-   fits with section padding. */
-@media (max-width: 1100px) {
-  .concept-c-host--split {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "strands"
-      "helix"
-      "panel";
-    gap: 2rem;
-    justify-items: center;
-  }
+.concept-c-helix-area {
+  grid-area: helix;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.concept-c-panel-area {
+  grid-area: panel;
+  width: 100%;
+  /* Wider than before (720 → 960 px). At this width the panel's
+     theme grid (auto-fit minmax(220, 1fr) with 96 px of horizontal
+     padding) lays out 3-up instead of 2-up, so the 4-theme Aevorix
+     strand collapses from ~4 rows to ~2 — letting helix + panel
+     comfortably co-exist below the same fold. */
+  max-width: 960px;
+  margin: 0 auto;
 }
