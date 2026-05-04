@@ -99,31 +99,70 @@ export default function ConceptView() {
   function playSectionB() {
     const root = sectionBRef.current
     if (!root) return
-    const line = root.querySelector('.roadmap-line:not(.roadmap-line--dashed)')
-    const dashed = root.querySelector('.roadmap-line--dashed')
-    const nodes = root.querySelectorAll('.roadmap-node')
+    const line     = root.querySelector('.roadmap-line') as SVGGeometryElement | null
+    const brace    = root.querySelector('.roadmap-brace') as SVGGeometryElement | null
+    const connector= root.querySelector('.roadmap-brace-connector') as SVGGeometryElement | null
+    const nodes    = root.querySelectorAll('.roadmap-node')
+    const ticks    = root.querySelectorAll('.roadmap-tick')
+    const chevrons = root.querySelectorAll('.roadmap-chevron')
+    const labels   = root.querySelectorAll('.roadmap-node-label, .roadmap-node-label-above')
     if (!nodes.length) return
 
+    // Pre-stage stroke-dasharray for the draw-on lines (anime sets
+    // strokeDashoffset → 0 to reveal them). Skip if the path has no
+    // measurable length yet (off-screen / not laid out).
+    const drawOn: SVGGeometryElement[] = []
+    if (line)      drawOn.push(line)
+    if (brace)     drawOn.push(brace)
+    if (connector) drawOn.push(connector)
+    drawOn.forEach(el => {
+      try {
+        const len = el.getTotalLength()
+        utils.set(el, { strokeDasharray: len, strokeDashoffset: len })
+      } catch (_) { /* zero-length — skip */ }
+    })
+
     const tl = createTimeline({ defaults: { ease: 'outQuad' } })
+    // 1. Main timeline draws on first
     if (line) {
-      tl.add(line, {
-        strokeDashoffset: [1000, 0],
-        duration: 1100,
-        ease: 'inOutQuad',
-      })
+      tl.add(line, { strokeDashoffset: 0, duration: 900, ease: 'inOutQuad' })
     }
-    tl.add(nodes, {
+    // 2. Direction chevrons + tick marks fade in along the line
+    if (ticks.length) {
+      tl.add(ticks, { opacity: [0, 0.7], duration: 400, delay: stagger(80) }, '-=500')
+    }
+    if (chevrons.length) {
+      tl.add(chevrons, { opacity: [0, 0.6], duration: 400, delay: stagger(120) }, '-=400')
+    }
+    // 3. Three primary nodes pop in (Research → Design → Development)
+    const primaryNodes = root.querySelectorAll('.roadmap-node:not(.roadmap-node--satellite)')
+    tl.add(primaryNodes, {
       opacity: [0, 1],
       scale: [0.6, 1],
-      duration: 600,
-      delay: stagger(140),
+      duration: 550,
+      delay: stagger(120),
       ease: 'outBack',
-    }, '-=600')
-    if (dashed) {
-      tl.add(dashed, {
-        opacity: [0, 0.5],
-        duration: 500,
-      }, '-=400')
+    }, '-=300')
+    // 4. The `}` brace draws on, indicating Consultancy covers all
+    if (brace) {
+      tl.add(brace, { strokeDashoffset: 0, duration: 800, ease: 'inOutQuad' }, '-=200')
+    }
+    // 5. Connector line + Consultancy node appear at the top
+    if (connector) {
+      tl.add(connector, { strokeDashoffset: 0, duration: 350 }, '-=300')
+    }
+    const satellite = root.querySelector('.roadmap-node--satellite')
+    if (satellite) {
+      tl.add(satellite, {
+        opacity: [0, 1],
+        scale: [0.6, 1],
+        duration: 600,
+        ease: 'outBack',
+      }, '-=200')
+    }
+    // 6. Text labels last
+    if (labels.length) {
+      tl.add(labels, { opacity: [0, 1], duration: 400, delay: stagger(60) }, '-=400')
     }
   }
 
@@ -178,52 +217,75 @@ export default function ConceptView() {
           From insight to product, we cover the full arc.
         </h2>
         <div className="roadmap">
-          <svg viewBox="0 0 800 360" className="roadmap-svg" aria-label="Service roadmap">
+          <svg viewBox="0 0 800 440" className="roadmap-svg" aria-label="Service roadmap">
             {/* Main line: Research → Design → Development */}
-            <path
-              d="M 100 260 Q 250 260 400 260 Q 550 260 700 260"
+            <line
+              x1={130} y1={310} x2={670} y2={310}
               className="roadmap-line"
             />
-            {/* Dashed connector to the satellite Consultancy node */}
+            {/* Progress tick marks along the timeline (between nodes) */}
+            <line x1={265} y1={300} x2={265} y2={320} className="roadmap-tick" />
+            <line x1={400} y1={298} x2={400} y2={322} className="roadmap-tick roadmap-tick--major" />
+            <line x1={535} y1={300} x2={535} y2={320} className="roadmap-tick" />
+
+            {/* Direction chevrons — flow indicators along the timeline */}
+            <path d="M 200 304 L 212 310 L 200 316" className="roadmap-chevron" />
+            <path d="M 470 304 L 482 310 L 470 316" className="roadmap-chevron" />
+
+            {/* `}` brace above the three primary nodes, indicating that
+                Consultancy COVERS all of them. Two smooth quadratic
+                curves meeting at a peak in the centre. */}
             <path
-              d="M 550 260 Q 600 180 640 110"
-              className="roadmap-line roadmap-line--dashed"
+              d="M 130 248 Q 130 188 280 188 Q 400 188 400 138 Q 400 188 520 188 Q 670 188 670 248"
+              className="roadmap-brace"
+            />
+            {/* Vertical connector from brace peak up to Consultancy */}
+            <line
+              x1={400} y1={138} x2={400} y2={92}
+              className="roadmap-brace-connector"
             />
 
-            {/* Nodes — clickable */}
-            <g
-              className="roadmap-node"
-              data-node="research"
-              onClick={() => onRoadmapNodeClick('research')}
-            >
-              <circle cx={100} cy={260} r={50} className="roadmap-node-circle" />
-              <text x={100} y={266} className="roadmap-node-label">Research</text>
-            </g>
-            <g
-              className="roadmap-node"
-              data-node="design"
-              onClick={() => onRoadmapNodeClick('design')}
-            >
-              <circle cx={400} cy={260} r={50} className="roadmap-node-circle" />
-              <text x={400} y={266} className="roadmap-node-label">Design</text>
-            </g>
-            <g
-              className="roadmap-node"
-              data-node="development"
-              onClick={() => onRoadmapNodeClick('development')}
-            >
-              <circle cx={700} cy={260} r={50} className="roadmap-node-circle" />
-              <text x={700} y={266} className="roadmap-node-label">Development</text>
-            </g>
-            {/* Consultancy — satellite (off the main path, dashed connector) */}
+            {/* Consultancy — sits ABOVE the brace, covering everything */}
             <g
               className="roadmap-node roadmap-node--satellite"
               data-node="consultancy"
               onClick={() => onRoadmapNodeClick('consultancy')}
             >
-              <circle cx={640} cy={90} r={42} className="roadmap-node-circle" />
-              <text x={640} y={96} className="roadmap-node-label">Consultancy</text>
+              <circle cx={400} cy={50} r={42} className="roadmap-node-circle" />
+              <text x={400} y={64} className="roadmap-node-emoji">📋</text>
             </g>
+            <text x={400} y={120} className="roadmap-node-label-above">Consultancy</text>
+
+            {/* Three primary nodes along the timeline */}
+            <g
+              className="roadmap-node"
+              data-node="research"
+              onClick={() => onRoadmapNodeClick('research')}
+            >
+              <circle cx={130} cy={310} r={50} className="roadmap-node-circle" />
+              <text x={130} y={326} className="roadmap-node-emoji">🔬</text>
+            </g>
+            <text x={130} y={400} className="roadmap-node-label">Research</text>
+
+            <g
+              className="roadmap-node"
+              data-node="design"
+              onClick={() => onRoadmapNodeClick('design')}
+            >
+              <circle cx={400} cy={310} r={50} className="roadmap-node-circle" />
+              <text x={400} y={326} className="roadmap-node-emoji">🎨</text>
+            </g>
+            <text x={400} y={400} className="roadmap-node-label">Design</text>
+
+            <g
+              className="roadmap-node"
+              data-node="development"
+              onClick={() => onRoadmapNodeClick('development')}
+            >
+              <circle cx={670} cy={310} r={50} className="roadmap-node-circle" />
+              <text x={670} y={326} className="roadmap-node-emoji">💻</text>
+            </g>
+            <text x={670} y={400} className="roadmap-node-label">Development</text>
           </svg>
         </div>
       </section>

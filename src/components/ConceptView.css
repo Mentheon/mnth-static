@@ -101,19 +101,57 @@
   display: block;
   overflow: visible;
 }
+/* Main timeline line: solid, ink, low opacity. The draw-on entrance
+   is set via JS (utils.set strokeDasharray = pathLength). */
 .roadmap-line {
   fill: none;
   stroke: var(--ink);
   stroke-width: 2.5;
-  opacity: 0.4;
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
+  opacity: 0.55;
+  stroke-linecap: round;
 }
-.roadmap-line--dashed {
-  stroke-dasharray: 6 6;
-  stroke-dashoffset: 0;        /* dashed, not draw-on */
+
+/* Progress ticks — short cross-hairs marking the divisions between
+   the three primary stages. Pre-set to opacity 0; the section-B
+   animation fades them in along with the line. */
+.roadmap-tick {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
   opacity: 0;
 }
+.roadmap-tick--major {
+  stroke-width: 2.5;
+}
+
+/* Direction chevrons (>) along the timeline pointing right, showing
+   flow Research → Design → Development. Fade in with the ticks. */
+.roadmap-chevron {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+/* The `}` brace above the three primary nodes — visualises that
+   Consultancy spans all of them. Drawn on via stroke-dasharray. */
+.roadmap-brace {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.7;
+}
+.roadmap-brace-connector {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
 .roadmap-node {
   cursor: pointer;
   opacity: 0;
@@ -136,24 +174,48 @@
 }
 .roadmap-node--satellite .roadmap-node-circle {
   fill: var(--bg);
-  stroke-width: 2;
-  stroke-dasharray: 4 4;
+  stroke-width: 2.5;
+  stroke-dasharray: 5 5;
 }
 .roadmap-node--satellite:hover .roadmap-node-circle {
   fill: var(--crimson);
   stroke-dasharray: none;
 }
-.roadmap-node-label {
+
+/* Emoji icon centred inside each node — same family as the Hero
+   icons (🔬 / 🎨 / 💻 / 📋). The Apple-style emoji font stack
+   ensures a consistent visual across platforms. */
+.roadmap-node-emoji {
+  font-size: 36px;
+  text-anchor: middle;
+  pointer-events: none;
+  font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Android Emoji',EmojiSymbols,sans-serif;
+  /* dominant-baseline doesn't help reliably with emoji — use the dy
+     in the SVG y attribute instead (already accounted for). */
+}
+.roadmap-node--satellite .roadmap-node-emoji {
+  font-size: 30px;
+}
+
+/* Per-node text labels under the primary timeline; the satellite
+   Consultancy uses an "above" label between its circle and the brace. */
+.roadmap-node-label,
+.roadmap-node-label-above {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: 16px;
-  fill: #FFECE1;
+  font-size: 18px;
+  fill: var(--ink);
   text-anchor: middle;
   pointer-events: none;
   letter-spacing: 0.02em;
+  opacity: 0;
 }
-.roadmap-node--satellite .roadmap-node-label { fill: var(--ink); }
-.roadmap-node--satellite:hover .roadmap-node-label { fill: #FFECE1; }
+.roadmap-node-label-above {
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0;
+}
 
 /* ---------- Section C: existing helix ---------- */
 
