@@ -615,16 +615,15 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         const label = svgEl('text', { class: 'project-label' })
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
-          label.setAttribute('x', side === 'right' ? px + 22 : px - 22)
-          // Visual centre on the bead — y is the bead's y, and
-          // dominant-baseline=middle vertically centres the glyphs
-          // around that point. A previous +6 baseline nudge dropped
-          // the label ~5 px below the bead, which read as "the snap
-          // is off" because the user judges the bead's position by
-          // the visible label text, not the SVG bead itself.
-          label.setAttribute('y', py)
-          label.setAttribute('dominant-baseline', 'middle')
-          label.setAttribute('text-anchor', side === 'right' ? 'start' : 'end')
+          // Sit DIRECTLY UNDER the bead — centred horizontally on the
+          // bead's x, hanging baseline so y is the top of the text.
+          // The +20 viewBox-unit gap clears the bead's stroke (r=13)
+          // and leaves ~6 unit breathing room between bead bottom and
+          // label top.
+          label.setAttribute('x', px)
+          label.setAttribute('y', py + 20)
+          label.setAttribute('dominant-baseline', 'hanging')
+          label.setAttribute('text-anchor', 'middle')
         } else {
           label.setAttribute('x', px)
           label.setAttribute('y', side === 'right' ? py + 28 : py - 20)
@@ -724,25 +723,30 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         const labelX = orientation === 'vertical' ? outboard : mid.x
         const labelY = orientation === 'vertical' ? mid.y : outboard
 
-        const labelLeader = svgEl('line', {
-          x1: mid.x, y1: mid.y, x2: labelX, y2: labelY,
-          class: 'project-leader',
-          stroke: '#2F0147',
-        })
-        g.appendChild(labelLeader)
+        // Outboard-column leader is only useful when the label sits
+        // out THERE (horizontal orientation). In vertical the label
+        // now sits directly under the capsule, so the leader would be
+        // a horizontal stub pointing at empty space — skip it.
+        const labelLeader = orientation === 'horizontal'
+          ? svgEl('line', {
+              x1: mid.x, y1: mid.y, x2: labelX, y2: labelY,
+              class: 'project-leader',
+              stroke: '#2F0147',
+            })
+          : null
+        if (labelLeader) g.appendChild(labelLeader)
 
         const label = svgEl('text', { class: 'project-label' })
         label.dataset.projectId = proj.id
         if (orientation === 'vertical') {
-          label.setAttribute('x', labelX + (sideSign > 0 ? 6 : -6))
-          // Vertical centre on the capsule's y — same baseline fix as
-          // the single-domain bead branch. With a +6 baseline nudge
-          // (the prior value) the label read 5 px below the capsule,
-          // and since users judge "where the project sits" by its
-          // label text, that misalignment cropped onto the snap.
-          label.setAttribute('y', labelY)
-          label.setAttribute('dominant-baseline', 'middle')
-          label.setAttribute('text-anchor', sideSign > 0 ? 'start' : 'end')
+          // Sit DIRECTLY UNDER the capsule's midpoint — centred
+          // horizontally, hanging baseline so y is the top of the
+          // glyphs. +14 viewBox units clears the capsule's
+          // stroke-width (9) and leaves a small gap underneath.
+          label.setAttribute('x', mid.x)
+          label.setAttribute('y', mid.y + 14)
+          label.setAttribute('dominant-baseline', 'hanging')
+          label.setAttribute('text-anchor', 'middle')
         } else {
           label.setAttribute('x', labelX)
           label.setAttribute('y', labelY + (sideSign > 0 ? 16 : -8))
@@ -1410,8 +1414,12 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         }
         if (pe.label) {
           if (orientation === 'vertical') {
-            pe.label.setAttribute('x', sideSign >= 0 ? px + 22 : px - 22)
-            pe.label.setAttribute('y', py + 115)
+            // Match the build-time placement (centred under the bead).
+            // The previous (px ± 22, py + 115) values were leftovers
+            // from an earlier outboard-column layout and were
+            // overwriting the build-time position every drift frame.
+            pe.label.setAttribute('x', px)
+            pe.label.setAttribute('y', py + 20)
           } else {
             pe.label.setAttribute('x', px)
             pe.label.setAttribute('y', sideSign >= 0 ? py + 28 : py - 20)
@@ -1454,8 +1462,11 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         }
         if (pe.label) {
           if (orientation === 'vertical') {
-            pe.label.setAttribute('x', labelX + (sideSign > 0 ? 6 : -6))
-            pe.label.setAttribute('y', labelY + 115)
+            // Match the build-time placement (centred under capsule).
+            // The previous (labelX ± 6, labelY + 115) was the old
+            // outboard-column-with-leader layout — now superseded.
+            pe.label.setAttribute('x', mid.x)
+            pe.label.setAttribute('y', mid.y + 14)
           } else {
             pe.label.setAttribute('x', labelX)
             pe.label.setAttribute('y', labelY + (sideSign > 0 ? 16 : -8))

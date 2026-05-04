@@ -14,8 +14,8 @@ interface HelixProps {
 // has just entered the viewport) or small (once the user has page-
 // scrolled past the trigger threshold). CSS transition handles the
 // visible morph between the two snapshots.
-const LARGE_ROD = 180
-const SMALL_ROD = 56
+const LARGE_ROD = 120
+const SMALL_ROD = 38
 // Page-scroll progress at which the rod flips from large → small.
 // progress 0 = section just entering view; 1 = section's top has
 // reached viewport top. ~0.45 means the rod minimises about halfway
@@ -174,6 +174,22 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
         }
       }
 
+      const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
+      // Deadzone: if the user has parked within ~10 px of the chosen
+      // project's snap target, treat that as "close enough" — keep the
+      // selection live but DON'T yank the scroll back to the exact
+      // ideal. This gives a small margin above/below each snap so the
+      // user can nudge the helix manually (e.g. fine-tune Kindreon's
+      // alignment with the selector) without the snap fighting them.
+      const SNAP_DEADZONE = 10
+      if (Math.abs(stage.scrollTop - chosen.idealScroll) < SNAP_DEADZONE) {
+        if (rdId !== lastReportedRdId.current) {
+          lastReportedRdId.current = rdId
+          onSelect(rdId)
+        }
+        return
+      }
+
       programmaticScrollUntil.current = Date.now() + 700
       // Pass the fractional `idealScroll` straight through — modern
       // browsers honour sub-pixel scrollTop and will land the bead
@@ -182,7 +198,6 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       // whose pxY (= viewBox-Y × non-integer scale) fell on a fraction.
       stage.scrollTo({ top: chosen.idealScroll, behavior: 'smooth' })
 
-      const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
       if (rdId !== lastReportedRdId.current) {
         lastReportedRdId.current = rdId
         onSelect(rdId)
@@ -345,17 +360,6 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
           </span>
           <span><strong>Capsule</strong> = project bridging two or more domains</span>
         </div>
-      </div>
-
-      {/* Strand-domain key — colour-coded labels for the four research
-          domains the helix's strands represent. Lets users decode
-          which strand of a project capsule corresponds to which
-          domain, since the SVG's intrinsic strand labels are off. */}
-      <div className="helix-strand-key" aria-label="Research domains">
-        <span className="helix-strand-name" style={{ color: '#A30B37' }}>Research</span>
-        <span className="helix-strand-name" style={{ color: '#9C528B' }}>Design</span>
-        <span className="helix-strand-name" style={{ color: '#3F0247' }}>Development</span>
-        <span className="helix-strand-name" style={{ color: '#6B1F4D' }}>Regulatory</span>
       </div>
 
       <div className="helix-viewport">
