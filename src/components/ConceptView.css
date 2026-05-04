@@ -342,9 +342,12 @@
   grid-area: strands;
   width: 100%;
   /* Animate the picker row collapsing when a strand is selected, so
-     it doesn't pop out of layout abruptly. */
+     it doesn't pop out of layout abruptly. The max-height needs to be
+     comfortably larger than the natural content height (title + 130 px
+     bubble + label + paddings ≈ 420 px) — anything tighter clips the
+     button labels underneath. */
   overflow: hidden;
-  max-height: 320px;
+  max-height: 560px;
   opacity: 1;
   transition: max-height 0.4s ease, opacity 0.3s ease;
 }
