@@ -178,41 +178,49 @@
   transform-origin: center;
   transition: filter 0.25s, opacity 0.2s;
 }
+/* Match HeroIconsWithContent: no stroke, drop-shadow for depth,
+   colour fade + scale via CSS, hover scale 1.12 (Hero match). */
 .roadmap-node-circle {
   fill: var(--grape);
-  stroke: var(--ink);
-  stroke-width: 3;
-  transition: fill 0.2s, transform 0.2s;
+  stroke: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+  transition: fill 0.2s ease, transform 0.15s ease-out;
   transform-box: fill-box;
   transform-origin: center;
 }
 .roadmap-node:hover .roadmap-node-circle {
-  fill: var(--crimson);
-  transform: scale(1.08);
+  /* Hover ONLY scales (Hero behaviour: no fill change on hover —
+     fill changes happen only when the bubble is actively selected). */
+  transform: scale(1.12);
 }
+/* Consultancy satellite — dashed outline still distinguishes it. */
 .roadmap-node--satellite .roadmap-node-circle {
   fill: var(--bg);
+  stroke: var(--ink);
   stroke-width: 2.5;
   stroke-dasharray: 5 5;
 }
 .roadmap-node--satellite:hover .roadmap-node-circle {
-  fill: var(--crimson);
-  stroke-dasharray: none;
+  /* Same hover behaviour as Hero: just scale, no fill change. */
+  transform: scale(1.12);
 }
 
-/* Emoji icon centred inside each node — same family as the Hero
-   icons (🔬 / 🎨 / 💻 / 📋). The Apple-style emoji font stack
-   ensures a consistent visual across platforms. */
+/* Emoji icon centred inside each node — same family + size ratio as
+   HeroIconsWithContent (which uses font-size 72px in a 120px circle,
+   = 60% diameter). For our r=50 nodes (= 100px diameter) that's 60px;
+   for the r=42 satellite, ~50px. Apple-style emoji font stack matches
+   what HeroIconsWithContent uses. */
 .roadmap-node-emoji {
-  font-size: 36px;
+  font-size: 60px;
   text-anchor: middle;
+  /* Vertically centre the emoji on the circle's cy. */
+  dominant-baseline: central;
   pointer-events: none;
   font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Android Emoji',EmojiSymbols,sans-serif;
-  /* dominant-baseline doesn't help reliably with emoji — use the dy
-     in the SVG y attribute instead (already accounted for). */
+  line-height: 1;
 }
 .roadmap-node--satellite .roadmap-node-emoji {
-  font-size: 30px;
+  font-size: 50px;
 }
 
 /* Per-node text labels under the primary timeline; the satellite

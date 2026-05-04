@@ -143,29 +143,39 @@ export default function ConceptView() {
         const designCircle      = root.querySelector('.roadmap-node[data-node="design"] .roadmap-node-circle')      as SVGCircleElement | null
         const developmentCircle = root.querySelector('.roadmap-node[data-node="development"] .roadmap-node-circle') as SVGCircleElement | null
 
-        /* arriveAt — dot has reached this bubble. Bubble swells with
-           an organic squish (scale via outElastic), and fill switches
-           to crimson via inline style (CSS transition on .roadmap-node-
-           circle smooths the colour change in 0.2s). */
+        // Geometry constants — match the SVG markup above.
+        const NODE_R    = 50          // primary node radius
+        const DOT_R_MAX = 9           // upper bound on the breathing dot's r
+        const BOUND     = NODE_R + DOT_R_MAX   // dot is fully outside / first touches at this distance
+
+        /* arriveAt — dot has fully (well, first-touch) entered this
+           bubble. Bubble swells with an organic squish (outElastic),
+           and fill switches to crimson via inline style (CSS transition
+           on .roadmap-node-circle fades the colour over 0.2s).
+           onComplete clears inline transform so the CSS :hover
+           scale(1.12) keeps working between traversal events. */
         function arriveAt(circle: SVGCircleElement | null) {
           if (!circle) return
           circle.style.fill = '#A30B37'
           animate(circle, {
-            scale: [1, 1.22, 1.06],
+            scale: [1, 1.22, 1],
             duration: 700,
             ease: 'outElastic(1.2, 0.5)',
+            onComplete: () => { circle.style.transform = '' },
           })
         }
-        /* departFrom — dot is leaving this bubble. A second, slightly
-           inverted squish (compress then settle), and fill reverts by
-           clearing the inline style so it falls back to var(--grape). */
+        /* departFrom — dot has fully cleared this bubble's bounds.
+           Fill reverts (clears inline so CSS default var(--grape)
+           takes over with the same fade), and an inverted squish
+           recoils the bubble before it settles back to scale 1. */
         function departFrom(circle: SVGCircleElement | null) {
           if (!circle) return
           circle.style.fill = ''
           animate(circle, {
-            scale: [1.06, 0.9, 1],
+            scale: [1, 0.9, 1],
             duration: 600,
             ease: 'outElastic(1.2, 0.5)',
+            onComplete: () => { circle.style.transform = '' },
           })
         }
 
@@ -176,32 +186,49 @@ export default function ConceptView() {
         animate(aura, { opacity: [0, 0.3], duration: 600 })
         arriveAt(researchCircle)
 
-        // Slow traversal — Research (130) → Design (400) → Development
-        // (670) → warp back. Each transit step uses onBegin to depart
-        // the bubble it's leaving and onComplete to arrive at the next.
+        /* Build a transit step that uses onUpdate to fire arrive/depart
+           the moment the dot's cx actually crosses each bubble's edge,
+           NOT at the start/end of the timeline step. depart fires when
+           the dot is fully OUTSIDE the source bubble (|cx - fromX| >
+           BOUND); arrive fires when the dot first touches the target
+           bubble (|cx - toX| < BOUND). onBegin resets the per-iteration
+           latches so the loop replays cleanly. */
+        function makeTransit(
+          fromCircle: SVGCircleElement | null, fromX: number,
+          toCircle:   SVGCircleElement | null, toX:   number,
+          duration: number,
+        ) {
+          let departed = false
+          let arrived  = false
+          return {
+            cx: toX,
+            duration,
+            onBegin:  () => { departed = false; arrived = false },
+            onUpdate: () => {
+              const cx = parseFloat(dot.getAttribute('cx') || '0')
+              if (!departed && Math.abs(cx - fromX) > BOUND) {
+                departed = true
+                departFrom(fromCircle)
+              }
+              if (!arrived && Math.abs(cx - toX) < BOUND) {
+                arrived = true
+                arriveAt(toCircle)
+              }
+            },
+          }
+        }
+
         const traverse = createTimeline({
           loop: true,
           defaults: { ease: 'inOutQuad' },
         })
-        // Initial hold at Research (also fires every loop iteration).
+        // Hold at Research (also fires once per loop iteration).
         traverse.add([dot, aura], { cx: 130, duration: 1400 })
-        traverse.add([dot, aura], {
-          cx: 400, duration: 5500,
-          onBegin:    () => departFrom(researchCircle),
-          onComplete: () => arriveAt(designCircle),
-        })
+        traverse.add([dot, aura], makeTransit(researchCircle, 130, designCircle,      400, 5500))
         traverse.add([dot, aura], { cx: 400, duration: 1400 })  // hold at Design
-        traverse.add([dot, aura], {
-          cx: 670, duration: 5500,
-          onBegin:    () => departFrom(designCircle),
-          onComplete: () => arriveAt(developmentCircle),
-        })
+        traverse.add([dot, aura], makeTransit(designCircle,   400, developmentCircle, 670, 5500))
         traverse.add([dot, aura], { cx: 670, duration: 1400 })  // hold at Development
-        traverse.add([dot, aura], {
-          cx: 130, duration: 1400,
-          onBegin:    () => departFrom(developmentCircle),
-          onComplete: () => arriveAt(researchCircle),       // wraps loop
-        })
+        traverse.add([dot, aura], makeTransit(developmentCircle, 670, researchCircle, 130, 1800))  // warp back
 
         // Breathing pulse — independent loops. Dot subtly grows; aura
         // grows further and fades to give the "breath halo" feel.
@@ -357,7 +384,7 @@ export default function ConceptView() {
               onClick={() => onRoadmapNodeClick('consultancy')}
             >
               <circle cx={400} cy={50} r={42} className="roadmap-node-circle" />
-              <text x={400} y={64} className="roadmap-node-emoji">📋</text>
+              <text x={400} y={50} className="roadmap-node-emoji">📋</text>
             </g>
             <text x={400} y={120} className="roadmap-node-label-above">Consultancy</text>
 
@@ -368,7 +395,7 @@ export default function ConceptView() {
               onClick={() => onRoadmapNodeClick('research')}
             >
               <circle cx={130} cy={310} r={50} className="roadmap-node-circle" />
-              <text x={130} y={326} className="roadmap-node-emoji">🔬</text>
+              <text x={130} y={310} className="roadmap-node-emoji">🔬</text>
             </g>
             <text x={130} y={400} className="roadmap-node-label">Research</text>
 
@@ -378,7 +405,7 @@ export default function ConceptView() {
               onClick={() => onRoadmapNodeClick('design')}
             >
               <circle cx={400} cy={310} r={50} className="roadmap-node-circle" />
-              <text x={400} y={326} className="roadmap-node-emoji">🎨</text>
+              <text x={400} y={310} className="roadmap-node-emoji">🎨</text>
             </g>
             <text x={400} y={400} className="roadmap-node-label">Design</text>
 
@@ -388,7 +415,7 @@ export default function ConceptView() {
               onClick={() => onRoadmapNodeClick('development')}
             >
               <circle cx={670} cy={310} r={50} className="roadmap-node-circle" />
-              <text x={670} y={326} className="roadmap-node-emoji">💻</text>
+              <text x={670} y={310} className="roadmap-node-emoji">💻</text>
             </g>
             <text x={670} y={400} className="roadmap-node-label">Development</text>
           </svg>
