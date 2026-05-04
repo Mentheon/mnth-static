@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentheon — Design Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+
+  <style>
+    /* ============================================================
+       Mentheon — design reference
+       Self-contained: every token, type sample, and component
+       pattern in one file. Hand to a designer or another agent
+       as the canonical source of truth for visual language.
+       ============================================================ */
+
+    :root {
+      /* Core palette — these match src/index.css exactly. */
+      --bg:             #FFECE1;   /* cream — page background, panel surface */
+      --ink:            #2F0147;   /* deep plum — body text, lines, primary fills */
+      --plum:           #3F0247;   /* slightly warmer ink — secondary fills, mounts */
+      --crimson:        #A30B37;   /* signature red — accents, active states, alerts */
+      --grape:          #9C528B;   /* muted purple — section labels, soft accents */
+      --strand-default:  #9C528B;
+      --strand-selected: #A30B37;
+      --strand-hover-scale: 1.12;
+
+      /* Derived alphas — common semi-transparent uses. Match
+         conventions in StrandPanel.module.css / ConceptView.css. */
+      --bg-soft:    rgba(47, 1, 71, 0.04);   /* faintest panel tint */
+      --ink-soft:   rgba(47, 1, 71, 0.15);   /* dividers, subtle borders */
+      --ink-quiet:  rgba(47, 1, 71, 0.55);   /* muted body text, captions */
+      --crimson-soft: rgba(163, 11, 55, 0.05);
+      --shadow-sm:  0 2px 6px rgba(47, 1, 71, 0.12);
+      --shadow-md:  0 4px 12px rgba(47, 1, 71, 0.18);
+      --shadow-lg:  0 8px 24px rgba(47, 1, 71, 0.22);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: 'Lato', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 3rem 3rem 6rem;
+    }
+    .page > header { margin-bottom: 4rem; }
+    .page > header h1 {
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.4rem, 5vw, 4.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      margin: 0 0 0.5rem;
+    }
+    .page > header p {
+      font-size: 1.15rem;
+      color: var(--ink-quiet);
+      margin: 0;
+      max-width: 65ch;
+      font-style: italic;
+    }
+
+    /* Section header pattern used across the site:
+         § rule (28px line, grape) — label (mono caps) — § number (right) */
+    .section { margin-bottom: 4rem; }
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--grape);
+      font-weight: 700;
+      margin: 0 0 1.4rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.8em;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      background: var(--grape);
+      transform: translateY(-3px);
+    }
+    .section-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--ink-quiet);
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    /* ----- 01. Colour palette ----- */
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--ink-soft);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .swatch-chip { height: 110px; }
+    .swatch-meta {
+      padding: 0.85rem 1rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      background: var(--bg);
+    }
+    .swatch-name {
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--ink);
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+    .swatch-hex { color: var(--ink-quiet); }
+    .swatch-use {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      color: var(--ink);
+      opacity: 0.75;
+      margin-top: 0.4rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    /* ----- 02. Typography ----- */
+    .type-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 2rem 3rem;
+      align-items: baseline;
+    }
+    .type-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+      padding-top: 0.5rem;
+    }
+    .type-key small { display: block; font-size: 0.65rem; opacity: 0.7; margin-top: 0.2rem; }
+    .type-display    { font-family: 'Lato', sans-serif; font-weight: 900; font-size: 4rem;   line-height: 1.05; letter-spacing: -0.015em; margin: 0; }
+    .type-headline   { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 2.4rem; line-height: 1.1;  margin: 0; }
+    .type-subhead    { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.5rem; margin: 0; }
+    .type-body       { font-family: 'Lato', sans-serif; font-weight: 400; font-size: 1.05rem; line-height: 1.6; margin: 0; max-width: 60ch; }
+    .type-caption    { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); margin: 0; }
+    .type-mono-label { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--grape); margin: 0; }
+    .type-mono-stat  { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 0.85rem; letter-spacing: 0.04em; color: var(--ink); margin: 0; }
+    .type-tagline    { font-family: 'Lato', sans-serif; font-weight: 400; font-style: italic; font-size: 1.15rem; color: var(--ink); opacity: 0.7; margin: 0; }
+
+    /* ----- 03. Page frame + corner crops (Mentheon signature) ----- */
+    .frame {
+      position: relative;
+      background: var(--bg);
+      border: 2px solid var(--ink);
+      padding: 2.5rem 2.5rem 2rem;
+    }
+    .corner-crop {
+      position: absolute;
+      width: 24px; height: 24px;
+      pointer-events: none;
+    }
+    .corner-crop--tl { top: -12px; left: -12px;   border-top: 3px solid var(--crimson); border-left:   3px solid var(--crimson); }
+    .corner-crop--tr { top: -12px; right: -12px;  border-top: 3px solid var(--crimson); border-right:  3px solid var(--crimson); }
+    .corner-crop--bl { bottom: -12px; left: -12px; border-bottom: 3px solid var(--crimson); border-left:  3px solid var(--crimson); }
+    .corner-crop--br { bottom: -12px; right: -12px; border-bottom: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+    .frame-note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+      margin: 0 0 0.5rem;
+    }
+
+    /* ----- 04. Buttons / CTAs ----- */
+    .cta-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'Lato', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.85rem 1.6rem;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: background-color 0.2s, color 0.2s, gap 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .cta--primary   { background: var(--crimson); color: var(--bg); }
+    .cta--primary:hover { background: var(--ink); gap: 0.9rem; }
+    .cta--secondary { background: transparent; color: var(--ink); border: 2px solid var(--ink); }
+    .cta--secondary:hover { background: var(--ink); color: var(--bg); }
+    .cta--ghost     { background: transparent; color: var(--ink); padding: 0.6rem 1rem; font-size: 0.85rem; border: 1px solid var(--ink-soft); }
+    .cta--ghost:hover { background: var(--bg-soft); border-color: var(--ink); }
+    .cta-arrow { transition: transform 0.2s; display: inline-block; }
+    .cta:hover .cta-arrow { transform: translateX(3px); }
+
+    /* ----- 05. Cards (theme/objective grid pattern) ----- */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      counter-reset: card;
+    }
+    .card {
+      position: relative;
+      padding: 1.5rem 1.4rem 1.4rem;
+      background: var(--bg);
+      border: 1px solid var(--ink-soft);
+      transition: border-color 0.2s, transform 0.2s;
+      counter-increment: card;
+    }
+    .card::before {
+      content: counter(card, decimal-leading-zero);
+      position: absolute;
+      top: 0.85rem; right: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--ink-quiet);
+      letter-spacing: 0.08em;
+    }
+    /* Inner corner-crop tick — grape default, crimson on hover. */
+    .card::after {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 12px; height: 12px;
+      border-top: 2px solid var(--grape);
+      border-left: 2px solid var(--grape);
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--crimson); transform: translateY(-2px); }
+    .card:hover::after { border-color: var(--crimson); }
+    .card-verb {
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: var(--crimson);
+      margin: 0 0 0.45rem;
+      text-transform: lowercase;
+      font-variant: small-caps;
+      letter-spacing: 0.04em;
+    }
+    .card-text { font-size: 0.98rem; line-height: 1.55; color: var(--ink); margin: 0; opacity: 0.9; }
+
+    /* ----- 06. List item (research questions, etc.) ----- */
+    .rq-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
+    .rq-item {
+      position: relative;
+      padding: 1.3rem 1.5rem 1.3rem 3.2rem;
+      background: var(--bg-soft);
+      border-left: 3px solid var(--grape);
+      transition: border-left-color 0.2s, background 0.2s;
+    }
+    .rq-item:hover { border-left-color: var(--crimson); background: var(--crimson-soft); }
+    .rq-item-num {
+      position: absolute;
+      top: 1.3rem; left: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--grape);
+    }
+    .rq-item:hover .rq-item-num { color: var(--crimson); }
+    .rq-item-text { font-size: 1rem; line-height: 1.55; color: var(--ink); margin: 0; }
+
+    /* ----- 07. Abstract block (drop-cap pattern) ----- */
+    .abstract {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--ink);
+      max-width: 75ch;
+      margin: 0;
+    }
+    .abstract::first-letter {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--crimson);
+      float: left;
+      line-height: 0.9;
+      margin: 0.1em 0.1em 0 0;
+    }
+
+    /* ----- 08. Pills (carousel/section indicators) ----- */
+    .pillnav {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+    }
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      background: transparent; border: none; padding: 0; cursor: pointer;
+    }
+    .pill-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--ink);
+      opacity: 0.35;
+      transition: background 220ms ease, opacity 220ms ease, transform 220ms ease;
+    }
+    .pill:hover .pill-dot { opacity: 0.7; transform: scale(1.15); }
+    .pill--active .pill-dot {
+      background: var(--crimson); opacity: 1; transform: scale(1.4);
+    }
+
+    /* ----- 09. Monitor-style readout strip ----- */
+    .readout {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--ink);
+      opacity: 0.55;
+      padding: 0.75rem 1rem;
+      border-top: 1px dashed var(--ink-soft);
+      border-bottom: 1px dashed var(--ink-soft);
+    }
+
+    /* ----- 10. Meta strip (stat blocks) ----- */
+    .meta-row { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .meta-item {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--ink-quiet);
+      line-height: 1.3;
+    }
+    .meta-item strong {
+      display: block;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-top: 0.15rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* ----- 11. Vital-stat block (clinical-monitor look) ----- */
+    .vitals { display: flex; gap: 2.4rem; flex-wrap: wrap; }
+    .vital { display: flex; flex-direction: column; gap: 0.15rem; }
+    .vital-label {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+    }
+    .vital-value {
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+    .vital-value--hr   { color: var(--crimson); }
+    .vital-value--bp   { color: var(--ink); }
+    .vital-value--spo2 { color: var(--plum); }
+    .vital-unit { font-family: 'Lato', sans-serif; font-size: 0.65rem; letter-spacing: 0.12em; color: var(--ink-quiet); }
+
+    /* ----- 12. Strand panel header (icon + name + tagline) ----- */
+    .panel {
+      background: var(--bg);
+      border: 2px solid var(--ink);
+      padding: 2rem;
+      position: relative;
+      max-width: 720px;
+    }
+    .panel-header { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--ink-soft); }
+    .panel-icon {
+      flex-shrink: 0;
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-md);
+    }
+    .panel-icon svg { width: 60%; height: 60%; color: var(--bg); }
+    .panel-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--crimson); font-weight: 700; margin: 0 0 0.4rem;
+    }
+    .panel-name {
+      font-family: 'Lato', sans-serif; font-weight: 900; font-size: 2rem;
+      color: var(--ink); margin: 0 0 0.4rem; letter-spacing: -0.01em;
+    }
+    .panel-tagline { font-style: italic; color: var(--ink); opacity: 0.7; margin: 0; max-width: 50ch; }
+
+    /* ----- 13. Breadcrumb ----- */
+    .breadcrumb {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+    }
+    .breadcrumb a { color: var(--ink); text-decoration: none; opacity: 0.7; }
+    .breadcrumb a:hover { opacity: 1; color: var(--crimson); }
+    .breadcrumb-sep { padding: 0 0.6em; opacity: 0.4; }
+
+    /* ----- 14. Eyebrow ----- */
+    .eyebrow {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--ink);
+      opacity: 0.55;
+      margin: 0 0 0.5rem;
+    }
+
+    /* ----- 15. Spacing/sizing tokens (info card) ----- */
+    .tokens {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .token {
+      padding: 1rem;
+      background: var(--bg-soft);
+      border-left: 3px solid var(--ink);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+    .token strong { color: var(--ink); display: block; margin-bottom: 0.2rem; }
+    .token span { color: var(--ink-quiet); }
+
+    /* ----- 16. Animation idiom card ----- */
+    .anim-card {
+      padding: 1.4rem;
+      background: var(--bg-soft);
+      border: 1px solid var(--ink-soft);
+    }
+    .anim-card h4 {
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: 0.95rem;
+      margin: 0 0 0.4rem;
+      color: var(--ink);
+    }
+    .anim-card code {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: var(--bg);
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--ink-soft);
+      border-radius: 2px;
+      margin-top: 0.6rem;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--ink);
+    }
+
+    /* utility — invisible spacer so grids don't collapse on small viewports */
+    .stack > * + * { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<main class="page">
+  <header>
+    <p class="eyebrow">Mentheon · design system</p>
+    <h1>Visual reference</h1>
+    <p>One file containing the colour palette, typography, and every common UI pattern in the codebase. Hand to a designer or a coding agent for shared context.</p>
+  </header>
+
+  <!-- ===== 01. PALETTE ===== -->
+  <section class="section">
+    <h2 class="section-title">Colour palette<span class="section-num">§ 01</span></h2>
+    <div class="palette">
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#FFECE1; border-bottom:1px solid var(--ink-soft);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg</div>
+          <div class="swatch-hex">#FFECE1</div>
+          <div class="swatch-use">Page background, panel surface, type-on-dark colour. The site is set in cream — this is the canvas everything sits on.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#2F0147;"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--ink</div>
+          <div class="swatch-hex">#2F0147</div>
+          <div class="swatch-use">Primary text, lines, frame borders, dominant fills. Pairs with cream as the body type colour.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#3F0247;"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--plum</div>
+          <div class="swatch-hex">#3F0247</div>
+          <div class="swatch-use">Slightly warmer ink — secondary fills (e.g. mounted strands), pull-quotes, supporting glyphs.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#A30B37;"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--crimson</div>
+          <div class="swatch-hex">#A30B37</div>
+          <div class="swatch-use">Signature accent. Active states, primary CTAs, the punchline word in display headlines, alert/heart-rate.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#9C528B;"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--grape</div>
+          <div class="swatch-hex">#9C528B</div>
+          <div class="swatch-use">Section labels, soft accents, default strand-bubble fill before selection. Quieter than crimson, warmer than ink.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:rgba(47,1,71,0.04); border-bottom:1px solid var(--ink-soft);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--bg-soft</div>
+          <div class="swatch-hex">rgba(47,1,71,0.04)</div>
+          <div class="swatch-use">Faintest panel tint. Used for RQ list rows, secondary card backgrounds.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:rgba(47,1,71,0.15);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--ink-soft</div>
+          <div class="swatch-hex">rgba(47,1,71,0.15)</div>
+          <div class="swatch-use">Dividers, subtle borders, dashed rules.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:rgba(47,1,71,0.55);"></div>
+        <div class="swatch-meta">
+          <div class="swatch-name">--ink-quiet</div>
+          <div class="swatch-hex">rgba(47,1,71,0.55)</div>
+          <div class="swatch-use">Captions, muted body, mono labels and stat numerals when not the active focus.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 02. TYPOGRAPHY ===== -->
+  <section class="section">
+    <h2 class="section-title">Typography<span class="section-num">§ 02</span></h2>
+    <p class="type-body" style="margin-bottom:2rem;"><strong>Lato</strong> (400 / 700 / 900) carries display, headline and body type. <strong>JetBrains Mono</strong> (400 / 500 / 700) is the system voice — used for kickers, mono labels, code-style stat readouts, and any moment where the UI feels &ldquo;instrumented&rdquo;.</p>
+
+    <div class="type-grid">
+      <div class="type-key">Display<br><small>Lato 900 · clamp(2.4, 6vw, 5.5)rem · -0.015em · line-height 1.05</small></div>
+      <div><h3 class="type-display">Digital health is moving<span style="color:var(--crimson)">&nbsp;fast</span></h3></div>
+
+      <div class="type-key">Headline<br><small>Lato 700 · 2.4rem · line-height 1.1</small></div>
+      <div><h3 class="type-headline">From insight to product, we cover the full arc.</h3></div>
+
+      <div class="type-key">Subhead<br><small>Lato 700 · 1.5rem</small></div>
+      <div><h4 class="type-subhead">Our ongoing R&amp;D strands</h4></div>
+
+      <div class="type-key">Body<br><small>Lato 400 · 1.05rem · line-height 1.6</small></div>
+      <div><p class="type-body">Reminiscence therapy is widely used in dementia care, but is constrained by the availability of personalised material and the cognitive demands of conventional media.</p></div>
+
+      <div class="type-key">Tagline / italic<br><small>Lato 400 italic · 1.15rem · 70 % opacity</small></div>
+      <div><p class="type-tagline">Personalised, low-stimulation virtual environments as a digital therapeutic.</p></div>
+
+      <div class="type-key">Eyebrow / caption<br><small>Lato 700 · 0.78rem · 0.18em · UPPERCASE · ink-quiet</small></div>
+      <div><p class="type-caption">Some work of our own</p></div>
+
+      <div class="type-key">Mono label<br><small>JetBrains Mono 700 · 0.7rem · 0.22em · UPPERCASE · grape</small></div>
+      <div><p class="type-mono-label">Strand · 03 of 06 · in progress</p></div>
+
+      <div class="type-key">Mono stat<br><small>JetBrains Mono 500 · 0.85rem · 0.04em</small></div>
+      <div><p class="type-mono-stat">since · oct 2024 · collaborators 03 · phase development</p></div>
+    </div>
+  </section>
+
+  <!-- ===== 03. PAGE FRAME + CORNER CROPS ===== -->
+  <section class="section">
+    <h2 class="section-title">Page frame · corner crops<span class="section-num">§ 03</span></h2>
+    <p class="type-body" style="margin-bottom:1.5rem;">The Mentheon &ldquo;framed canvas&rdquo;: a 2 px ink border around the content with four crimson L-shaped marks straddling the corners. Used on the StrandDetail page and any standalone publication-style surface.</p>
+    <div style="padding:18px;">
+      <div class="frame">
+        <span class="corner-crop corner-crop--tl"></span>
+        <span class="corner-crop corner-crop--tr"></span>
+        <span class="corner-crop corner-crop--bl"></span>
+        <span class="corner-crop corner-crop--br"></span>
+        <p class="frame-note">Frame · 2 px ink border · 24 × 24 crimson corner crops offset −12 px</p>
+        <h3 class="type-headline" style="margin-bottom:0.5rem;">Anything page-level lives inside this.</h3>
+        <p class="type-body">Cards, sections, headers — they all sit inside the frame. The corner crops anchor the surface visually.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 04. BUTTONS / CTAS ===== -->
+  <section class="section">
+    <h2 class="section-title">Buttons &amp; CTAs<span class="section-num">§ 04</span></h2>
+    <div class="cta-row">
+      <a href="#" class="cta cta--primary">See full work strand <span class="cta-arrow">→</span></a>
+      <a href="#" class="cta cta--secondary">Open prototype build</a>
+      <button class="cta cta--ghost">↻ Replay</button>
+    </div>
+    <div class="stack" style="margin-top:1.5rem;">
+      <p class="type-mono-stat"><strong>cta--primary</strong> &mdash; crimson fill / cream type. Hover: bg → ink, gap widens 0.6→0.9rem.</p>
+      <p class="type-mono-stat"><strong>cta--secondary</strong> &mdash; transparent / ink type / 2 px ink border. Hover: invert.</p>
+      <p class="type-mono-stat"><strong>cta--ghost</strong> &mdash; small chrome control (replay, skip). Hover: bg-soft + ink border.</p>
+    </div>
+  </section>
+
+  <!-- ===== 05. CARD GRID ===== -->
+  <section class="section">
+    <h2 class="section-title">Card grid · objectives / themes<span class="section-num">§ 05</span></h2>
+    <div class="card-grid">
+      <article class="card"><p class="card-verb">Characterise</p><p class="card-text">Map the design space of personalised WebXR reminiscence.</p></article>
+      <article class="card"><p class="card-verb">Design</p><p class="card-text">Develop a prop vocabulary that scaffolds engagement without overwhelming users.</p></article>
+      <article class="card"><p class="card-verb">Build</p><p class="card-text">Engineer a backend capable of per-participant media curation under SaMD constraints.</p></article>
+      <article class="card"><p class="card-verb">Instrument</p><p class="card-text">Integrate physiological signals with in-session telemetry to detect overload states.</p></article>
+    </div>
+  </section>
+
+  <!-- ===== 06. RESEARCH-QUESTION LIST ===== -->
+  <section class="section">
+    <h2 class="section-title">Numbered list · research questions<span class="section-num">§ 06</span></h2>
+    <ol class="rq-list">
+      <li class="rq-item"><span class="rq-item-num">RQ1</span><p class="rq-item-text">How can personalised content be delivered through WebXR props without inducing sensory overload?</p></li>
+      <li class="rq-item"><span class="rq-item-num">RQ2</span><p class="rq-item-text">What backend architecture supports per-participant curation while remaining clinically deployable?</p></li>
+      <li class="rq-item"><span class="rq-item-num">RQ3</span><p class="rq-item-text">Which physiological signals can be combined with interaction data to detect overload in real time?</p></li>
+    </ol>
+  </section>
+
+  <!-- ===== 07. ABSTRACT BLOCK ===== -->
+  <section class="section">
+    <h2 class="section-title">Abstract · drop-cap<span class="section-num">§ 07</span></h2>
+    <p class="abstract">Reminiscence therapy is widely used in dementia care, but is constrained by the availability of personalised material and the cognitive demands of conventional media. This strand investigates how WebXR environments — paired with a dynamic media-asset backend — can serve individualised reminiscence content through interactive props within a low-arousal virtual room.</p>
+  </section>
+
+  <!-- ===== 08. PILLS ===== -->
+  <section class="section">
+    <h2 class="section-title">Pill indicators<span class="section-num">§ 08</span></h2>
+    <p class="type-body" style="margin-bottom:1rem;">Used for the home-page mashup carousel and the ConceptView side-section nav. Just dots — inactive grey/translucent, active crimson and scaled 1.4×.</p>
+    <nav class="pillnav">
+      <button class="pill pill--active"><span class="pill-dot"></span></button>
+      <button class="pill"><span class="pill-dot"></span></button>
+      <button class="pill"><span class="pill-dot"></span></button>
+      <button class="pill"><span class="pill-dot"></span></button>
+      <button class="pill"><span class="pill-dot"></span></button>
+    </nav>
+  </section>
+
+  <!-- ===== 09. MONITOR READOUT ===== -->
+  <section class="section">
+    <h2 class="section-title">Monitor readout strip<span class="section-num">§ 09</span></h2>
+    <p class="type-body" style="margin-bottom:1rem;">Top-corner instrumentation strip used by the carousel scenes. Two slots — left identifier, right live value.</p>
+    <div class="readout">
+      <span>Lead II · cardiac monitor</span>
+      <span>HR 142</span>
+    </div>
+  </section>
+
+  <!-- ===== 10. META STRIP ===== -->
+  <section class="section">
+    <h2 class="section-title">Meta strip · stat blocks<span class="section-num">§ 10</span></h2>
+    <div class="meta-row">
+      <div class="meta-item">since<strong>oct 2024</strong></div>
+      <div class="meta-item">collaborators<strong>03</strong></div>
+      <div class="meta-item">phase<strong>development</strong></div>
+      <div class="meta-item">strand id<strong>vr-rt</strong></div>
+    </div>
+  </section>
+
+  <!-- ===== 11. VITAL STATS ===== -->
+  <section class="section">
+    <h2 class="section-title">Vital-stat block · clinical monitor<span class="section-num">§ 11</span></h2>
+    <div class="vitals">
+      <div class="vital">
+        <span class="vital-label">HR</span>
+        <span class="vital-value vital-value--hr">142</span>
+        <span class="vital-unit">bpm</span>
+      </div>
+      <div class="vital">
+        <span class="vital-label">BP</span>
+        <span class="vital-value vital-value--bp">138/89</span>
+        <span class="vital-unit">mmHg</span>
+      </div>
+      <div class="vital">
+        <span class="vital-label">SpO₂</span>
+        <span class="vital-value vital-value--spo2">96</span>
+        <span class="vital-unit">%</span>
+      </div>
+      <div class="vital">
+        <span class="vital-label">RESP</span>
+        <span class="vital-value vital-value--bp">18</span>
+        <span class="vital-unit">/min</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 12. STRAND PANEL ===== -->
+  <section class="section">
+    <h2 class="section-title">Strand panel header<span class="section-num">§ 12</span></h2>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+            <path d="M20 20 Q 50 35, 80 20"/><path d="M20 40 Q 50 55, 80 40"/>
+            <path d="M20 60 Q 50 75, 80 60"/><path d="M20 80 Q 50 95, 80 80"/>
+            <path d="M20 20 V 80"/><path d="M80 20 V 80"/>
+          </svg>
+        </div>
+        <div>
+          <p class="panel-kicker">strand · 03 of 06 · in progress</p>
+          <h3 class="panel-name">VR Reminiscence Therapy</h3>
+          <p class="panel-tagline">Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 13. BREADCRUMB ===== -->
+  <section class="section">
+    <h2 class="section-title">Breadcrumb<span class="section-num">§ 13</span></h2>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="#">strands</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="#">vr-rt</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>detail</span>
+    </nav>
+  </section>
+
+  <!-- ===== 14. SPACING + SIZING TOKENS ===== -->
+  <section class="section">
+    <h2 class="section-title">Spacing &amp; sizing<span class="section-num">§ 14</span></h2>
+    <div class="tokens">
+      <div class="token"><strong>Border radius</strong><span>2 px sharp · 4 px chips · 12 px stage corners · 50 % discs</span></div>
+      <div class="token"><strong>Shadows</strong><span>--shadow-sm · --shadow-md · --shadow-lg (ink-tinted, 12–22 % opacity)</span></div>
+      <div class="token"><strong>Border weight</strong><span>2 px frame · 1 px panel divider · 0.5 px subtle rule</span></div>
+      <div class="token"><strong>Section gap</strong><span>3.5 rem between sections · 1.5 rem between section-title and content</span></div>
+      <div class="token"><strong>Container</strong><span>max-width 1100–1280 px · 2–3 rem horizontal padding</span></div>
+      <div class="token"><strong>Letter spacing</strong><span>display −0.015em · UI 0.04em · UPPERCASE 0.16–0.22em</span></div>
+    </div>
+  </section>
+
+  <!-- ===== 15. ANIMATION IDIOMS ===== -->
+  <section class="section">
+    <h2 class="section-title">Animation idioms · anime.js v4<span class="section-num">§ 15</span></h2>
+    <p class="type-body" style="margin-bottom:1.5rem;">Common patterns used across ConceptView, StrandDetail, and the HomeMashup scenes. Easings drop the <code>ease</code> prefix in v4 (<code>'easeOutQuad' → 'outQuad'</code>).</p>
+
+    <div class="card-grid">
+      <div class="anim-card">
+        <h4>Stagger entrance</h4>
+        <p class="type-body" style="font-size:0.92rem;">Fade-in a sequence of elements with a 60–110 ms stagger.</p>
+        <code>animate(els, {
+  opacity: [0, 1],
+  translateY: [16, 0],
+  duration: 460,
+  delay: stagger(110),
+  ease: 'outQuad',
+})</code>
+      </div>
+      <div class="anim-card">
+        <h4>Stroke draw-on</h4>
+        <p class="type-body" style="font-size:0.92rem;">For SVG paths — set dash to length, animate offset to 0.</p>
+        <code>const len = path.getTotalLength()
+path.style.strokeDasharray = String(len)
+path.style.strokeDashoffset = String(len)
+animate(path, {
+  strokeDashoffset: [len, 0],
+  duration: 1100,
+  ease: 'inOutQuad',
+})</code>
+      </div>
+      <div class="anim-card">
+        <h4>Counter rollover</h4>
+        <p class="type-body" style="font-size:0.92rem;">Tween a dummy object's value, read live in onUpdate.</p>
+        <code>animate({ v: 0 }, {
+  v: 12847,
+  duration: 1500,
+  ease: 'outQuart',
+  onUpdate: (a) => {
+    const v = Math.round(a.targets[0].v)
+    el.textContent = v.toLocaleString()
+  },
+})</code>
+      </div>
+      <div class="anim-card">
+        <h4>Looping pulse</h4>
+        <p class="type-body" style="font-size:0.92rem;">Heartbeat / breath effect on a single element.</p>
+        <code>animate(dot, {
+  r: [9, 16],
+  opacity: [0.18, 0],
+  duration: 1600,
+  ease: 'outQuad',
+  loop: true,
+})</code>
+      </div>
+      <div class="anim-card">
+        <h4>Two-layer transform trick</h4>
+        <p class="type-body" style="font-size:0.92rem;">Anime CSS transforms override SVG <code>transform</code> attributes. Wrap placement in an outer <code>&lt;g&gt;</code>, animate the inner one.</p>
+        <code>const placement = svgGroup({ transform: 'translate(x y)' })
+const animTarget  = svgGroup()
+placement.appendChild(animTarget)
+animate(animTarget, { scale: [0.4, 1] })</code>
+      </div>
+      <div class="anim-card">
+        <h4>Cleanup discipline</h4>
+        <p class="type-body" style="font-size:0.92rem;">Always pause animations AND clear DOM in effect cleanup — StrictMode dev re-runs the effect, stacking duplicates otherwise.</p>
+        <code>return () => {
+  timers.forEach(clearTimeout)
+  animations.forEach(a => a.pause())
+  while (svg.firstChild) svg.removeChild(svg.firstChild)
+}</code>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

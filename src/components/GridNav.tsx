@@ -1,16 +1,17 @@
 import styles from './GridNav.module.css'
 
 const NAV_ITEMS = [
-  { label: 'Home',  href: '#home'  },
-  { label: 'News',  href: '#news'  },
-  { label: 'About', href: '#about' },
-  { label: 'Who?',  href: '#who'   },
-  { label: 'What?', href: '#what'  },
-  { label: 'Why?',  href: '#why'   },
+  { label: 'Home',  href: '#home'       },
+  { label: 'News',  href: '#marginalia' },
+  { label: 'About', href: '#about'      },
+  { label: 'Who?',  href: '#who'        },
+  { label: 'What?', href: '#what'       },
+  { label: 'Why?',  href: '#why'        },
 ]
 
 function getActive(hash: string): string {
   if (hash === '#who') return 'Who?'
+  if (hash === '#marginalia' || hash.startsWith('#marginalia/')) return 'News'
   return 'Home'
 }
 

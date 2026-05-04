@@ -7,6 +7,7 @@ import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
 import StrandDetail from './components/StrandDetail'
+import Marginalia from './components/Marginalia'
 import { STRANDS } from './data/strands'
 
 function useHash() {
@@ -23,10 +24,14 @@ export default function App() {
   const hash = useHash()
   // `#strand` (no id) and `#strand/<id>` both route to the detail view.
   const isStrandRoute = hash === '#strand' || hash.startsWith('#strand/')
+  // `#marginalia` and `#marginalia/<slug>` both route to the news section
+  // (list view vs. article detail).
+  const isMarginaliaRoute = hash === '#marginalia' || hash.startsWith('#marginalia/')
   const page =
-    hash === '#who'     ? 'who'     :
-    hash === '#concept' ? 'concept' :
-    isStrandRoute       ? 'strand'  :
+    hash === '#who'     ? 'who'        :
+    hash === '#concept' ? 'concept'    :
+    isStrandRoute       ? 'strand'     :
+    isMarginaliaRoute   ? 'marginalia' :
     'home'
 
   // Pick the strand the route is asking for. If `#strand/<id>` matches a
@@ -38,6 +43,13 @@ export default function App() {
     (requestedId ? STRANDS.find(s => s.id === requestedId) : null)
     ?? STRANDS.find(s => s.progress)
     ?? STRANDS[0]
+
+  // Mirror the `#strand/<id>` slug-extraction pattern. `null` means
+  // we're on the index/list view; any other value asks for the detail
+  // page of that article slug.
+  const marginaliaSlug = hash.startsWith('#marginalia/')
+    ? hash.slice('#marginalia/'.length)
+    : null
 
   // Selected R&D Strand id, shared between the StrandPanel, the
   // RDStrands buttons, and the Helix — scrolling the helix snaps to a
@@ -55,6 +67,8 @@ export default function App() {
         <ConceptView />
       ) : page === 'strand' && detailStrand.progress ? (
         <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
+      ) : page === 'marginalia' ? (
+        <Marginalia slug={marginaliaSlug} />
       ) : (
         <>
           <HomeMashup />

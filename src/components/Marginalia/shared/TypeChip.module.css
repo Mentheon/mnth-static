@@ -1,0 +1,19 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.55rem;
+  color: var(--bg);
+  border-radius: 2px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.chipCrimson { background: var(--crimson); }
+.chipPlum    { background: var(--plum); }
+.chipInk     { background: var(--ink); }
+.chipGrape   { background: var(--grape); }

@@ -1,0 +1,160 @@
+/* All article-body typography. Scoped under `.body` so the rules
+   never leak into the rest of the site (especially since we inject
+   raw HTML via dangerouslySetInnerHTML). */
+
+.body {
+  font-family: 'Lato', sans-serif;
+  color: var(--ink);
+  max-width: 70ch;
+}
+
+/* Drop-cap on the first paragraph — same idiom as design-reference § 07. */
+.body > p:first-of-type::first-letter {
+  font-family: 'Lato', sans-serif;
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: var(--crimson);
+  float: left;
+  line-height: 0.9;
+  margin: 0.1em 0.12em 0 0;
+}
+
+.body h2 {
+  font-family: 'Lato', sans-serif;
+  font-weight: 900;
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin: 2.5rem 0 0.6rem;
+  letter-spacing: -0.005em;
+}
+
+.body h3 {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--ink);
+  margin: 1.8rem 0 0.5rem;
+}
+
+.body p {
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin: 0 0 1.1rem;
+  max-width: 70ch;
+}
+
+.body blockquote {
+  border-left: 3px solid var(--crimson);
+  padding: 0.2rem 0 0.2rem 1.2rem;
+  margin: 1.4rem 0;
+  font-style: italic;
+  color: var(--plum);
+  max-width: 65ch;
+}
+
+.body blockquote p { margin: 0.4rem 0; color: var(--plum); }
+
+.body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color 0.15s ease;
+}
+.body a:hover { color: var(--crimson); }
+
+.body ul,
+.body ol {
+  padding-left: 1.4rem;
+  margin: 0.6rem 0 1.2rem;
+  max-width: 70ch;
+}
+
+.body ul li,
+.body ol li {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin: 0.3rem 0;
+  color: var(--ink);
+}
+.body ul li::marker,
+.body ol li::marker { color: var(--ink); }
+
+.body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--ink-soft, rgba(47, 1, 71, 0.15));
+  margin: 1.5rem auto;
+}
+
+/* Inline code. */
+.body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  background: var(--bg-soft, rgba(47, 1, 71, 0.04));
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+/* ----- Code blocks (renderer outputs <pre class="hljsBlock">). -----
+   The renderer in src/lib/marginalia/renderMarkdown.ts emits this
+   exact class name; we use a global selector here because the rendered
+   HTML is injected via dangerouslySetInnerHTML and CSS-modules will
+   not hash classes inside that string. */
+
+.body :global(pre.hljsBlock) {
+  background: var(--bg-soft, rgba(47, 1, 71, 0.04));
+  border-left: 3px solid var(--ink);
+  padding: 1rem 1.1rem;
+  margin: 1.4rem 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink);
+  border-radius: 0 2px 2px 0;
+}
+
+.body :global(pre.hljsBlock code.hljs) {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  display: block;
+  white-space: pre;
+}
+
+/* On-brand syntax-highlight palette. Crimson keywords, plum strings,
+   ink-quiet comments, grape numerals/literals. Hits the `common`
+   highlight.js token classes; anything not matched stays ink. */
+
+.body :global(.hljs-keyword),
+.body :global(.hljs-selector-tag),
+.body :global(.hljs-built_in),
+.body :global(.hljs-tag) { color: var(--crimson); font-weight: 700; }
+
+.body :global(.hljs-string),
+.body :global(.hljs-attr),
+.body :global(.hljs-template-variable) { color: var(--plum); }
+
+.body :global(.hljs-comment),
+.body :global(.hljs-meta),
+.body :global(.hljs-quote) { color: var(--ink-quiet); font-style: italic; }
+
+.body :global(.hljs-number),
+.body :global(.hljs-literal),
+.body :global(.hljs-regexp),
+.body :global(.hljs-symbol) { color: var(--grape); }
+
+.body :global(.hljs-title),
+.body :global(.hljs-name),
+.body :global(.hljs-section),
+.body :global(.hljs-class .hljs-title),
+.body :global(.hljs-type) { color: var(--ink); font-weight: 700; }
+
+.body :global(.hljs-variable),
+.body :global(.hljs-params) { color: var(--ink); }

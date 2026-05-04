@@ -1,0 +1,115 @@
+.breadcrumb {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.75rem 3rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-quiet, rgba(47, 1, 71, 0.55));
+}
+
+.breadcrumb a {
+  color: var(--ink);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: color 0.15s, opacity 0.15s;
+}
+
+.breadcrumb a:hover {
+  opacity: 1;
+  color: var(--crimson);
+}
+
+.sep {
+  padding: 0 0.6em;
+  opacity: 0.4;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 1.5rem auto 5rem;
+  padding: 0 3rem;
+  position: relative;
+}
+
+.frame {
+  position: relative;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  padding: 3rem 3rem 3.5rem;
+}
+
+.cornerCrop {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.cornerTL { top: -14px; left: -14px;   border-top:    3px solid var(--crimson); border-left:  3px solid var(--crimson); }
+.cornerTR { top: -14px; right: -14px;  border-top:    3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+.cornerBL { bottom: -14px; left: -14px;  border-bottom: 3px solid var(--crimson); border-left:  3px solid var(--crimson); }
+.cornerBR { bottom: -14px; right: -14px; border-bottom: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+
+.header {
+  margin: 0 0 2.4rem;
+  padding-bottom: 1.8rem;
+  border-bottom: 1px solid var(--ink-soft, rgba(47, 1, 71, 0.15));
+  max-width: 75ch;
+}
+
+.title {
+  font-family: 'Lato', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 0.8rem;
+}
+
+.tagline {
+  font-family: 'Lato', sans-serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--ink);
+  opacity: 0.75;
+  margin: 0;
+  max-width: 65ch;
+}
+
+.backRow {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--ink-soft, rgba(47, 1, 71, 0.15));
+}
+
+.backCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: 1px solid var(--ink-soft, rgba(47, 1, 71, 0.15));
+  border-radius: 2px;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, gap 0.2s;
+}
+
+.backCta:hover {
+  background: var(--bg-soft, rgba(47, 1, 71, 0.04));
+  border-color: var(--ink);
+  color: var(--crimson);
+  gap: 0.7rem;
+}
+
+@media (max-width: 880px) {
+  .breadcrumb,
+  .page { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .frame { padding: 2rem 1.5rem 2.5rem; }
+}
