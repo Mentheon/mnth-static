@@ -63,13 +63,20 @@ export default function EcgScene({ onReadoutChange }: SceneProps) {
       onReadoutChange('Lead II · cardiac monitor', 'HR 0')
     }, 2100)
 
+    /* Drop-off — translateY on an SVG path doesn't reliably take in
+       anime v4 (the CSS transform doesn't always apply to <path>
+       elements), which left the flatlined trace stuck as a horizontal
+       red bar at y=360 for the rest of the scene. Fade-only + a hard
+       DOM removal once the fade settles guarantees the trace is gone. */
     const dropTimer = window.setTimeout(() => {
       animations.push(
         animate(trace, {
-          translateY: [0, 200],
           opacity: [1, 0],
-          duration: 900,
+          duration: 700,
           ease: 'inCubic',
+          onComplete: () => {
+            if (trace.parentNode) trace.parentNode.removeChild(trace)
+          },
         }),
       )
     }, 2600)

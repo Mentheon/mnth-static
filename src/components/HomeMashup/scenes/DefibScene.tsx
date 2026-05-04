@@ -68,6 +68,28 @@ export default function DefibScene({ onReadoutChange }: SceneProps) {
       }),
     ]
 
+    /* Wipe the charge bar the moment it hits full — must come BEFORE
+       CLEAR + the shockwaves so the bar isn't still on screen when the
+       big red text drops. Quick 250 ms fade, then DOM removal. */
+    const wipeTimer = window.setTimeout(() => {
+      animations.push(
+        animate(fill, {
+          opacity: [1, 0],
+          duration: 250,
+          ease: 'outQuad',
+          onComplete: () => { if (fill.parentNode) fill.parentNode.removeChild(fill) },
+        }),
+        animate(track, {
+          opacity: [1, 0],
+          duration: 250,
+          ease: 'outQuad',
+          onComplete: () => { if (track.parentNode) track.parentNode.removeChild(track) },
+        }),
+      )
+    }, 1100)
+
+    /* CLEAR flash + shockwaves — fires AFTER the bar has cleared away
+       (1.1 s charge + 250 ms fade ≈ 1.35 s). */
     const shockTimer = window.setTimeout(() => {
       animations.push(
         animate(clearLbl, {
@@ -102,10 +124,11 @@ export default function DefibScene({ onReadoutChange }: SceneProps) {
           }),
         )
       })
-    }, 1100)
+    }, 1400)
 
     return () => {
       clearTimeout(shockTimer)
+      clearTimeout(wipeTimer)
       animations.forEach(a => a.pause())
       while (svg.firstChild) svg.removeChild(svg.firstChild)
     }
