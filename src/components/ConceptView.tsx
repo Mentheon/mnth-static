@@ -148,51 +148,87 @@ export default function ConceptView() {
         const DOT_R_MAX = 9           // upper bound on the breathing dot's r
         const BOUND     = NODE_R + DOT_R_MAX   // dot is fully outside / first touches at this distance
 
-        /* arriveAt — dot has fully (well, first-touch) entered this
-           bubble. Bubble swells with an organic squish (outElastic),
-           and fill switches to crimson via inline style (CSS transition
-           on .roadmap-node-circle fades the colour over 0.2s).
-           onComplete clears inline transform so the CSS :hover
-           scale(1.12) keeps working between traversal events. */
+        /* arriveAt — the dot first touches this bubble. The dot
+           ASSIMILATES into the bubble (fade to 0). The bubble does a
+           small absorption swell + recolours crimson. While the dot
+           sits inside (the "hold" phase), it stays invisible — the
+           bubble itself is the active visual. */
         function arriveAt(circle: SVGCircleElement | null) {
           if (!circle) return
           circle.style.fill = '#A30B37'
           animate(circle, {
-            scale: [1, 1.22, 1],
-            duration: 700,
+            scale: [1, 1.12, 1.04],
+            duration: 600,
             ease: 'outElastic(1.2, 0.5)',
-            onComplete: () => { circle.style.transform = '' },
+          })
+          animate([dot, aura], {
+            opacity: 0,
+            duration: 280,
+            ease: 'inQuad',
           })
         }
+
+        /* releaseFrom — fired at the START of the next transit step,
+           BEFORE the dot has cleared the bubble's bounds. The bubble
+           "bubbles up" — inflates well beyond its resting size — and
+           the dot re-emerges (fades back in) inside the bubble. Once
+           the dot crosses the bound, departFrom() shrinks the bubble
+           the rest of the way back to normal. */
+        function releaseFrom(circle: SVGCircleElement | null) {
+          if (!circle) return
+          // Inflate the bubble (the "bubbling" phase). Doesn't settle
+          // here — departFrom() runs the second half once the dot has
+          // physically left.
+          animate(circle, {
+            scale: [1.04, 1.32],
+            duration: 700,
+            ease: 'outQuad',
+          })
+          // Dot + aura emerge from inside the bubble, with a small
+          // delay so they appear around the moment the bubble peaks.
+          animate(dot, {
+            opacity: [0, 1],
+            duration: 420,
+            delay: 220,
+            ease: 'outQuad',
+          })
+          animate(aura, {
+            opacity: [0, 0.35],
+            duration: 420,
+            delay: 220,
+            ease: 'outQuad',
+          })
+        }
+
         /* departFrom — dot has fully cleared this bubble's bounds.
-           Fill reverts (clears inline so CSS default var(--grape)
-           takes over with the same fade), and an inverted squish
-           recoils the bubble before it settles back to scale 1. */
+           Bubble deflates back to scale 1 with an elastic recoil; fill
+           reverts to grape (CSS transition fades it). onComplete
+           clears inline transform so the CSS :hover scale(1.12)
+           keeps working between traversal events. */
         function departFrom(circle: SVGCircleElement | null) {
           if (!circle) return
           circle.style.fill = ''
           animate(circle, {
-            scale: [1, 0.9, 1],
-            duration: 600,
+            scale: [1.32, 1],
+            duration: 550,
             ease: 'outElastic(1.2, 0.5)',
             onComplete: () => { circle.style.transform = '' },
           })
         }
 
-        // Fade the traveller in. Dot starts at Research, so colour
-        // Research crimson immediately to match the dot's position.
+        // Initial state: dot is INVISIBLE (assimilated into Research)
+        // and Research is already coloured crimson + slightly swollen.
         utils.set([dot, aura], { opacity: 0 })
-        animate(dot,  { opacity: [0, 1],   duration: 600 })
-        animate(aura, { opacity: [0, 0.3], duration: 600 })
         arriveAt(researchCircle)
 
-        /* Build a transit step that uses onUpdate to fire arrive/depart
-           the moment the dot's cx actually crosses each bubble's edge,
-           NOT at the start/end of the timeline step. depart fires when
-           the dot is fully OUTSIDE the source bubble (|cx - fromX| >
-           BOUND); arrive fires when the dot first touches the target
-           bubble (|cx - toX| < BOUND). onBegin resets the per-iteration
-           latches so the loop replays cleanly. */
+        /* Build a transit step:
+            onBegin   — bubble that we're leaving "bubbles up" and the
+                        dot re-emerges from inside it (releaseFrom).
+            onUpdate  — when the dot's cx clears the source bubble's
+                        bounds, departFrom() shrinks the bubble back
+                        to normal and reverts its colour. When cx
+                        first touches the target bubble's bounds,
+                        arriveAt() assimilates the dot into it. */
         function makeTransit(
           fromCircle: SVGCircleElement | null, fromX: number,
           toCircle:   SVGCircleElement | null, toX:   number,
@@ -203,7 +239,11 @@ export default function ConceptView() {
           return {
             cx: toX,
             duration,
-            onBegin:  () => { departed = false; arrived = false },
+            onBegin: () => {
+              departed = false
+              arrived  = false
+              releaseFrom(fromCircle)
+            },
             onUpdate: () => {
               const cx = parseFloat(dot.getAttribute('cx') || '0')
               if (!departed && Math.abs(cx - fromX) > BOUND) {
@@ -231,7 +271,9 @@ export default function ConceptView() {
         traverse.add([dot, aura], makeTransit(developmentCircle, 670, researchCircle, 130, 1800))  // warp back
 
         // Breathing pulse — independent loops. Dot subtly grows; aura
-        // grows further and fades to give the "breath halo" feel.
+        // grows further. Opacity is NO LONGER driven by the breath
+        // (arriveAt / releaseFrom now own it) so the assimilation /
+        // re-emergence transitions don't fight the breath cycle.
         animate(dot, {
           r: [6, 8.5, 6],
           duration: 2200,
@@ -239,8 +281,7 @@ export default function ConceptView() {
           loop: true,
         })
         animate(aura, {
-          r:       [12, 22, 12],
-          opacity: [0.35, 0.05, 0.35],
+          r: [12, 22, 12],
           duration: 2200,
           ease: 'inOutSine',
           loop: true,
