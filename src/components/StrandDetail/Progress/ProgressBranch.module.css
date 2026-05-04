@@ -1,0 +1,6 @@
+/* Branch group — cursor + hit-target. The branch lines, returns and
+   nodes themselves carry presentational SVG attributes inline because
+   each output type uses different colours / shapes. */
+.branch {
+  cursor: pointer;
+}

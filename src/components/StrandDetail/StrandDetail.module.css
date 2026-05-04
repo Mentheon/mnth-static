@@ -1,0 +1,67 @@
+.page {
+  max-width: 1280px;
+  margin: 1.5rem auto 5rem;
+  padding: 0 3rem;
+  position: relative;
+}
+
+.breadcrumb {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.75rem 3rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(47, 1, 71, 0.55);
+}
+
+.breadcrumb a,
+.breadcrumb button {
+  color: #2F0147;
+  text-decoration: none;
+  opacity: 0.7;
+  background: none;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.breadcrumb a:hover,
+.breadcrumb button:hover {
+  opacity: 1;
+  color: #A30B37;
+}
+
+.sep {
+  padding: 0 0.6em;
+  opacity: 0.4;
+}
+
+.frame {
+  position: relative;
+  background: #FFECE1;
+  border: 2px solid #2F0147;
+  padding: 3rem 3rem 3.5rem;
+}
+
+.cornerCrop {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.cornerTL { top: -14px; left: -14px;  border-top:    3px solid #A30B37; border-left:  3px solid #A30B37; }
+.cornerTR { top: -14px; right: -14px; border-top:    3px solid #A30B37; border-right: 3px solid #A30B37; }
+.cornerBL { bottom: -14px; left: -14px;  border-bottom: 3px solid #A30B37; border-left:  3px solid #A30B37; }
+.cornerBR { bottom: -14px; right: -14px; border-bottom: 3px solid #A30B37; border-right: 3px solid #A30B37; }
+
+@media (max-width: 880px) {
+  .breadcrumb,
+  .page { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .frame { padding: 2rem 1.5rem 2.5rem; }
+}

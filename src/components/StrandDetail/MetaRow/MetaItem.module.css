@@ -1,0 +1,16 @@
+.item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(47, 1, 71, 0.55);
+  line-height: 1.3;
+}
+
+.value {
+  display: block;
+  color: #2F0147;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+  letter-spacing: 0.04em;
+}

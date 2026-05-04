@@ -6,6 +6,7 @@ import StrandPanel from './components/StrandPanel'
 import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
+import StrandDetail from './components/StrandDetail'
 import { STRANDS } from './data/strands'
 
 function useHash() {
@@ -20,10 +21,23 @@ function useHash() {
 
 export default function App() {
   const hash = useHash()
+  // `#strand` (no id) and `#strand/<id>` both route to the detail view.
+  const isStrandRoute = hash === '#strand' || hash.startsWith('#strand/')
   const page =
     hash === '#who'     ? 'who'     :
     hash === '#concept' ? 'concept' :
+    isStrandRoute       ? 'strand'  :
     'home'
+
+  // Pick the strand the route is asking for. If `#strand/<id>` matches a
+  // known strand, use that; otherwise fall back to the first strand with
+  // populated `progress` data (currently Kindreon, the VR Reminiscence
+  // Therapy demo).
+  const requestedId = hash.startsWith('#strand/') ? hash.slice('#strand/'.length) : null
+  const detailStrand =
+    (requestedId ? STRANDS.find(s => s.id === requestedId) : null)
+    ?? STRANDS.find(s => s.progress)
+    ?? STRANDS[0]
 
   // Selected R&D Strand id, shared between the StrandPanel, the
   // RDStrands buttons, and the Helix — scrolling the helix snaps to a
@@ -39,6 +53,8 @@ export default function App() {
         <WhoPage />
       ) : page === 'concept' ? (
         <ConceptView />
+      ) : page === 'strand' && detailStrand.progress ? (
+        <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
       ) : (
         <>
           <HeroSection />

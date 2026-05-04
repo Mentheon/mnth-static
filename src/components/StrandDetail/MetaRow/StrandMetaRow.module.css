@@ -1,0 +1,9 @@
+.row {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed rgba(47, 1, 71, 0.15);
+  flex-wrap: wrap;
+}

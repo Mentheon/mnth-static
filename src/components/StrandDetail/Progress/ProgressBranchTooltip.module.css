@@ -1,0 +1,34 @@
+.tip {
+  position: absolute;
+  background: #2F0147;
+  color: #FFECE1;
+  padding: 0.7rem 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(-8px);
+  transition: opacity 0.18s ease;
+  max-width: 240px;
+  letter-spacing: 0.03em;
+  z-index: 5;
+}
+.tip.visible { opacity: 1; }
+
+.title {
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.meta {
+  color: rgba(255, 236, 225, 0.55);
+  text-transform: uppercase;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.4rem;
+}

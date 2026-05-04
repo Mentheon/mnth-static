@@ -1,0 +1,7 @@
+.section { margin-bottom: 3.5rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}

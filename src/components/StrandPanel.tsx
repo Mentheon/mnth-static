@@ -46,7 +46,18 @@ export default function StrandPanel({ strand, isOpen, onClose }: StrandPanelProp
         </div>
 
         <div className={styles.ctaRow}>
-          <a href={strand.href} className={styles.ctaLink}>
+          <a
+            href={`#strand/${strand.id}`}
+            className={styles.ctaLink}
+            onClick={(e) => {
+              // Belt-and-braces: scroll-snap parents in ConceptView can
+              // swallow the default hash navigation in some browsers.
+              // Drive the hash change ourselves so the route fires
+              // reliably from any context.
+              e.preventDefault()
+              window.location.hash = `#strand/${strand.id}`
+            }}
+          >
             See full work strand
             <span className={styles.ctaArrow} aria-hidden="true">→</span>
           </a>

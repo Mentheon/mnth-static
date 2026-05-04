@@ -1,0 +1,7 @@
+/* ProgressPhaseNode — visual styling lives almost entirely in the
+   inline SVG attributes (fill / stroke). The class hooks below exist
+   so the entrance hook can target each phase tier by status. */
+.node            { /* base — shared transforms */ }
+.past            { /* past phases — solid plum */ }
+.current         { /* current phase — crimson with pulse */ }
+.projected       { /* projected phase — outline only, dashed stroke */ }

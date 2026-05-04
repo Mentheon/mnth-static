@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mentheon — Design Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap"
+  />
+
+  <!--
+    ============================================================
+    MENTHEON — Static design reference
+    ============================================================
+    This file is a single, self-contained snapshot of the live
+    React app at /src so it can be handed to Claude (or another
+    designer) as context without running the build.
+
+    Source-of-truth React components live in:
+      src/App.tsx
+      src/components/{Header, GridNav, HeroSection, HeroIconsWithContent,
+                      IconCircle, RDStrands, StrandIcon, StrandPanel,
+                      WhoPage, PersonIcon, PersonPanel}.tsx
+      src/data/{strands, people}.ts
+      src/index.css
+
+    The page contains FOUR labelled sections so all key UI states
+    are visible on one scroll:
+      1. HOME — default (Research selected, no strand panel open)
+      2. HOME — R&D strand panel open (Aevorix)
+      3. WHO  — default (no person panel open)
+      4. WHO  — person panel open (Nicholas Quentin Smith)
+
+    Design tokens (from src/index.css):
+      --bg               #FFECE1   (warm cream — page background)
+      --ink              #2F0147   (deep plum — primary text)
+      --plum             #3F0247   (nav default)
+      --crimson          #A30B37   (selected / accent)
+      --grape            #9C528B   (idle disc / secondary accent)
+      --strand-default   = grape
+      --strand-selected  = crimson
+      --strand-hover-scale  1.12
+
+    Typography:
+      Lato, sans-serif (400 / 700 / 900 weights from Google Fonts).
+      Base body 16px. Hero/section titles 2.5rem.
+
+    Layout:
+      Centred 1100px max-width column. Header is a 518×170 logo
+      block (left) + 3×2 grid nav (right). Mobile breakpoint at
+      1080px — nav stacks under logo and rows wrap.
+
+    Logo:
+      The real logo is /public/web-svg.svg (vector wordmark
+      "Mentheon" + icon block). For this reference doc we render
+      a simplified placeholder with the same footprint so the
+      header geometry is preserved.
+    ============================================================
+  -->
+
+  <style>
+    /* ---------- design tokens (mirrors src/index.css) ---------- */
+    :root {
+      --bg:                #FFECE1;
+      --ink:               #2F0147;
+      --plum:              #3F0247;
+      --crimson:           #A30B37;
+      --grape:             #9C528B;
+      --white:             #FFECE1;
+      --strand-default:    #9C528B;
+      --strand-selected:   #A30B37;
+      --strand-hover-scale: 1.12;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Lato', sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
+    }
+
+    a { color: #FFECE1; text-decoration: none; }
+
+    /* ---------- design-doc chrome (NOT part of the product) ---------- */
+    .design-doc-banner {
+      background: #2F0147;
+      color: #FFECE1;
+      font-family: 'Lato', sans-serif;
+      padding: 14px 24px;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+    .design-doc-banner strong { color: #FFECE1; font-weight: 900; }
+    .design-doc-banner code {
+      background: rgba(255,236,225,0.12);
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-size: 0.78rem;
+    }
+
+    .design-doc-section {
+      border-top: 1px dashed rgba(47,1,71,0.25);
+      position: relative;
+      padding-top: 12px;
+    }
+    .design-doc-label {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(47,1,71,0.92);
+      color: #FFECE1;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      font-weight: 700;
+      backdrop-filter: blur(6px);
+    }
+    .design-doc-label .sub {
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      opacity: 0.75;
+      text-transform: none;
+      margin-left: 12px;
+    }
+
+    /* ---------- header (Header.module.css) ---------- */
+    .header-site {
+      position: relative;
+      width: 100%;
+      height: 170px;
+      background-color: var(--bg);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .header-logo-wrap {
+      position: absolute;
+      top: 6px;
+      left: 0;
+      width: 518px;
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Simplified logo placeholder (real asset: /public/web-svg.svg) */
+    .header-logo {
+      width: 518px;
+      height: 170px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px;
+    }
+    .header-logo-mark {
+      flex-shrink: 0;
+      width: 138px;
+      height: 138px;
+      background: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-logo-mark svg { width: 92px; height: 92px; }
+    .header-logo-word {
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: 3rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+
+    @media (max-width: 1080px) {
+      .header-site {
+        height: auto;
+        padding: 8px 16px 16px;
+      }
+      .header-logo-wrap {
+        position: static;
+        width: 100%;
+        max-width: 518px;
+        margin: 0 auto;
+      }
+    }
+
+    /* ---------- nav (GridNav.module.css) ---------- */
+    .gridnav {
+      position: absolute;
+      top: 16px;
+      right: 0;
+      width: 518px;
+      height: 170px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 4px;
+      font-size: 1.9rem;
+    }
+    .gridnav-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: #FFECE1;
+      font-weight: bold;
+      width: 75%;
+      height: 75%;
+      position: relative;
+      background-color: var(--plum);
+      justify-self: center;
+      align-self: center;
+      transition: background-color 160ms ease;
+    }
+    .gridnav-item:hover { background-color: #520359; }
+    .gridnav-item.is-active { background-color: var(--crimson); }
+    .gridnav-corner-crop {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: 20px;
+      height: 20px;
+      border-top: 3px solid #2F0147;
+      border-left: 3px solid #2F0147;
+    }
+    @media (max-width: 1080px) {
+      .gridnav {
+        position: static;
+        width: 100%;
+        max-width: 518px;
+        margin: 12px auto 0;
+        height: 140px;
+        font-size: 1.3rem;
+      }
+      .gridnav-item { width: 92%; height: 88%; }
+    }
+
+    /* ---------- hero (HeroSection.module.css) ---------- */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .hero-line1 {
+      font-size: 2.5rem;
+      margin-bottom: 0;
+      margin-top: 5rem;
+      color: var(--ink);
+      font-weight: 400;
+      line-height: 1.15;
+    }
+    .hero-line2 {
+      font-size: 2.5rem;
+      margin-top: 1rem;
+      margin-bottom: 0;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .hero-scroll-cue {
+      display: flex;
+      justify-content: center;
+      margin-top: 2rem;
+      color: var(--ink);
+      opacity: 0.55;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .hero-scroll-cue span {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hero-scroll-cue span::before,
+    .hero-scroll-cue span::after {
+      content: '';
+      width: 26px;
+      height: 1px;
+      background: currentColor;
+    }
+    @media (max-width: 1080px) {
+      .hero-line1, .hero-line2 { font-size: 1.6rem; }
+    }
+
+    /* ---------- hero icons (HeroIconsWithContent.module.css) ---------- */
+    .hero-icons-row {
+      display: flex;
+      justify-content: center;
+      gap: 8rem;
+      margin-top: 5rem;
+    }
+    .hero-icon-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero-icon-wrapper {
+      width: 130px;
+      height: 130px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-icon-link {
+      display: inline-block;
+      cursor: pointer;
+    }
+    .hero-icon-label {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 1.5rem;
+      text-align: center;
+      color: var(--ink);
+    }
+    .hero-typed-content {
+      min-height: 100px;
+      margin-top: 5rem;
+      font-size: 2rem;
+      color: var(--ink);
+      text-align: center;
+      padding: 0 1rem;
+    }
+    .hero-caret {
+      display: inline-block;
+      width: 2px;
+      height: 1.8rem;
+      background: var(--ink);
+      margin-left: 4px;
+      vertical-align: -4px;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .hero-status-indicators {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.75rem;
+    }
+    .hero-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ccc;
+      transition: background-color 0.3s;
+    }
+    .hero-indicator.is-active { background-color: var(--crimson); }
+    @media (max-width: 1080px) {
+      .hero-icons-row { gap: 2.5rem; flex-wrap: wrap; }
+    }
+
+    /* ---------- icon circle (IconCircle.module.css) ---------- */
+    .icon-circle {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.1s ease-out, background-color 0.2s ease;
+      transform-origin: center;
+      width: 120px;
+      height: 120px;
+    }
+    .icon-circle--default  { background-color: var(--grape); }
+    .icon-circle--selected { background-color: var(--crimson); }
+    .icon-circle__emoji {
+      font-size: 72px;
+      line-height: 1;
+      font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', EmojiSymbols, sans-serif;
+    }
+
+    /* ---------- R&D / Who section (RDStrands.module.css) ---------- */
+    .rd {
+      text-align: center;
+      padding: 6rem 2rem 8rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      scroll-margin-top: 20px;
+    }
+    .rd-title {
+      font-size: 2.5rem;
+      color: var(--ink);
+      font-weight: 700;
+      margin: 0 0 3.5rem;
+      line-height: 1.15;
+    }
+    .rd-title-thin { font-weight: 400; }
+
+    .rd-row {
+      display: flex;
+      justify-content: center;
+      gap: 8rem;
+      margin-top: 2rem;
+      transition: gap 0.4s ease, margin-top 0.4s ease;
+    }
+    .rd-row.is-collapsed {
+      gap: 4rem;
+      margin-top: 1rem;
+    }
+    .rd-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: opacity 0.35s ease, transform 0.4s ease, max-width 0.4s ease;
+      max-width: 260px;
+      padding: 18px 24px 0;
+    }
+    .rd-group.is-selected {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.85);
+      max-width: 0;
+      pointer-events: none;
+    }
+    .rd-group.is-dimmed { opacity: 0.45; }
+    .rd-group.is-dimmed:hover { opacity: 1; }
+
+    .rd-link {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .svg-disc {
+      width: 130px;
+      height: 130px;
+      display: block;
+      border-radius: 50%;
+      transition: transform 0.2s ease-out, filter 0.25s ease;
+      transform-origin: center;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+      overflow: visible;
+    }
+    .rd-link:hover .svg-disc {
+      transform: scale(var(--strand-hover-scale, 1.12));
+    }
+    .rd-label {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 1.5rem;
+      text-align: center;
+      color: var(--ink);
+    }
+
+    .who-credentials {
+      font-size: 1rem;
+      margin-top: 0.35rem;
+      opacity: 0.7;
+      font-weight: bold;
+      color: var(--ink);
+    }
+
+    @media (max-width: 1080px) {
+      .rd-title { font-size: 1.8rem; }
+      .rd-row { gap: 3rem; flex-wrap: wrap; }
+      .rd-row.is-collapsed { gap: 2rem; }
+    }
+
+    /* ---------- panel (StrandPanel.module.css — shared with PersonPanel) ---------- */
+    .panel {
+      width: 100%;
+      max-width: 1100px;
+      margin: 2rem auto 0;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.4s ease 0.1s, margin-top 0.4s ease;
+      pointer-events: none;
+    }
+    .panel.is-open {
+      max-height: 900px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .panel-inner {
+      position: relative;
+      background-color: #FFECE1;
+      border: 2px solid #2F0147;
+      border-radius: 2px;
+      padding: 3rem 3rem 2.5rem;
+      text-align: left;
+    }
+    .panel-corner-crop {
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      width: 24px;
+      height: 24px;
+      border-top: 3px solid #A30B37;
+      border-left: 3px solid #A30B37;
+    }
+    .panel-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: transparent;
+      border: none;
+      font-size: 2rem;
+      line-height: 1;
+      color: #2F0147;
+      cursor: pointer;
+      padding: 4px 10px;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .panel-close:hover { color: #A30B37; transform: scale(1.1); }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid rgba(47, 1, 71, 0.15);
+      padding-bottom: 2rem;
+    }
+    .panel-header-icon {
+      flex-shrink: 0;
+      width: 125px;
+      height: 125px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(47, 1, 71, 0.25);
+      animation: iconPulse 0.6s ease-out;
+    }
+    @keyframes iconPulse {
+      0%   { transform: scale(0.85); opacity: 0; }
+      60%  { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    .panel-header-text { flex: 1; min-width: 0; }
+    .panel-strand-name {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #2F0147;
+      margin: 0 0 0.4rem;
+      letter-spacing: -0.01em;
+    }
+    .panel-tagline {
+      font-size: 1.2rem;
+      font-style: italic;
+      color: #2F0147;
+      opacity: 0.75;
+      margin: 0;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .theme-card {
+      position: relative;
+      padding: 1.5rem 1.25rem 1.25rem;
+      background-color: rgba(47, 1, 71, 0.04);
+      border-left: 3px solid #9C528B;
+      transition: background-color 0.25s, border-left-color 0.25s, transform 0.25s;
+      animation: cardRise 0.5s ease-out backwards;
+    }
+    .theme-card:nth-child(1) { animation-delay: 0.15s; }
+    .theme-card:nth-child(2) { animation-delay: 0.25s; }
+    .theme-card:nth-child(3) { animation-delay: 0.35s; }
+    .theme-card:nth-child(4) { animation-delay: 0.45s; }
+    @keyframes cardRise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .theme-card:hover {
+      background-color: rgba(163, 11, 55, 0.06);
+      border-left-color: #A30B37;
+      transform: translateX(2px);
+    }
+    .theme-number {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #9C528B;
+      margin-bottom: 0.5rem;
+    }
+    .theme-card:hover .theme-number { color: #A30B37; }
+    .theme-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #2F0147;
+      margin: 0 0 0.5rem;
+      line-height: 1.3;
+    }
+    .theme-description {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #2F0147;
+      opacity: 0.8;
+      margin: 0;
+    }
+
+    .cta-row { display: flex; justify-content: flex-end; }
+    .cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #FFECE1;
+      background-color: #A30B37;
+      padding: 0.85rem 1.75rem;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: background-color 0.2s, gap 0.2s;
+    }
+    .cta-link:hover { background-color: #2F0147; gap: 1rem; }
+    .cta-arrow { display: inline-block; transition: transform 0.2s; }
+    .cta-link:hover .cta-arrow { transform: translateX(3px); }
+
+    @media (max-width: 640px) {
+      .panel-inner { padding: 2rem 1.5rem 1.5rem; }
+      .panel-header { flex-direction: column; text-align: center; gap: 1rem; }
+      .panel-header-icon { width: 90px; height: 90px; }
+      .panel-strand-name { font-size: 1.75rem; }
+      .theme-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .cta-row { justify-content: stretch; }
+      .cta-link { justify-content: center; width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       BANNER — describes what this file is. NOT part of the product.
+       Delete this whole `.design-doc-banner` block when reusing
+       individual sections.
+       ============================================================ -->
+  <div class="design-doc-banner">
+    <strong>MENTHEON · DESIGN REFERENCE</strong> &nbsp;·&nbsp;
+    Static, self-contained snapshot of the live React app for design iteration.
+    Source lives in <code>src/</code>. Four scrollable sections below show every key UI state
+    (default + open panels) on the same page.
+    Page background <code>#FFECE1</code>, ink <code>#2F0147</code>, accent <code>#A30B37</code>,
+    grape <code>#9C528B</code>, plum nav <code>#3F0247</code>. Type: Lato 400 / 700 / 900.
+    Container max-width 1100px.
+  </div>
+
+
+  <!-- ============================================================
+       SECTION 1 — HOME page, default state
+       Hero shows "Research" selected → bold line reads
+       "Digital Health Research". R&D row shows all three discs
+       (Kindreon, Aevorix, Acumentra) in idle grape.
+       Source: src/App.tsx, HeroSection.tsx, RDStrands.tsx
+       ============================================================ -->
+  <section class="design-doc-section" id="state-home-default">
+    <div class="design-doc-label">
+      State 1 / Home — default
+      <span class="sub">hash = "" · hero "Research" selected · no strand panel open</span>
+    </div>
+
+    <header class="header-site">
+      <div class="header-logo-wrap">
+        <!--
+          NOTE: real logo asset is /public/web-svg.svg — a vector wordmark
+          "Mentheon" with a 195×195 icon block on the left. Rendered here
+          as a placeholder of the same total footprint (518×170).
+        -->
+        <div class="header-logo">
+          <div class="header-logo-mark" aria-label="Mentheon mark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFECE1" stroke-width="3"/>
+              <path d="M50 18 L50 82 M18 50 L82 50" stroke="#FFECE1" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="6" fill="#FFECE1"/>
+            </svg>
+          </div>
+          <div class="header-logo-word">Mentheon</div>
+        </div>
+      </div>
+      <nav class="gridnav" aria-label="Primary">
+        <a href="#home"  class="gridnav-item is-active">Home<span class="gridnav-corner-crop" aria-hidden="true"></span></a>
+        <a href="#news"  class="gridnav-item">News</a>
+        <a href="#about" class="gridnav-item">About</a>
+        <a href="#who"   class="gridnav-item">Who?</a>
+        <a href="#what"  class="gridnav-item">What?</a>
+        <a href="#why"   class="gridnav-item">Why?</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="home">
+      <p class="hero-line1">We undertake:</p>
+      <p class="hero-line2">Digital Health Research</p>
+
+      <!--
+        Three icon buttons. The selected one uses crimson; unselected use grape.
+        Behaviour: clicking one switches `selected` and the line2 + typed-content
+        + active-indicator update. (Real app uses useState in HeroSection.tsx.)
+      -->
+      <div class="hero-icons-row">
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="true">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--selected">
+                <span class="icon-circle__emoji">🔬</span>
+              </div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Research</span>
+        </div>
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="false">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--default">
+                <span class="icon-circle__emoji">💻</span>
+              </div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Development</span>
+        </div>
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="false">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--default">
+                <span class="icon-circle__emoji">📋</span>
+              </div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Consultancy</span>
+        </div>
+      </div>
+
+      <!--
+        Typewriter content. Real app cycles through two strings per topic
+        with a blinking caret. Showing first string of "Research" mid-typed.
+      -->
+      <div class="hero-typed-content">
+        Our research pushes the boundaries of digital
+        <span class="hero-caret" aria-hidden="true"></span>
+      </div>
+
+      <div class="hero-status-indicators">
+        <div class="hero-indicator is-active"></div>
+        <div class="hero-indicator"></div>
+        <div class="hero-indicator"></div>
+      </div>
+
+      <div class="hero-scroll-cue">
+        <span>scroll to see our latest work</span>
+      </div>
+    </section>
+
+    <section class="rd" id="rd">
+      <h2 class="rd-title">
+        <span class="rd-title-thin">Our ongoing</span> R&amp;D strands<span class="rd-title-thin">…</span>
+      </h2>
+
+      <div class="rd-row">
+        <!-- Kindreon -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Kindreon">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <g fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round">
+                <circle cx="80" cy="100" r="32"/>
+                <circle cx="120" cy="100" r="32"/>
+                <path d="M 100 108 C 100 108, 92 100, 92 94 C 92 89, 96 86, 100 90 C 104 86, 108 89, 108 94 C 108 100, 100 108, 100 108 Z" fill="#FCE8D5" stroke="none"/>
+                <circle cx="100" cy="55" r="3" fill="#FCE8D5" stroke="none"/>
+                <circle cx="85"  cy="60" r="2" fill="#FCE8D5" stroke="none" opacity="0.7"/>
+                <circle cx="115" cy="60" r="2" fill="#FCE8D5" stroke="none" opacity="0.7"/>
+              </g>
+            </svg>
+          </button>
+          <span class="rd-label">Kindreon</span>
+        </div>
+
+        <!-- Aevorix (id "vitalis" in source) -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Aevorix">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <g stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" fill="none">
+                <path d="M 100 160 L 100 70"/>
+                <path d="M 100 140 Q 75 130, 70 110"/>
+                <path d="M 100 140 Q 125 130, 130 110"/>
+                <path d="M 100 110 Q 80 100, 75 85"/>
+                <path d="M 100 110 Q 120 100, 125 85"/>
+                <path d="M 100 75 Q 90 65, 92 55"/>
+                <path d="M 100 75 Q 110 65, 108 55"/>
+                <circle cx="70"  cy="110" r="5" fill="#FCE8D5" stroke="none"/>
+                <circle cx="130" cy="110" r="5" fill="#FCE8D5" stroke="none"/>
+                <circle cx="75"  cy="85"  r="4" fill="#FCE8D5" stroke="none"/>
+                <circle cx="125" cy="85"  r="4" fill="#FCE8D5" stroke="none"/>
+                <circle cx="92"  cy="55"  r="3" fill="#FCE8D5" stroke="none"/>
+                <circle cx="108" cy="55"  r="3" fill="#FCE8D5" stroke="none"/>
+                <circle cx="100" cy="48"  r="4" fill="#FCE8D5" stroke="none"/>
+                <path d="M 85 160 Q 100 155, 115 160" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </button>
+          <span class="rd-label">Aevorix</span>
+        </div>
+
+        <!-- Acumentra (id "vitrix" in source) -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Acumentra">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="65" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.4"/>
+              <path d="M 45 100 L 70 100 L 78 85 L 88 120 L 98 70 L 108 115 L 118 100 L 155 100"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="100" cy="35"  r="3" fill="#FCE8D5"/>
+              <circle cx="165" cy="100" r="3" fill="#FCE8D5"/>
+              <circle cx="100" cy="165" r="3" fill="#FCE8D5"/>
+              <circle cx="35"  cy="100" r="3" fill="#FCE8D5"/>
+              <circle cx="146" cy="54"  r="2" fill="#FCE8D5" opacity="0.6"/>
+              <circle cx="146" cy="146" r="2" fill="#FCE8D5" opacity="0.6"/>
+              <circle cx="54"  cy="146" r="2" fill="#FCE8D5" opacity="0.6"/>
+              <circle cx="54"  cy="54"  r="2" fill="#FCE8D5" opacity="0.6"/>
+            </svg>
+          </button>
+          <span class="rd-label">Acumentra</span>
+        </div>
+      </div>
+    </section>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 2 — HOME page with R&D strand panel OPEN
+       Demonstrates: selected strand collapses (opacity 0, max-width 0),
+       siblings dim to 0.45 opacity, panel expands below row with
+       crimson corner-crop, header pulse, theme cards, CTA.
+       Showing Aevorix (themes from src/data/strands.ts).
+       ============================================================ -->
+  <section class="design-doc-section" id="state-home-strand-open">
+    <div class="design-doc-label">
+      State 2 / Home — Aevorix strand panel open
+      <span class="sub">selected disc collapses · siblings dim to 0.45 · panel slides in</span>
+    </div>
+
+    <header class="header-site">
+      <div class="header-logo-wrap">
+        <div class="header-logo">
+          <div class="header-logo-mark" aria-label="Mentheon mark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFECE1" stroke-width="3"/>
+              <path d="M50 18 L50 82 M18 50 L82 50" stroke="#FFECE1" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="6" fill="#FFECE1"/>
+            </svg>
+          </div>
+          <div class="header-logo-word">Mentheon</div>
+        </div>
+      </div>
+      <nav class="gridnav" aria-label="Primary">
+        <a href="#home"  class="gridnav-item is-active">Home<span class="gridnav-corner-crop" aria-hidden="true"></span></a>
+        <a href="#news"  class="gridnav-item">News</a>
+        <a href="#about" class="gridnav-item">About</a>
+        <a href="#who"   class="gridnav-item">Who?</a>
+        <a href="#what"  class="gridnav-item">What?</a>
+        <a href="#why"   class="gridnav-item">Why?</a>
+      </nav>
+    </header>
+
+    <!-- Hero is unchanged when a strand is open; included for layout reference -->
+    <section class="hero">
+      <p class="hero-line1">We undertake:</p>
+      <p class="hero-line2">Digital Health Research</p>
+
+      <div class="hero-icons-row">
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="true">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--selected"><span class="icon-circle__emoji">🔬</span></div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Research</span>
+        </div>
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="false">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--default"><span class="icon-circle__emoji">💻</span></div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Development</span>
+        </div>
+        <div class="hero-icon-group">
+          <a href="#" class="hero-icon-link" aria-pressed="false">
+            <div class="hero-icon-wrapper">
+              <div class="icon-circle icon-circle--default"><span class="icon-circle__emoji">📋</span></div>
+            </div>
+          </a>
+          <span class="hero-icon-label">Consultancy</span>
+        </div>
+      </div>
+
+      <div class="hero-typed-content">
+        Cutting-edge methods and pioneering discoveries.<span class="hero-caret" aria-hidden="true"></span>
+      </div>
+
+      <div class="hero-status-indicators">
+        <div class="hero-indicator is-active"></div>
+        <div class="hero-indicator"></div>
+        <div class="hero-indicator"></div>
+      </div>
+
+      <div class="hero-scroll-cue"><span>scroll to see our latest work</span></div>
+    </section>
+
+    <section class="rd">
+      <h2 class="rd-title">
+        <span class="rd-title-thin">Our ongoing</span> R&amp;D strands<span class="rd-title-thin">…</span>
+      </h2>
+
+      <div class="rd-row is-collapsed">
+        <!-- Kindreon — dimmed sibling -->
+        <div class="rd-group is-dimmed">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Kindreon">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <g fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round">
+                <circle cx="80" cy="100" r="32"/>
+                <circle cx="120" cy="100" r="32"/>
+                <path d="M 100 108 C 100 108, 92 100, 92 94 C 92 89, 96 86, 100 90 C 104 86, 108 89, 108 94 C 108 100, 100 108, 100 108 Z" fill="#FCE8D5" stroke="none"/>
+                <circle cx="100" cy="55" r="3" fill="#FCE8D5" stroke="none"/>
+                <circle cx="85"  cy="60" r="2" fill="#FCE8D5" stroke="none" opacity="0.7"/>
+                <circle cx="115" cy="60" r="2" fill="#FCE8D5" stroke="none" opacity="0.7"/>
+              </g>
+            </svg>
+          </button>
+          <span class="rd-label">Kindreon</span>
+        </div>
+
+        <!-- Aevorix — SELECTED, collapses to 0 width (kept in DOM but hidden) -->
+        <div class="rd-group is-selected">
+          <button type="button" class="rd-link" aria-expanded="true" aria-label="Aevorix">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#A30B37"/>
+            </svg>
+          </button>
+          <span class="rd-label">Aevorix</span>
+        </div>
+
+        <!-- Acumentra — dimmed sibling -->
+        <div class="rd-group is-dimmed">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Acumentra">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="65" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.4"/>
+              <path d="M 45 100 L 70 100 L 78 85 L 88 120 L 98 70 L 108 115 L 118 100 L 155 100"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="100" cy="35"  r="3" fill="#FCE8D5"/>
+              <circle cx="165" cy="100" r="3" fill="#FCE8D5"/>
+              <circle cx="100" cy="165" r="3" fill="#FCE8D5"/>
+              <circle cx="35"  cy="100" r="3" fill="#FCE8D5"/>
+            </svg>
+          </button>
+          <span class="rd-label">Acumentra</span>
+        </div>
+      </div>
+
+      <!-- Strand panel — open. Re-uses the same structure as PersonPanel. -->
+      <div class="panel is-open" id="strand-panel" aria-hidden="false">
+        <div class="panel-inner">
+          <div class="panel-corner-crop" aria-hidden="true"></div>
+          <button class="panel-close" aria-label="Close strand panel">×</button>
+
+          <div class="panel-header">
+            <div class="panel-header-icon">
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;height:100%;display:block;">
+                <circle cx="100" cy="100" r="95" fill="#A30B37"/>
+                <g stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" fill="none">
+                  <path d="M 100 160 L 100 70"/>
+                  <path d="M 100 140 Q 75 130, 70 110"/>
+                  <path d="M 100 140 Q 125 130, 130 110"/>
+                  <path d="M 100 110 Q 80 100, 75 85"/>
+                  <path d="M 100 110 Q 120 100, 125 85"/>
+                  <path d="M 100 75 Q 90 65, 92 55"/>
+                  <path d="M 100 75 Q 110 65, 108 55"/>
+                  <circle cx="70"  cy="110" r="5" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="130" cy="110" r="5" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="75"  cy="85"  r="4" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="125" cy="85"  r="4" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="92"  cy="55"  r="3" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="108" cy="55"  r="3" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="100" cy="48"  r="4" fill="#FCE8D5" stroke="none"/>
+                </g>
+              </svg>
+            </div>
+            <div class="panel-header-text">
+              <h2 class="panel-strand-name">Aevorix</h2>
+              <p class="panel-tagline">Technology for enduring vitality</p>
+            </div>
+          </div>
+
+          <div class="theme-grid">
+            <div class="theme-card">
+              <div class="theme-number">01</div>
+              <h3 class="theme-title">Longevity modelling</h3>
+              <p class="theme-description">Quantitative frameworks for healthspan, frailty trajectories and preventative intervention points.</p>
+            </div>
+            <div class="theme-card">
+              <div class="theme-number">02</div>
+              <h3 class="theme-title">Assistive innovation</h3>
+              <p class="theme-description">Devices and software enabling independence and dignity in later life.</p>
+            </div>
+            <div class="theme-card">
+              <div class="theme-number">03</div>
+              <h3 class="theme-title">Cognitive preservation</h3>
+              <p class="theme-description">Research into sustained cognitive function through digital and behavioural tools.</p>
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <a href="#/strands/vitalis" class="cta-link">
+              See full work strand
+              <span class="cta-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 3 — WHO page, default state
+       Reuses the .rd / .rd-row layout. Three identical PersonIcon
+       silhouettes in idle grape with name + credentials beneath.
+       Source: src/components/WhoPage.tsx, src/data/people.ts
+       ============================================================ -->
+  <section class="design-doc-section" id="state-who-default">
+    <div class="design-doc-label">
+      State 3 / Who? — default
+      <span class="sub">hash = "#who" · nav highlights "Who?" · no person panel open</span>
+    </div>
+
+    <header class="header-site">
+      <div class="header-logo-wrap">
+        <div class="header-logo">
+          <div class="header-logo-mark" aria-label="Mentheon mark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFECE1" stroke-width="3"/>
+              <path d="M50 18 L50 82 M18 50 L82 50" stroke="#FFECE1" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="6" fill="#FFECE1"/>
+            </svg>
+          </div>
+          <div class="header-logo-word">Mentheon</div>
+        </div>
+      </div>
+      <nav class="gridnav" aria-label="Primary">
+        <a href="#home"  class="gridnav-item">Home</a>
+        <a href="#news"  class="gridnav-item">News</a>
+        <a href="#about" class="gridnav-item">About</a>
+        <a href="#who"   class="gridnav-item is-active">Who?<span class="gridnav-corner-crop" aria-hidden="true"></span></a>
+        <a href="#what"  class="gridnav-item">What?</a>
+        <a href="#why"   class="gridnav-item">Why?</a>
+      </nav>
+    </header>
+
+    <section class="rd" id="who">
+      <h2 class="rd-title">
+        <span class="rd-title-thin">Our</span> people<span class="rd-title-thin">…</span>
+      </h2>
+
+      <div class="rd-row">
+        <!-- Nicholas Quentin Smith -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Nicholas Quentin Smith">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+              <circle cx="78"  cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="58"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="122" cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+              <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="rd-label">Nicholas Quentin<br/>Smith</span>
+          <span class="who-credentials">(MSc, BSc)</span>
+        </div>
+
+        <!-- Dr Toby Edward Laycock -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Dr Toby Edward Laycock">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+              <circle cx="78"  cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="58"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="122" cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+              <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="rd-label">Dr Toby Edward<br/>Laycock</span>
+          <span class="who-credentials">(BDS)</span>
+        </div>
+
+        <!-- Rhys Jason Hook -->
+        <div class="rd-group">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Rhys Jason Hook">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+              <circle cx="78"  cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="58"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="122" cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+              <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+              <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="rd-label">Rhys Jason<br/>Hook</span>
+          <span class="who-credentials">(MSc, BSc)</span>
+        </div>
+      </div>
+    </section>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 4 — WHO page with person panel OPEN
+       Same panel pattern as the strand panel; the only differences
+       are: header icon uses PersonIcon silhouette (still crimson when
+       selected), CTA label is "Read full profile". Showing Nicholas.
+       ============================================================ -->
+  <section class="design-doc-section" id="state-who-person-open">
+    <div class="design-doc-label">
+      State 4 / Who? — Nicholas Quentin Smith profile open
+      <span class="sub">person panel re-uses StrandPanel layout · CTA reads "Read full profile"</span>
+    </div>
+
+    <header class="header-site">
+      <div class="header-logo-wrap">
+        <div class="header-logo">
+          <div class="header-logo-mark" aria-label="Mentheon mark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFECE1" stroke-width="3"/>
+              <path d="M50 18 L50 82 M18 50 L82 50" stroke="#FFECE1" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="6" fill="#FFECE1"/>
+            </svg>
+          </div>
+          <div class="header-logo-word">Mentheon</div>
+        </div>
+      </div>
+      <nav class="gridnav" aria-label="Primary">
+        <a href="#home"  class="gridnav-item">Home</a>
+        <a href="#news"  class="gridnav-item">News</a>
+        <a href="#about" class="gridnav-item">About</a>
+        <a href="#who"   class="gridnav-item is-active">Who?<span class="gridnav-corner-crop" aria-hidden="true"></span></a>
+        <a href="#what"  class="gridnav-item">What?</a>
+        <a href="#why"   class="gridnav-item">Why?</a>
+      </nav>
+    </header>
+
+    <section class="rd">
+      <h2 class="rd-title">
+        <span class="rd-title-thin">Our</span> people<span class="rd-title-thin">…</span>
+      </h2>
+
+      <div class="rd-row is-collapsed">
+        <!-- Nicholas — SELECTED, collapses out -->
+        <div class="rd-group is-selected">
+          <button type="button" class="rd-link" aria-expanded="true" aria-label="Nicholas Quentin Smith">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#A30B37"/>
+            </svg>
+          </button>
+          <span class="rd-label">Nicholas Quentin<br/>Smith</span>
+          <span class="who-credentials">(MSc, BSc)</span>
+        </div>
+
+        <!-- Toby — dimmed -->
+        <div class="rd-group is-dimmed">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Dr Toby Edward Laycock">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+              <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+              <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="rd-label">Dr Toby Edward<br/>Laycock</span>
+          <span class="who-credentials">(BDS)</span>
+        </div>
+
+        <!-- Rhys — dimmed -->
+        <div class="rd-group is-dimmed">
+          <button type="button" class="rd-link" aria-expanded="false" aria-label="Rhys Jason Hook">
+            <svg class="svg-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#9C528B"/>
+              <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+              <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+              <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                    fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="rd-label">Rhys Jason<br/>Hook</span>
+          <span class="who-credentials">(MSc, BSc)</span>
+        </div>
+      </div>
+
+      <div class="panel is-open" id="people-panel" aria-hidden="false">
+        <div class="panel-inner">
+          <div class="panel-corner-crop" aria-hidden="true"></div>
+          <button class="panel-close" aria-label="Close person panel">×</button>
+
+          <div class="panel-header">
+            <div class="panel-header-icon">
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;height:100%;display:block;">
+                <circle cx="100" cy="100" r="95" fill="#A30B37"/>
+                <circle cx="100" cy="100" r="72" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.35"/>
+                <circle cx="78"  cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+                <circle cx="100" cy="58"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+                <circle cx="122" cy="62"  r="2.5" fill="#FCE8D5" opacity="0.7"/>
+                <circle cx="100" cy="95"  r="18" fill="none" stroke="#FCE8D5" stroke-width="4"/>
+                <path d="M 68 145 C 68 125, 82 118, 100 118 C 118 118, 132 125, 132 145"
+                      fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="panel-header-text">
+              <h2 class="panel-strand-name">Nicholas Quentin Smith</h2>
+              <p class="panel-tagline">(MSc, BSc) · Founder &amp; Director of Research</p>
+            </div>
+          </div>
+
+          <div class="theme-grid">
+            <div class="theme-card">
+              <div class="theme-number">01</div>
+              <h3 class="theme-title">Research leadership</h3>
+              <p class="theme-description">Directs the organisation's R&amp;D programme and sets the scientific agenda across all work strands.</p>
+            </div>
+            <div class="theme-card">
+              <div class="theme-number">02</div>
+              <h3 class="theme-title">Digital health methods</h3>
+              <p class="theme-description">Designs rigorous, mixed-methods studies to evaluate software-driven interventions in real-world care settings.</p>
+            </div>
+            <div class="theme-card">
+              <div class="theme-number">03</div>
+              <h3 class="theme-title">Partnerships</h3>
+              <p class="theme-description">Builds collaborations with clinical, academic and industry partners to accelerate translation into practice.</p>
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <a href="#/people/nicholas" class="cta-link">
+              Read full profile
+              <span class="cta-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+</body>
+</html>

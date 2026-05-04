@@ -1,0 +1,31 @@
+.item {
+  position: relative;
+  padding: 1.5rem 1.5rem 1.5rem 3.2rem;
+  background: rgba(47, 1, 71, 0.04);
+  border-left: 3px solid #9C528B;
+  transition: border-left-color 0.2s, background 0.2s;
+}
+
+.item:hover {
+  border-left-color: #A30B37;
+  background: rgba(163, 11, 55, 0.05);
+}
+
+.num {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #9C528B;
+}
+
+.item:hover .num { color: #A30B37; }
+
+.text {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #2F0147;
+  margin: 0;
+}

@@ -1,0 +1,29 @@
+.title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9C528B;
+  font-weight: 700;
+  margin: 0 0 1.2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.8em;
+}
+
+.title::before {
+  content: '';
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: #9C528B;
+  transform: translateY(-3px);
+}
+
+.num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(47, 1, 71, 0.55);
+  font-weight: 500;
+  margin-left: auto;
+}

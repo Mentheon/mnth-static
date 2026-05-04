@@ -1,0 +1,2099 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mentheon</title>
+<meta name="description" content="Digital Health Solutions - VR-RT and more" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
+<style>
+  /* ===== tokens pulled directly from the uploaded source ===== */
+  :root {
+    --bg:        #FFECE1;   /* globals.css body background */
+    --ink:       #2F0147;   /* headline ink (HeroSection) */
+    --plum:      #3F0247;   /* inactive nav tile (GridNav) */
+    --crimson:   #A30B37;   /* active nav tile + selected icon colour (IconCircle) */
+    --grape:     #9C528B;   /* default icon disc colour (IconCircle selectedColour) */
+    --white:     #FFECE1;
+    /* tweakable strand disc colours */
+    --strand-default:  #9C528B;
+    --strand-selected: #A30B37;
+    --strand-hover-scale: 1.12;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+  a { color: #FFECE1; text-decoration: none; }
+
+  /* ===== Header: 170px tall, logo 518×170 left, GridNav 518×170 right ===== */
+  header.site {
+    position: relative;
+    width: 100%;
+    height: 170px;
+    background-color: var(--bg);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .logo-wrap {
+    position: absolute;
+    top: 6px;
+    left: 0;
+    width: 518px;
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-wrap img {
+    width: 518px;
+    height: 170px;
+    display: block;
+  }
+
+  /* GridNav.module.css — ported literally */
+  .gridContainer {
+    position: absolute;
+    top: 16px;
+    right: 0;
+    width: 518px;
+    height: 170px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 4px;
+    font-size: 1.9rem;
+  }
+  .navItem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #FFECE1;
+    font-weight: bold;
+    width: 75%;
+    height: 75%;
+    position: relative;
+    background-color: var(--plum);
+    justify-self: center;
+    align-self: center;
+    transition: background-color 160ms ease;
+  }
+  .navItem:hover { background-color: #520359; }
+  .navItem.active { background-color: var(--crimson); }
+  .cornerCrop {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 20px;
+    height: 20px;
+    border-top: 3px solid #2F0147;
+    border-left: 3px solid #2F0147;
+  }
+
+  /* ===== Hero section (HeroSection.tsx) ===== */
+  section.hero {
+    text-align: center;
+    padding: 4rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .hero .line1 {
+    font-size: 2.5rem;
+    margin-bottom: 0;
+    margin-top: 0;
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+  .hero .line2 {
+    font-size: 2.5rem;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  /* HeroIcons.module.css — ported */
+  .iconsRow {
+    display: flex;
+    justify-content: center;
+    gap: 8rem;
+    margin-top: 2rem;
+  }
+  .iconGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .iconWrapper {
+    width: 130px;
+    height: 130px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .iconLink {
+    display: inline-block;
+    cursor: pointer;
+  }
+  .label {
+    margin-top: 1rem;
+    font-weight: bold;
+    font-size: 1.5rem;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  /* IconCircle.module.css — ported + default disc colour */
+  .circle {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    background-color: var(--grape);
+    transition: transform 0.15s ease-out, background-color 0.2s ease;
+    width: 120px;
+    height: 120px;
+    transform-origin: center;
+  }
+  .circle .emoji {
+    font-size: 72px;
+    line-height: 1;
+    /* Apple color emoji font stack so icons match uploaded look */
+    font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Android Emoji',EmojiSymbols,sans-serif;
+  }
+  .iconLink:hover .circle {
+    transform: scale(1.12);
+  }
+  .iconLink.selected .circle {
+    background-color: var(--crimson);
+    width: 125px;
+    height: 125px;
+  }
+
+  /* Typed content region (HeroIcons.module.css .typedContent) */
+  .typedContent {
+    min-height: 100px;
+    margin-top: 5rem;
+    font-size: 2rem;
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    text-align: center;
+    padding: 0 1rem;
+  }
+  .typedContent .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.8rem;
+    background: var(--ink);
+    margin-left: 4px;
+    vertical-align: -4px;
+    animation: blink 1s step-start infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Status indicator dots (ContentDisplay.module.css) */
+  .statusIndicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+  }
+  .indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+    transition: background-color 0.3s;
+  }
+  .activeIndicator { background-color: var(--crimson); }
+
+  /* ===== Scrolled view: R&D strands — same visual system ===== */
+  section.rd {
+    text-align: center;
+    padding: 6rem 2rem 8rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    scroll-margin-top: 20px;
+  }
+  .rd .rdTitle {
+    font-size: 2.5rem;
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    font-weight: 700;
+    margin: 0 0 3.5rem;
+    line-height: 1.15;
+  }
+  .rd .rdTitle .thin { font-weight: 400; }
+
+  /* ----- R&D row: collapses on select (HeroIcons.module.css) ----- */
+  .rdRow {
+    display: flex;
+    justify-content: center;
+    gap: 8rem;
+    margin-top: 2rem;
+    transition: gap 0.4s ease, margin-top 0.4s ease;
+  }
+  .rdRow.collapsed { gap: 4rem; margin-top: 1rem; }
+
+  .rdGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: opacity 0.35s ease, transform 0.4s ease, max-width 0.4s ease;
+    /* widened + no overflow clipping so the disc can grow freely on hover */
+    max-width: 260px;
+    padding: 18px 24px 0;
+  }
+  .rdGroup.selected {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.85);
+    max-width: 0;
+    pointer-events: none;
+  }
+  .rdGroup.dimmed { opacity: 0.45; }
+  .rdGroup.dimmed:hover { opacity: 1; }
+
+  .rdLink {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  /* SVG disc — the svg IS the coloured circle (fills the 130px wrapper) */
+  .svgDisc {
+    width: 130px;
+    height: 130px;
+    display: block;
+    border-radius: 50%;
+    transition: transform 0.2s ease-out, color 0.25s ease, filter 0.25s ease;
+    transform-origin: center;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+    /* drives the inner `fill="currentColor"` on the strand-bg circle */
+    color: var(--strand-default, #9C528B);
+    overflow: visible;
+  }
+  .rdLink:hover .svgDisc { transform: scale(var(--strand-hover-scale, 1.12)); }
+  .rdLink[aria-expanded="true"] .svgDisc,
+  .rdGroup.active .svgDisc { color: var(--strand-selected, #A30B37); }
+
+  /* ===== StrandPanel (StrandPanel.module.css) ===== */
+  .panel {
+    width: 100%;
+    max-width: 1100px;
+    margin: 2rem auto 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, opacity 0.4s ease 0.1s, margin-top 0.4s ease;
+    pointer-events: none;
+  }
+  .panel.open {
+    max-height: 900px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .panelInner {
+    position: relative;
+    background-color: #FFECE1;
+    border: 2px solid #2F0147;
+    border-radius: 2px;
+    padding: 3rem 3rem 2.5rem;
+    font-family: 'Lato', sans-serif;
+    text-align: left;
+  }
+  .panelInner .cornerCropPanel {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    width: 24px;
+    height: 24px;
+    border-top: 3px solid #A30B37;
+    border-left: 3px solid #A30B37;
+  }
+  .closeButton {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    color: #2F0147;
+    cursor: pointer;
+    padding: 4px 10px;
+    transition: color 0.2s, transform 0.2s;
+  }
+  .closeButton:hover { color: #A30B37; transform: scale(1.1); }
+
+  .panelHeader {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(47, 1, 71, 0.15);
+    padding-bottom: 2rem;
+  }
+  .headerIconCircle {
+    flex-shrink: 0;
+    width: 125px;
+    height: 125px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(47, 1, 71, 0.25);
+    animation: iconPulse 0.6s ease-out;
+    overflow: hidden;
+    background-color: transparent;
+  }
+  .headerIconCircle img { width: 100%; height: 100%; display: block; }
+
+  @keyframes iconPulse {
+    0%   { transform: scale(0.85); opacity: 0; }
+    60%  { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  .headerText { flex: 1; min-width: 0; }
+  .strandName {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2F0147;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .tagline {
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #2F0147;
+    opacity: 0.75;
+    margin: 0;
+  }
+
+  .themeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .themeCard {
+    position: relative;
+    padding: 1.5rem 1.25rem 1.25rem;
+    background-color: rgba(47, 1, 71, 0.04);
+    border-left: 3px solid #9C528B;
+    transition: background-color 0.25s, border-left-color 0.25s, transform 0.25s;
+    animation: cardRise 0.5s ease-out backwards;
+  }
+  .themeCard:nth-child(1) { animation-delay: 0.15s; }
+  .themeCard:nth-child(2) { animation-delay: 0.25s; }
+  .themeCard:nth-child(3) { animation-delay: 0.35s; }
+  .themeCard:nth-child(4) { animation-delay: 0.45s; }
+  @keyframes cardRise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .themeCard:hover {
+    background-color: rgba(163, 11, 55, 0.06);
+    border-left-color: #A30B37;
+    transform: translateX(2px);
+  }
+  .themeNumber {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: #9C528B;
+    margin-bottom: 0.5rem;
+  }
+  .themeCard:hover .themeNumber { color: #A30B37; }
+  .themeTitle {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2F0147;
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+  .themeDescription {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #2F0147;
+    opacity: 0.8;
+    margin: 0;
+  }
+  .ctaRow { display: flex; justify-content: flex-end; }
+  .ctaLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #FFECE1;
+    background-color: #A30B37;
+    padding: 0.85rem 1.75rem;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background-color 0.2s, gap 0.2s;
+  }
+  .ctaLink:hover { background-color: #2F0147; gap: 1rem; }
+  .ctaArrow { display: inline-block; transition: transform 0.2s; }
+  .ctaLink:hover .ctaArrow { transform: translateX(3px); }
+
+  @media (max-width: 640px) {
+    .panelInner { padding: 2rem 1.5rem 1.5rem; }
+    .panelHeader { flex-direction: column; text-align: center; gap: 1rem; }
+    .headerIconCircle { width: 90px; height: 90px; }
+    .strandName { font-size: 1.75rem; }
+    .themeGrid { grid-template-columns: 1fr; gap: 1rem; }
+    .ctaRow { justify-content: stretch; }
+    .ctaLink { justify-content: center; width: 100%; }
+  }
+
+  /* Scroll hint between the two views */
+  .scrollCue {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+    color: var(--ink);
+    opacity: 0.55;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .scrollCue span { display: inline-flex; align-items: center; gap: 10px; }
+  .scrollCue span::before,
+  .scrollCue span::after {
+    content: ""; width: 26px; height: 1px; background: currentColor;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1080px) {
+    header.site { height: auto; padding: 8px 16px 16px; }
+    .logo-wrap { position: static; width: 100%; max-width: 518px; margin: 0 auto; }
+    .gridContainer { position: static; width: 100%; max-width: 518px; margin: 12px auto 0; height: 140px; font-size: 1.3rem; }
+    .navItem { width: 92%; height: 88%; }
+    .hero .line1, .hero .line2 { font-size: 1.6rem; }
+    .iconsRow { gap: 2.5rem; flex-wrap: wrap; }
+    .rd .rdTitle { font-size: 1.8rem; }
+  }
+
+  /* ===== Helix section: Rod of Asclepius ===== */
+  section.helix {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4rem 2rem 5rem;
+  }
+  .helix-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;
+  }
+  .helix-head-text { flex: 1; min-width: 280px; }
+  .helix-eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; opacity: 0.55; margin-bottom: 0.6rem;
+    color: var(--ink);
+  }
+  .helix-title {
+    font-size: 2.2rem; font-weight: 700; margin: 0 0 0.6rem;
+    line-height: 1.15; color: var(--ink);
+  }
+  .helix-title .thin { font-weight: 400; }
+  .helix-blurb {
+    font-size: 1rem; max-width: 640px; line-height: 1.55;
+    opacity: 0.78; margin: 0; color: var(--ink);
+  }
+  .helix-toolbar { display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; }
+  .orientation-toggle { display: inline-flex; border: 1.5px solid var(--ink); }
+  .orientation-toggle button {
+    background: transparent; border: none;
+    font-family: inherit; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); padding: 0.5rem 1rem;
+    cursor: pointer; transition: background 0.2s, color 0.2s;
+  }
+  .orientation-toggle button.is-active { background: var(--ink); color: var(--bg); }
+
+  .helix-key {
+    display: flex; justify-content: center;
+    gap: 2rem; margin-bottom: 1.25rem;
+    font-size: 0.82rem; flex-wrap: wrap; opacity: 0.78;
+    color: var(--ink);
+  }
+  .helix-key-item { display: flex; align-items: center; gap: 0.5rem; }
+  .helix-key-glyph {
+    width: 30px; height: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  .helix-stage {
+    width: 100%; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    transition: height 0.4s ease;
+  }
+  .helix-stage[data-orientation="vertical"]   { height: 900px; }
+  .helix-stage[data-orientation="horizontal"] { height: 560px; }
+
+  .helix-svg { max-width: 100%; max-height: 100%; display: block; overflow: visible; }
+
+  .staff { stroke: var(--ink); stroke-width: 1.25; opacity: 0.35; stroke-linecap: round; }
+
+  /* Strands now read as quieter background carriers */
+  .strand-segment {
+    fill: none; stroke-width: 2.5; stroke-linecap: round;
+    cursor: pointer; transition: opacity 0.35s, stroke-width 0.25s;
+    opacity: 0.5;
+  }
+  .strand-segment.is-back { stroke-width: 2; opacity: 0.32; }
+
+  .strand-hitbox { fill: none; stroke: transparent; stroke-width: 22; cursor: pointer; }
+
+  .strand-label-group { transition: opacity 0.3s; opacity: 0.7; }
+  .strand-label-group.is-dim { opacity: 0.25; }
+  .strand-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    fill: var(--ink); pointer-events: none;
+  }
+  .strand-leader {
+    stroke: var(--ink); stroke-width: 1; opacity: 0.3;
+    fill: none; pointer-events: none;
+  }
+
+  .rung-line {
+    stroke: var(--ink); stroke-width: 1.25; stroke-dasharray: 2 4;
+    opacity: 0.4; fill: none; pointer-events: none;
+    transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s, stroke-dasharray 0.25s;
+  }
+  .rung-bead {
+    fill: var(--bg); stroke: var(--ink); stroke-width: 1.25;
+    transition: fill 0.25s, stroke 0.25s; cursor: pointer;
+  }
+  .rung-group:hover .rung-line,
+  .rung-group.is-active .rung-line {
+    stroke: var(--ink); stroke-width: 1.75; opacity: 1; stroke-dasharray: none;
+  }
+  .rung-group:hover .rung-bead,
+  .rung-group.is-active .rung-bead { fill: var(--ink); stroke: var(--ink); }
+  .rung-group.is-dim { opacity: 0.18; }
+
+  /* Projects are the headline content */
+  .project-bead { cursor: pointer; transition: opacity 0.3s, transform 0.2s; transform-box: fill-box; transform-origin: center; }
+  .project-bead-shape { stroke-width: 3; transition: fill 0.25s, stroke 0.25s, stroke-width 0.25s; }
+  .project-bead:hover { transform: scale(1.15); }
+  .project-bead.is-active .project-bead-shape { stroke: var(--crimson); stroke-width: 4; }
+  .project-bead.is-dim { opacity: 0.28; }
+
+  .project-bridge { cursor: pointer; transition: opacity 0.3s; }
+  .project-bridge-line { stroke-width: 9; stroke-linecap: round; transition: stroke-width 0.2s, opacity 0.25s; }
+  .project-bridge-cap { stroke-width: 3; transition: r 0.2s, stroke-width 0.2s; }
+  .project-bridge:hover .project-bridge-line { stroke-width: 11; }
+  .project-bridge:hover .project-bridge-cap  { stroke-width: 4; }
+  .project-bridge.is-active .project-bridge-line { stroke-width: 11; }
+  .project-bridge.is-active .project-bridge-cap  { stroke: var(--crimson) !important; stroke-width: 4; }
+  .project-bridge.is-dim { opacity: 0.28; }
+
+  .project-label {
+    font-size: 18px; font-weight: 700; letter-spacing: 0.01em;
+    fill: var(--ink); pointer-events: none; transition: opacity 0.3s;
+  }
+  .project-label.is-dim { opacity: 0.32; }
+
+  .helix-tooltip {
+    position: absolute; pointer-events: none;
+    background: var(--ink); color: var(--bg);
+    padding: 6px 10px; font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.04em;
+    transform: translate(-50%, -130%);
+    opacity: 0; transition: opacity 0.18s; white-space: nowrap; z-index: 5;
+  }
+  .helix-tooltip::after {
+    content: ''; position: absolute; left: 50%; bottom: -5px;
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--ink);
+  }
+  .helix-tooltip.is-visible { opacity: 1; }
+
+  .helix-legend { display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap; margin-top: 1.25rem; }
+  .legend-button {
+    background: none; border: none;
+    font-family: inherit; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; padding: 6px 10px; color: var(--ink);
+    transition: opacity 0.25s, color 0.25s;
+  }
+  .legend-button.is-dim { opacity: 0.4; }
+  .legend-button.is-active { color: var(--crimson); }
+  .legend-swatch {
+    display: inline-block; width: 10px; height: 10px;
+    border-radius: 50%; margin-right: 8px; vertical-align: middle;
+  }
+
+  /* Reuse panel styles from R&D strands */
+  .helix .panel { max-width: 1100px; margin: 1.5rem auto 0; }
+
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="site">
+  <div class="logo-wrap">
+    <img src="assets/web-svg.svg" alt="Mentheon Logo" width="518" height="170" />
+  </div>
+
+  <nav class="gridContainer" aria-label="Primary">
+    <a href="#home" class="navItem active" data-nav="home">
+      Home
+      <span class="cornerCrop" aria-hidden="true"></span>
+    </a>
+    <a href="#news" class="navItem" data-nav="news">News</a>
+    <a href="#about" class="navItem" data-nav="about">About</a>
+    <a href="#who" class="navItem" data-nav="who">Who?</a>
+    <a href="#what" class="navItem" data-nav="what">What?</a>
+    <a href="#why" class="navItem" data-nav="why">Why?</a>
+  </nav>
+</header>
+
+<!-- ================= VIEW 1 — HERO ================= -->
+<section class="hero" id="home">
+  <p class="line1">We undertake:</p>
+  <p class="line2" id="heroLine2">Digital Health Research &amp; Design</p>
+
+  <div class="iconsRow" id="heroIcons">
+    <div class="iconGroup">
+      <a href="#" class="iconLink" data-id="research" data-label="Research">
+        <div class="iconWrapper">
+          <div class="circle"><span class="emoji">🔬</span></div>
+        </div>
+      </a>
+      <span class="label">Research</span>
+    </div>
+    <div class="iconGroup">
+      <a href="#" class="iconLink" data-id="development" data-label="Development">
+        <div class="iconWrapper">
+          <div class="circle"><span class="emoji">💻</span></div>
+        </div>
+      </a>
+      <span class="label">Development</span>
+    </div>
+    <div class="iconGroup">
+      <a href="#" class="iconLink" data-id="consultancy" data-label="Consultancy">
+        <div class="iconWrapper">
+          <div class="circle"><span class="emoji">📋</span></div>
+        </div>
+      </a>
+      <span class="label">Consultancy</span>
+    </div>
+  </div>
+
+  <div class="typedContent" id="typedContent"><span class="text"></span><span class="caret"></span></div>
+
+  <div class="statusIndicators" id="statusIndicators">
+    <div class="indicator activeIndicator" data-for="research"></div>
+    <div class="indicator" data-for="development"></div>
+    <div class="indicator" data-for="consultancy"></div>
+  </div>
+
+  <div class="scrollCue"><span>scroll to see our latest work</span></div>
+</section>
+
+<!-- ================= VIEW 2 — R&D STRANDS ================= -->
+<section class="rd" id="rd">
+  <h2 class="rdTitle"><span class="thin">Our ongoing</span> R&amp;D strands<span class="thin">…</span></h2>
+
+  <div class="rdRow" id="rdRow">
+    <div class="rdGroup" data-id="kindred">
+      <button type="button" class="rdLink" data-id="kindred" aria-expanded="false" aria-controls="strand-panel" aria-label="Kindreon">
+        <svg class="svgDisc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="100" cy="100" r="95" fill="currentColor" class="strand-bg"></circle>
+          <g fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round">
+            <circle cx="80" cy="100" r="32"></circle>
+            <circle cx="120" cy="100" r="32"></circle>
+          </g>
+          <path d="M 100 108 C 100 108, 92 100, 92 94 C 92 89, 96 86, 100 90 C 104 86, 108 89, 108 94 C 108 100, 100 108, 100 108 Z" fill="#FCE8D5"></path>
+          <circle cx="100" cy="55" r="3" fill="#FCE8D5"></circle>
+          <circle cx="85" cy="60" r="2" fill="#FCE8D5" opacity="0.7"></circle>
+          <circle cx="115" cy="60" r="2" fill="#FCE8D5" opacity="0.7"></circle>
+        </svg>
+      </button>
+      <span class="label">Kindreon</span>
+    </div>
+    <div class="rdGroup" data-id="vitalis">
+      <button type="button" class="rdLink" data-id="vitalis" aria-expanded="false" aria-controls="strand-panel" aria-label="Aevorix">
+        <svg class="svgDisc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="100" cy="100" r="95" fill="currentColor" class="strand-bg"></circle>
+          <g stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" fill="none">
+            <path d="M 100 160 L 100 70"></path>
+            <path d="M 100 140 Q 75 130, 70 110"></path>
+            <path d="M 100 140 Q 125 130, 130 110"></path>
+            <path d="M 100 110 Q 80 100, 75 85"></path>
+            <path d="M 100 110 Q 120 100, 125 85"></path>
+            <path d="M 100 75 Q 90 65, 92 55"></path>
+            <path d="M 100 75 Q 110 65, 108 55"></path>
+          </g>
+          <circle cx="70" cy="110" r="5" fill="#FCE8D5"></circle>
+          <circle cx="130" cy="110" r="5" fill="#FCE8D5"></circle>
+          <circle cx="75" cy="85" r="4" fill="#FCE8D5"></circle>
+          <circle cx="125" cy="85" r="4" fill="#FCE8D5"></circle>
+          <circle cx="92" cy="55" r="3" fill="#FCE8D5"></circle>
+          <circle cx="108" cy="55" r="3" fill="#FCE8D5"></circle>
+          <circle cx="100" cy="48" r="4" fill="#FCE8D5"></circle>
+          <path d="M 85 160 Q 100 155, 115 160" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" fill="none"></path>
+        </svg>
+      </button>
+      <span class="label">Aevorix</span>
+    </div>
+    <div class="rdGroup" data-id="vitrix">
+      <button type="button" class="rdLink" data-id="vitrix" aria-expanded="false" aria-controls="strand-panel" aria-label="Acumentra">
+        <svg class="svgDisc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="100" cy="100" r="95" fill="currentColor" class="strand-bg"></circle>
+          <circle cx="100" cy="100" r="65" fill="none" stroke="#FCE8D5" stroke-width="2" opacity="0.4"></circle>
+          <path d="M 45 100 L 70 100 L 78 85 L 88 120 L 98 70 L 108 115 L 118 100 L 155 100" fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+          <circle cx="100" cy="35" r="3" fill="#FCE8D5"></circle>
+          <circle cx="165" cy="100" r="3" fill="#FCE8D5"></circle>
+          <circle cx="100" cy="165" r="3" fill="#FCE8D5"></circle>
+          <circle cx="35" cy="100" r="3" fill="#FCE8D5"></circle>
+          <circle cx="146" cy="54" r="2" fill="#FCE8D5" opacity="0.6"></circle>
+          <circle cx="146" cy="146" r="2" fill="#FCE8D5" opacity="0.6"></circle>
+          <circle cx="54" cy="146" r="2" fill="#FCE8D5" opacity="0.6"></circle>
+          <circle cx="54" cy="54" r="2" fill="#FCE8D5" opacity="0.6"></circle>
+        </svg>
+      </button>
+      <span class="label">Acumentra</span>
+    </div>
+  </div>
+
+  <div class="panel" id="strand-panel" aria-hidden="true">
+    <div class="panelInner">
+      <div class="cornerCropPanel" aria-hidden="true"></div>
+      <button class="closeButton" id="strandClose" aria-label="Close strand panel">×</button>
+
+      <div class="panelHeader">
+        <div class="headerIconCircle" id="panelIconHost"></div>
+        <div class="headerText">
+          <h2 class="strandName" id="panelName">Kindreon</h2>
+          <p class="tagline" id="panelTagline">Understanding subjective attraction in caregiving contexts</p>
+        </div>
+      </div>
+
+      <div class="themeGrid" id="panelThemes"></div>
+
+      <div class="ctaRow">
+        <a href="#" class="ctaLink" id="panelCta">
+          See full work strand
+          <span class="ctaArrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VIEW 3 — HELIX (Rod of Asclepius) ================= -->
+<section class="helix" id="helix">
+  <div class="helix-head">
+    <div class="helix-head-text">
+      <div class="helix-eyebrow">Research domains, woven around a single staff</div>
+      <h2 class="helix-title"><span class="thin">A research practice,</span> entwined</h2>
+      <p class="helix-blurb">
+        The four disciplines we work in wrap around a central axis &mdash; alternating
+        front and back as they descend, the way a single strand wraps a physician's
+        staff. Where two disciplines share a research conversation, a small dashed rung
+        marks it. Concrete projects sit on (and sometimes between) the strands.
+      </p>
+    </div>
+    <div class="helix-toolbar">
+      <div class="orientation-toggle" id="orientation-toggle">
+        <button class="is-active" data-orientation="vertical">Vertical</button>
+        <button data-orientation="horizontal">Horizontal</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="helix-key">
+    <div class="helix-key-item">
+      <span class="helix-key-glyph">
+        <svg width="30" height="14"><line x1="0" y1="7" x2="30" y2="7" stroke="#A30B37" stroke-width="3.5" stroke-linecap="round"></line></svg>
+      </span>
+      <span><strong>Strand</strong> = research domain</span>
+    </div>
+    <div class="helix-key-item">
+      <span class="helix-key-glyph">
+        <svg width="30" height="14"><circle cx="15" cy="7" r="5" fill="#3F0247" stroke="#2F0147" stroke-width="2"></circle></svg>
+      </span>
+      <span><strong>Bead</strong> = project on one domain</span>
+    </div>
+    <div class="helix-key-item">
+      <span class="helix-key-glyph">
+        <svg width="30" height="14">
+          <line x1="4" y1="7" x2="26" y2="7" stroke="#2F0147" stroke-width="6" stroke-linecap="round"></line>
+          <circle cx="4" cy="7" r="4" fill="#A30B37" stroke="#2F0147" stroke-width="2"></circle>
+          <circle cx="26" cy="7" r="4" fill="#9C528B" stroke="#2F0147" stroke-width="2"></circle>
+        </svg>
+      </span>
+      <span><strong>Capsule</strong> = project bridging two or more domains</span>
+    </div>
+    <div class="helix-key-item">
+      <span class="helix-key-glyph">
+        <svg width="30" height="14">
+          <line x1="0" y1="7" x2="30" y2="7" stroke="#2F0147" stroke-width="1.25" stroke-dasharray="2 4"></line>
+          <circle cx="15" cy="7" r="3.5" fill="#FFECE1" stroke="#2F0147" stroke-width="1.25"></circle>
+        </svg>
+      </span>
+      <span><strong>Rung</strong> = conceptual convergence</span>
+    </div>
+  </div>
+
+  <div class="helix-stage" id="helixStage" data-orientation="vertical"></div>
+  <div class="helix-legend" id="helixLegend"></div>
+
+  <!-- Reuses .panel styles from the R&D section -->
+  <div class="panel" id="helix-panel" aria-hidden="true">
+    <div class="panelInner">
+      <div class="cornerCropPanel" aria-hidden="true"></div>
+      <button class="closeButton" id="helixClose" aria-label="Close">&times;</button>
+      <div class="panelHeader">
+        <div class="headerIconCircle" id="helixPanelIcon"></div>
+        <div class="headerText">
+          <h2 class="strandName" id="helixPanelName"></h2>
+          <p class="tagline" id="helixPanelTagline"></p>
+        </div>
+      </div>
+      <div class="themeGrid" id="helixPanelThemes"></div>
+      <div class="ctaRow" id="helixPanelCtaRow" style="display:none;">
+        <a href="#" class="ctaLink" id="helixPanelCta">
+          See full work strand
+          <span class="ctaArrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="helix-tooltip" id="helixTooltip"></div>
+
+
+<script>
+/* ---------- Hero view typed content (mirrors HeroIconsWithContent.tsx) ---------- */
+const heroContent = {
+  research: [
+    "Our research pushes the boundaries of digital health.",
+    "Cutting-edge methods and pioneering discoveries."
+  ],
+  development: [
+    "Our development team builds robust, scalable solutions.",
+    "Innovation in software for healthcare."
+  ],
+  consultancy: [
+    "Expert consultancy to guide your digital transformation.",
+    "We bring expertise and strategy to your projects."
+  ],
+};
+
+/* ---------- R&D strand data (mirrors HeroIcons.tsx STRANDS) ---------- */
+const STRANDS = {
+  kindred: {
+    label: 'Kindreon',
+    icon: 'assets/kindred.svg',
+    tagline: 'Understanding subjective attraction in caregiving contexts',
+    href: '#/strands/kindred',
+    themes: [
+      { title: 'Perception of attractiveness', description: 'How caregivers, clinicians and partners perceive and interpret cues of human attraction in care settings.' },
+      { title: 'Interpersonal dynamics',       description: 'Mapping the subjective experience of connection, empathy and rapport across care relationships.' },
+      { title: 'Clinical implications',        description: 'Translating insights into guidance for practitioners supporting vulnerable individuals.' },
+    ],
+  },
+  vitalis: {
+    label: 'Aevorix',
+    icon: 'assets/vitalis.svg',
+    tagline: 'Technology for enduring vitality',
+    href: '#/strands/vitalis',
+    themes: [
+      { title: 'Longevity modelling',    description: 'Quantitative frameworks for healthspan, frailty trajectories and preventative intervention points.' },
+      { title: 'Assistive innovation',   description: 'Devices and software enabling independence and dignity in later life.' },
+      { title: 'Cognitive preservation', description: 'Research into sustained cognitive function through digital and behavioural tools.' },
+    ],
+  },
+  vitrix: {
+    label: 'Acumentra',
+    icon: 'assets/vitrix.svg',
+    tagline: 'Clarity from complex clinical data',
+    href: '#/strands/vitrix',
+    themes: [
+      { title: 'Signal intelligence',   description: 'Extracting meaningful patterns from continuous physiological and behavioural data streams.' },
+      { title: 'Predictive analytics',  description: 'Risk stratification and outcome forecasting for clinical decision support.' },
+      { title: 'Outcome measurement',   description: 'Quantifying real-world impact of digital health interventions at scale.' },
+    ],
+  },
+};
+
+/* ---------- Typewriter (stand-in for typeit-react) ---------- */
+function typewriter(targetEl, strings, { speed = 35, eraseDelay = 1800 } = {}) {
+  let i = 0, j = 0, deleting = false, cancelled = false;
+  const textEl = targetEl.querySelector('.text');
+  textEl.textContent = '';
+
+  function tick() {
+    if (cancelled) return;
+    const full = strings[i];
+    if (!deleting) {
+      j++;
+      textEl.textContent = full.slice(0, j);
+      if (j === full.length) {
+        if (strings.length === 1) return; // single string: stop at end
+        setTimeout(() => { deleting = true; tick(); }, eraseDelay);
+        return;
+      }
+    } else {
+      j--;
+      textEl.textContent = full.slice(0, j);
+      if (j === 0) {
+        deleting = false;
+        i = (i + 1) % strings.length;
+      }
+    }
+    setTimeout(tick, deleting ? 18 : speed);
+  }
+  tick();
+  return () => { cancelled = true; };
+}
+
+/* ---------- Icon row wiring ---------- */
+const heroLine2Map = {
+  research:    'digital health research',
+  development: 'R&D of Software as a Medical Device (SaMD)',
+  consultancy: 'Consultancy for your digital health needs',
+};
+
+function wireIconRow({ rowEl, contentMap, typedEl, dotsEl, initial }) {
+  const links = rowEl.querySelectorAll('.iconLink');
+  const dots = dotsEl.querySelectorAll('.indicator');
+  const line2El = document.getElementById('heroLine2');
+  let stopTyping = null;
+
+  function setSelected(id) {
+    links.forEach(l => l.classList.toggle('selected', l.dataset.id === id));
+    dots.forEach(d => d.classList.toggle('activeIndicator', d.dataset.for === id));
+    if (line2El && heroLine2Map[id]) line2El.textContent = heroLine2Map[id];
+    if (stopTyping) stopTyping();
+    const strings = contentMap[id];
+    if (strings) stopTyping = typewriter(typedEl, strings);
+  }
+
+  links.forEach(l => {
+    l.addEventListener('click', e => {
+      e.preventDefault();
+      setSelected(l.dataset.id);
+    });
+  });
+
+  setSelected(initial);
+}
+
+wireIconRow({
+  rowEl: document.getElementById('heroIcons'),
+  contentMap: heroContent,
+  typedEl: document.getElementById('typedContent'),
+  dotsEl: document.getElementById('statusIndicators'),
+  initial: 'research',
+});
+
+/* ---------- R&D row + StrandPanel (mirrors HeroIcons.tsx + StrandPanel.tsx) ---------- */
+(function wireStrands() {
+  const row = document.getElementById('rdRow');
+  const groups = row.querySelectorAll('.rdGroup');
+  const buttons = row.querySelectorAll('.rdLink');
+  const panel = document.getElementById('strand-panel');
+  const panelIconHost = document.getElementById('panelIconHost');
+  const panelName = document.getElementById('panelName');
+  const panelTagline = document.getElementById('panelTagline');
+  const panelThemes = document.getElementById('panelThemes');
+  const panelCta = document.getElementById('panelCta');
+  const closeBtn = document.getElementById('strandClose');
+
+  let current = null;
+
+  function renderPanel(id) {
+    const s = STRANDS[id];
+    if (!s) return;
+    // Clone the live row-SVG (with current colour) into the panel header
+    const rowBtn = row.querySelector('.rdLink[data-id="' + id + '"]');
+    const rowSvg = rowBtn ? rowBtn.querySelector('.svgDisc') : null;
+    panelIconHost.innerHTML = '';
+    if (rowSvg) {
+      const clone = rowSvg.cloneNode(true);
+      clone.removeAttribute('class');
+      clone.setAttribute('width', '100%');
+      clone.setAttribute('height', '100%');
+      clone.style.color = 'var(--strand-selected, #A30B37)';
+      clone.style.display = 'block';
+      panelIconHost.appendChild(clone);
+    }
+    panelName.textContent = s.label;
+    panelTagline.textContent = s.tagline;
+    panelCta.href = s.href;
+
+    panelThemes.innerHTML = '';
+    s.themes.forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'themeCard';
+      card.innerHTML =
+        '<div class="themeNumber">' + String(i + 1).padStart(2, '0') + '</div>' +
+        '<h3 class="themeTitle"></h3>' +
+        '<p class="themeDescription"></p>';
+      card.querySelector('.themeTitle').textContent = t.title;
+      card.querySelector('.themeDescription').textContent = t.description;
+      panelThemes.appendChild(card);
+    });
+  }
+
+  function setSelected(id) {
+    current = id;
+    const selectedSomething = id !== null;
+
+    row.classList.toggle('collapsed', selectedSomething);
+    groups.forEach(g => {
+      const gid = g.dataset.id;
+      g.classList.toggle('selected', gid === id);
+      g.classList.toggle('dimmed', selectedSomething && gid !== id);
+    });
+    buttons.forEach(b => {
+      b.setAttribute('aria-expanded', String(b.dataset.id === id));
+    });
+
+    if (selectedSomething) {
+      renderPanel(id);
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+    } else {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  buttons.forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.id;
+      setSelected(current === id ? null : id);
+    });
+  });
+
+  closeBtn.addEventListener('click', () => setSelected(null));
+})();
+
+/* ---------- Nav active state on click ---------- */
+const navLinks = document.querySelectorAll('nav.gridContainer .navItem');
+navLinks.forEach(a => {
+  a.addEventListener('click', () => {
+    navLinks.forEach(x => {
+      x.classList.remove('active');
+      const existing = x.querySelector('.cornerCrop');
+      if (existing) existing.remove();
+    });
+    a.classList.add('active');
+    if (!a.querySelector('.cornerCrop')) {
+      const c = document.createElement('span');
+      c.className = 'cornerCrop';
+      c.setAttribute('aria-hidden', 'true');
+      a.appendChild(c);
+    }
+  });
+});
+
+/* ---------- Proximity scale effect on disc (mirrors IconCircle.tsx) ---------- */
+const circles = document.querySelectorAll('.iconLink .circle');
+const THRESHOLD = 210, MAX_SCALE = 1.15, DEAD_ZONE = 70;
+let mouseX = -9999, mouseY = -9999;
+window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; updateCircles(); });
+function updateCircles() {
+  circles.forEach(c => {
+    const r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const d = Math.hypot(mouseX - cx, mouseY - cy);
+    const eff = d < DEAD_ZONE ? 0 : d;
+    let s = 1;
+    if (eff < THRESHOLD) s = 1 + (MAX_SCALE - 1) * (1 - eff / THRESHOLD);
+    c.style.transform = `scale(${s.toFixed(3)})`;
+  });
+}
+</script>
+
+<!-- ========== Tweaks panel ========== -->
+<style>
+  #tweaksPanel {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 300px;
+    background: #FFECE1;
+    border: 2px solid #2F0147;
+    border-radius: 2px;
+    font-family: 'Lato', sans-serif;
+    color: #2F0147;
+    z-index: 9999;
+    box-shadow: 0 10px 30px rgba(47,1,71,0.25);
+    display: none;
+  }
+  #tweaksPanel.open { display: block; }
+  #tweaksPanel .tpHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #2F0147;
+    color: #FFECE1;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: grab;
+    user-select: none;
+  }
+  #tweaksPanel .tpHead button {
+    background: transparent;
+    color: #FFECE1;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  #tweaksPanel .tpBody { padding: 14px 14px 18px; }
+  #tweaksPanel .tpGroup { margin-bottom: 14px; }
+  #tweaksPanel .tpGroup:last-child { margin-bottom: 0; }
+  #tweaksPanel label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  #tweaksPanel .tpRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #tweaksPanel input[type="color"] {
+    width: 38px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #2F0147;
+    background: transparent;
+    cursor: pointer;
+  }
+  #tweaksPanel input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    border: 1px solid rgba(47,1,71,0.3);
+    background: #FFECE1;
+    color: #2F0147;
+    border-radius: 2px;
+  }
+  #tweaksPanel input[type="range"] { width: 100%; accent-color: #A30B37; }
+  #tweaksPanel .tpVal {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    color: #9C528B;
+    font-weight: 700;
+  }
+  #tweaksPanel .tpReset {
+    margin-top: 6px;
+    background: transparent;
+    border: 1px solid #2F0147;
+    color: #2F0147;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    border-radius: 2px;
+  }
+  #tweaksPanel .tpReset:hover { background: #2F0147; color: #FFECE1; }
+</style>
+
+<div id="tweaksPanel" aria-hidden="true">
+  <div class="tpHead" id="tpHead">
+    <span>Tweaks</span>
+    <button id="tpClose" aria-label="Close tweaks">×</button>
+  </div>
+  <div class="tpBody">
+
+    <div class="tpGroup">
+      <label>Strand default colour <span class="tpVal" id="tpDefVal"></span></label>
+      <div class="tpRow">
+        <input type="color"  id="tpDefColor" />
+        <input type="text"   id="tpDefHex" spellcheck="false" />
+      </div>
+    </div>
+
+    <div class="tpGroup">
+      <label>Strand selected colour <span class="tpVal" id="tpSelVal"></span></label>
+      <div class="tpRow">
+        <input type="color"  id="tpSelColor" />
+        <input type="text"   id="tpSelHex" spellcheck="false" />
+      </div>
+    </div>
+
+    <div class="tpGroup">
+      <label>Hover grow <span class="tpVal" id="tpScaleVal"></span></label>
+      <input type="range" id="tpScale" min="1" max="1.5" step="0.01" />
+    </div>
+
+    <button class="tpReset" id="tpReset">Reset to defaults</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Tweakable defaults (host rewrites this block on save) ---------- */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "strandDefault": "#9C528B",
+  "strandSelected": "#A30B37",
+  "hoverScale": 1.12
+}/*EDITMODE-END*/;
+
+(function wireTweaks() {
+  const panel = document.getElementById('tweaksPanel');
+  const head  = document.getElementById('tpHead');
+  const close = document.getElementById('tpClose');
+
+  const defColor = document.getElementById('tpDefColor');
+  const defHex   = document.getElementById('tpDefHex');
+  const defVal   = document.getElementById('tpDefVal');
+  const selColor = document.getElementById('tpSelColor');
+  const selHex   = document.getElementById('tpSelHex');
+  const selVal   = document.getElementById('tpSelVal');
+  const scale    = document.getElementById('tpScale');
+  const scaleVal = document.getElementById('tpScaleVal');
+  const resetBtn = document.getElementById('tpReset');
+
+  const state = { ...TWEAK_DEFAULTS };
+
+  function apply() {
+    document.documentElement.style.setProperty('--strand-default',  state.strandDefault);
+    document.documentElement.style.setProperty('--strand-selected', state.strandSelected);
+    document.documentElement.style.setProperty('--strand-hover-scale', state.hoverScale);
+
+    defColor.value = state.strandDefault;
+    defHex.value   = state.strandDefault;
+    defVal.textContent = state.strandDefault.toUpperCase();
+
+    selColor.value = state.strandSelected;
+    selHex.value   = state.strandSelected;
+    selVal.textContent = state.strandSelected.toUpperCase();
+
+    scale.value = state.hoverScale;
+    scaleVal.textContent = Number(state.hoverScale).toFixed(2) + '×';
+
+    // Re-tint the header icon clone if the panel is open
+    const host = document.getElementById('panelIconHost');
+    const svg = host && host.querySelector('svg');
+    if (svg) svg.style.color = state.strandSelected;
+  }
+
+  function persist(edits) {
+    try {
+      window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    } catch (_) {}
+  }
+
+  function isHex(v) { return /^#[0-9a-f]{6}$/i.test(v); }
+
+  function setDefault(v) {
+    if (!isHex(v)) return;
+    state.strandDefault = v;
+    apply();
+    persist({ strandDefault: v });
+  }
+  function setSelected(v) {
+    if (!isHex(v)) return;
+    state.strandSelected = v;
+    apply();
+    persist({ strandSelected: v });
+  }
+  function setScale(v) {
+    v = Number(v);
+    if (!isFinite(v)) return;
+    state.hoverScale = v;
+    apply();
+    persist({ hoverScale: v });
+  }
+
+  defColor.addEventListener('input', e => setDefault(e.target.value));
+  defHex.addEventListener('change',  e => setDefault(e.target.value.trim()));
+  selColor.addEventListener('input', e => setSelected(e.target.value));
+  selHex.addEventListener('change',  e => setSelected(e.target.value.trim()));
+  scale.addEventListener('input',    e => setScale(e.target.value));
+
+  resetBtn.addEventListener('click', () => {
+    state.strandDefault  = '#9C528B';
+    state.strandSelected = '#A30B37';
+    state.hoverScale     = 1.12;
+    apply();
+    persist({ strandDefault: state.strandDefault, strandSelected: state.strandSelected, hoverScale: state.hoverScale });
+  });
+
+  // --- host protocol: listener first, then announce ---
+  window.addEventListener('message', (e) => {
+    const d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === '__activate_edit_mode')   { panel.classList.add('open');   panel.setAttribute('aria-hidden','false'); }
+    if (d.type === '__deactivate_edit_mode') { panel.classList.remove('open'); panel.setAttribute('aria-hidden','true');  }
+  });
+  try {
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  } catch (_) {}
+
+  close.addEventListener('click', () => {
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden','true');
+    try { window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*'); } catch (_) {}
+  });
+
+  // --- drag panel by header ---
+  let dragging = false, dx = 0, dy = 0;
+  head.addEventListener('mousedown', (e) => {
+    if (e.target === close) return;
+    dragging = true;
+    const r = panel.getBoundingClientRect();
+    dx = e.clientX - r.left;
+    dy = e.clientY - r.top;
+    head.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    panel.style.left = (e.clientX - dx) + 'px';
+    panel.style.top  = (e.clientY - dy) + 'px';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    head.style.cursor = 'grab';
+  });
+
+  apply();
+})();
+</script>
+
+
+<script>
+/* ============================================================
+   Helix (Rod of Asclepius) — four research domains weaving
+   around a central staff with project beads + convergence rungs.
+   ============================================================ */
+(function helix() {
+  const DOMAINS = [
+    { id: 'research', name: 'Research', shortName: 'Research',
+      tagline: 'Study design, longitudinal cohorts, real-world evidence',
+      color: '#A30B37',
+      themes: [
+        { n:'01', t:'Longitudinal cohort design', d:'Study architectures for following people over months and years — attrition, re-consent, and continuity of measurement.' },
+        { n:'02', t:'Mixed-methods evaluation',   d:'Quantitative and qualitative inquiry combined to evaluate digital interventions in real-world care.' },
+        { n:'03', t:'Real-world evidence',        d:'Frameworks for drawing reliable inferences from messy, opportunistic data outside controlled trials.' },
+      ] },
+    { id: 'design', name: 'Design', shortName: 'Design',
+      tagline: 'Human factors and interaction patterns for clinical environments',
+      color: '#9C528B',
+      themes: [
+        { n:'01', t:'Human factors',          d:'Usability research with clinicians and patients to make sure tools fit into busy care environments.' },
+        { n:'02', t:'Interaction patterns',   d:'Reusable interaction patterns built around safety, recoverability, and clarity under cognitive load.' },
+        { n:'03', t:'Service design',         d:'Designing for the unit of care — patient, family, clinician, system — not just the screen.' },
+      ] },
+    { id: 'development', name: 'Development', shortName: 'Development',
+      tagline: 'Engineering, signal processing, and the platform underneath',
+      color: '#3F0247',
+      themes: [
+        { n:'01', t:'Software engineering',  d:'Engineering standards, architecture and quality processes that underpin SaMD products.' },
+        { n:'02', t:'Signal processing',     d:'Pipelines that turn continuous physiological and behavioural data into clinical signal.' },
+        { n:'03', t:'Platform & ops',        d:'Robust, secure, auditable infrastructure — the foundation SaMD can be trusted on.' },
+      ] },
+    { id: 'regulatory', name: 'Regulatory', shortName: 'Regulatory',
+      tagline: 'SaMD compliance, safety frameworks, and deployment ethics',
+      color: '#6B1F4D',
+      themes: [
+        { n:'01', t:'SaMD pathway',          d:'Translating Software-as-a-Medical-Device requirements into design constraints the team can build against.' },
+        { n:'02', t:'Safeguarding',          d:'Safety-first interaction patterns for vulnerable users — children, those in crisis, people in care.' },
+        { n:'03', t:'Deployment ethics',     d:'When is a tool ready, and for whom? Standards for the leap from research artefact to clinical instrument.' },
+      ] },
+  ];
+
+  const PROJECTS = [
+    { id: 'kindreon',  name: 'Kindreon',
+      tagline: 'Family-centred digital tools for paediatric care',
+      summary: 'Family-centred digital tools for paediatric care, with safeguarding-by-design as a foundational constraint rather than an afterthought.',
+      domainIds: ['research', 'design', 'development'], position: 0.32, status: 'active',
+      themes: [
+        { n:'01', t:'Family-centred care',     d:'Tools built for the unit of paediatric care \u2014 child, parent, clinician \u2014 not a single screen-based user.' },
+        { n:'02', t:'Safeguarding by design',  d:'Vulnerability-aware interaction patterns, with safety treated as a foundational constraint rather than a feature added late.' },
+        { n:'03', t:'Longitudinal continuity', d:'Tracking development through paediatric care with study architectures designed for re-consent, attrition, and continuity of measurement.' },
+      ] },
+    { id: 'aevorix',   name: 'Aevorix',
+      tagline: 'Technology for enduring vitality',
+      summary: 'Technology for enduring vitality \u2014 longitudinal modelling of healthspan and frailty, with cognitive preservation as the central question.',
+      domainIds: ['research', 'design', 'development', 'regulatory'], position: 0.55, status: 'active',
+      themes: [
+        { n:'01', t:'Healthspan modelling',    d:'Quantitative frameworks for healthspan, frailty trajectories, and the points at which preventative intervention is most effective.' },
+        { n:'02', t:'Cognitive preservation',  d:'Identifying and protecting the cognitive signal earliest \u2014 long before clinical thresholds are crossed.' },
+        { n:'03', t:'Assistive innovation',    d:'Devices and software for independence and dignity in later life, regulated as SaMD where the clinical claim warrants it.' },
+        { n:'04', t:'Deployment ethics',       d:'When is a longevity tool ready, and for whom? Standards for the leap from research artefact to clinical instrument.' },
+      ] },
+    { id: 'acumentra', name: 'Acumentra',
+      tagline: 'Sharper signals from clinical noise',
+      summary: 'Sharper signals from clinical noise. Decision-support models built with subgroup auditing as a first-class concern, not a compliance step.',
+      domainIds: ['development'], position: 0.95, status: 'active',
+      themes: [
+        { n:'01', t:'Signal intelligence',  d:'Pipelines that turn continuous physiological and behavioural data into clinical signal a clinician can act on.' },
+        { n:'02', t:'Predictive analytics', d:'Risk stratification and outcome forecasting for clinical decision support, validated on cohort data.' },
+        { n:'03', t:'Subgroup auditing',    d:'A model that works on average can fail systematically for the people it was meant to help. Auditing is treated as a question, not a checkbox.' },
+      ] },
+  ];
+
+  const CONVERGENCES = [
+    { id: 'validation-on-cohorts', title: 'Validating models on cohort data',
+      description: 'Where Research meets Development. How do you know a clinical model works in the world it will actually be deployed in? The answer requires longitudinal, real-world cohort data — and a research conversation between the people who build models and the people who design studies.',
+      domainIds: ['research', 'development'], position: 0.18 },
+    { id: 'lifespan-continuity', title: 'Lifespan continuity',
+      description: 'Where Research meets Design. The same person ages through paediatric care into later life. The methods we build to track development at one end inform the design choices at the other. It is one continuous question.',
+      domainIds: ['research', 'design'], position: 0.42 },
+    { id: 'who-does-this-fail', title: 'Who does this fail?',
+      description: 'Where Development meets Regulatory. A model that works on average can still fail systematically for the people it was meant to help. Subgroup auditing is not a compliance step — it is the question that determines whether a tool is ready.',
+      domainIds: ['development', 'regulatory'], position: 0.65 },
+    { id: 'safeguarding-by-design', title: 'Safeguarding by design',
+      description: 'Where Design meets Regulatory. Tools that recognise children, families, and people in vulnerable states must be designed with safety as a foundational constraint, not a feature added late.',
+      domainIds: ['design', 'regulatory'], position: 0.85 },
+  ];
+
+  const domainById = (id) => DOMAINS.find(d => d.id === id);
+  const projectById = (id) => PROJECTS.find(p => p.id === id);
+  const convergenceById = (id) => CONVERGENCES.find(c => c.id === id);
+
+  const SEGMENTS_PER_STRAND = 28;
+
+  function strandPointAt(orientation, cfg, t) {
+    const angle = cfg.phase + t * cfg.turns * Math.PI * 2;
+    const across = Math.sin(angle) * cfg.amplitude;
+    const along = t * cfg.length;
+    const depth = Math.cos(angle);
+    let x, y;
+    if (orientation === 'vertical') { x = cfg.axisOffset + across; y = along; }
+    else                            { x = along; y = cfg.axisOffset + across; }
+    return { x, y, depth, t };
+  }
+
+  function pointsToPath(pts) {
+    if (!pts.length) return '';
+    return pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+  }
+
+  function sampleStrand(orientation, cfg) {
+    const front = [], back = [];
+    let currentList = null, currentSide = null;
+    const totalSamples = SEGMENTS_PER_STRAND * 4;
+    const samples = [];
+    for (let i = 0; i <= totalSamples; i++) samples.push(strandPointAt(orientation, cfg, i / totalSamples));
+    for (let i = 0; i < samples.length; i++) {
+      const p = samples[i];
+      const side = p.depth >= 0 ? 'front' : 'back';
+      if (side !== currentSide) {
+        currentList = [];
+        (side === 'front' ? front : back).push(currentList);
+        if (i > 0) {
+          const prev = samples[i - 1];
+          const denom = prev.depth - p.depth;
+          const tBlend = denom !== 0 ? prev.depth / denom : 0;
+          const blendX = prev.x + (p.x - prev.x) * tBlend;
+          const blendY = prev.y + (p.y - prev.y) * tBlend;
+          currentList.push({ x: blendX, y: blendY });
+          const otherList = side === 'front' ? back : front;
+          const lastSeg = otherList[otherList.length - 1];
+          if (lastSeg) lastSeg.push({ x: blendX, y: blendY });
+        }
+        currentSide = side;
+      }
+      currentList.push({ x: p.x, y: p.y });
+    }
+    return {
+      frontPaths: front.map(pointsToPath).filter(Boolean),
+      backPaths:  back.map(pointsToPath).filter(Boolean),
+      fullPath: pointsToPath(samples),
+    };
+  }
+
+  const stageEl = document.getElementById('helixStage');
+  const legendEl = document.getElementById('helixLegend');
+  const panelEl = document.getElementById('helix-panel');
+  const tooltipEl = document.getElementById('helixTooltip');
+  const panelIconEl = document.getElementById('helixPanelIcon');
+  const panelNameEl = document.getElementById('helixPanelName');
+  const panelTaglineEl = document.getElementById('helixPanelTagline');
+  const panelThemesEl = document.getElementById('helixPanelThemes');
+  const panelCtaRow = document.getElementById('helixPanelCtaRow');
+  const panelCta = document.getElementById('helixPanelCta');
+  const panelCloseBtn = document.getElementById('helixClose');
+
+  let currentOrientation = 'vertical';
+  let scene = null;
+  let state = { selectedDomain: null, selectedProject: null, selectedConvergence: null };
+
+  function getStrandLabelAnchor(orientation, viewBox, i, n) {
+    if (orientation === 'vertical') {
+      const padding = 80;
+      const usable = viewBox.W - padding * 2;
+      return { x: padding + (usable * (i + 0.5) / n), y: 32 };
+    } else {
+      const padding = 60;
+      const usable = viewBox.H - padding * 2;
+      return { x: 30, y: padding + (usable * (i + 0.5) / n) };
+    }
+  }
+
+  function nudgeProjectPositions(projects, convergences, minGap = 0.05) {
+    return projects.map(p => {
+      let pos = p.position, attempts = 0;
+      while (attempts < 8 && convergences.some(c => Math.abs(c.position - pos) < minGap)) {
+        const closer = convergences.reduce((a, b) =>
+          Math.abs(a.position - pos) < Math.abs(b.position - pos) ? a : b);
+        pos += pos < closer.position ? -minGap : +minGap;
+        pos = Math.max(0.05, Math.min(0.95, pos));
+        attempts++;
+      }
+      return Object.assign({}, p, { position: pos });
+    });
+  }
+
+  function svgEl(name, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+    if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function buildScene(orientation) {
+    stageEl.querySelectorAll('svg').forEach(s => s.remove());
+
+    const W = orientation === 'vertical' ? 820 : 1280;
+    const H = orientation === 'vertical' ? 880 : 540;
+    const labelGap   = orientation === 'vertical' ? 110 : 80;
+    const tailMargin = 80;
+    const lengthAxis = orientation === 'vertical' ? H - labelGap - tailMargin : W - labelGap - tailMargin;
+    const axisOffset = orientation === 'vertical' ? W / 2 : H / 2;
+    const startOffset = labelGap;
+    const amplitude = orientation === 'vertical' ? 130 : 100;
+    const turns = 1.8;
+
+    const root = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'helix-svg', preserveAspectRatio: 'xMidYMid meet' });
+    stageEl.appendChild(root);
+
+    function group(cls) {
+      return svgEl('g', { class: 'layer-' + cls });
+    }
+    const layerRungs       = group('rungs');
+    const layerStrandBack  = group('strand-back');
+    const layerStaff       = group('staff');
+    const layerStrandFront = group('strand-front');
+    const layerProjects    = group('projects');
+    const layerLabels      = group('labels');
+    const layerHitboxes    = group('hitboxes');
+    [layerRungs, layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerLabels, layerHitboxes].forEach(g => root.appendChild(g));
+
+    const transformAttr = orientation === 'vertical' ? 'translate(0,' + startOffset + ')' : 'translate(' + startOffset + ',0)';
+    [layerStrandBack, layerStaff, layerStrandFront, layerProjects, layerHitboxes, layerRungs].forEach(g => g.setAttribute('transform', transformAttr));
+
+    const strandConfigs = {};
+    DOMAINS.forEach((d, i) => {
+      strandConfigs[d.id] = {
+        phase: (i / DOMAINS.length) * Math.PI * 2,
+        amplitude, length: lengthAxis, axisOffset, turns,
+      };
+    });
+
+    const staff = svgEl('line', { class: 'staff' });
+    if (orientation === 'vertical') {
+      staff.setAttribute('x1', axisOffset); staff.setAttribute('y1', 0);
+      staff.setAttribute('x2', axisOffset); staff.setAttribute('y2', lengthAxis);
+    } else {
+      staff.setAttribute('x1', 0); staff.setAttribute('y1', axisOffset);
+      staff.setAttribute('x2', lengthAxis); staff.setAttribute('y2', axisOffset);
+    }
+    layerStaff.appendChild(staff);
+
+    const strandObjects = {};
+    DOMAINS.forEach((d) => {
+      const cfg = strandConfigs[d.id];
+      const { frontPaths, backPaths, fullPath } = sampleStrand(orientation, cfg);
+      const backEls = backPaths.map(p => {
+        const el = svgEl('path', { d: p, class: 'strand-segment is-back', stroke: d.color });
+        el.dataset.domainId = d.id;
+        layerStrandBack.appendChild(el);
+        return el;
+      });
+      const frontEls = frontPaths.map(p => {
+        const el = svgEl('path', { d: p, class: 'strand-segment', stroke: d.color });
+        el.dataset.domainId = d.id;
+        layerStrandFront.appendChild(el);
+        return el;
+      });
+      const hit = svgEl('path', { d: fullPath, class: 'strand-hitbox' });
+      hit.dataset.domainId = d.id;
+      layerHitboxes.appendChild(hit);
+      strandObjects[d.id] = { backEls, frontEls, hitbox: hit };
+    });
+
+    // Strand labels with leaders
+    const startSamples = DOMAINS.map(d => ({ d, pt: strandPointAt(orientation, strandConfigs[d.id], 0) }));
+    startSamples.sort((a, b) => orientation === 'vertical' ? a.pt.x - b.pt.x : a.pt.y - b.pt.y);
+
+    const strandLabels = {};
+    startSamples.forEach((entry, idx) => {
+      const d = entry.d, start = entry.pt;
+      const anchor = getStrandLabelAnchor(orientation, { W, H }, idx, startSamples.length);
+      const g = svgEl('g', { class: 'strand-label-group' });
+      g.dataset.domainId = d.id;
+      const startX = orientation === 'vertical' ? start.x : start.x + startOffset;
+      const startY = orientation === 'vertical' ? start.y + startOffset : start.y;
+      const leader = svgEl('path', { class: 'strand-leader' });
+      let dPath;
+      if (orientation === 'vertical') {
+        const midY = startOffset - 18;
+        dPath = 'M' + anchor.x + ',' + (anchor.y + 6) + ' L' + anchor.x + ',' + midY + ' L' + startX + ',' + midY + ' L' + startX + ',' + (startY - 4);
+      } else {
+        const midX = startOffset - 18;
+        dPath = 'M' + (anchor.x + 4) + ',' + anchor.y + ' L' + midX + ',' + anchor.y + ' L' + midX + ',' + startY + ' L' + (startX - 4) + ',' + startY;
+      }
+      leader.setAttribute('d', dPath);
+      g.appendChild(leader);
+      const text = svgEl('text', { class: 'strand-label' });
+      if (orientation === 'vertical') {
+        text.setAttribute('x', anchor.x); text.setAttribute('y', anchor.y); text.setAttribute('text-anchor', 'middle');
+      } else {
+        text.setAttribute('x', anchor.x); text.setAttribute('y', anchor.y + 4); text.setAttribute('text-anchor', 'start');
+      }
+      text.textContent = d.shortName;
+      g.appendChild(text);
+      layerLabels.appendChild(g);
+      strandLabels[d.id] = g;
+    });
+
+    // Convergence rungs
+    const rungEls = [];
+    CONVERGENCES.forEach(c => {
+      const a = strandConfigs[c.domainIds[0]], b = strandConfigs[c.domainIds[1]];
+      if (!a || !b) return;
+      const ptA = strandPointAt(orientation, a, c.position);
+      const ptB = strandPointAt(orientation, b, c.position);
+      const ax = ptA.x, ay = ptA.y, bx = ptB.x, by = ptB.y;
+      const mx = (ax + bx) / 2, my = (ay + by) / 2;
+      const cx = orientation === 'vertical' ? axisOffset : mx;
+      const cy = orientation === 'vertical' ? my : axisOffset;
+      const g = svgEl('g', { class: 'rung-group' });
+      g.dataset.convergenceId = c.id;
+      const path = svgEl('path', { d: 'M' + ax + ',' + ay + ' Q' + cx + ',' + cy + ' ' + bx + ',' + by, class: 'rung-line' });
+      g.appendChild(path);
+      const bead = svgEl('circle', { cx: cx, cy: cy, r: 5, class: 'rung-bead' });
+      g.appendChild(bead);
+      layerRungs.appendChild(g);
+      rungEls.push({ g, line: path, bead, convergence: c, cx, cy });
+    });
+
+    // Projects
+    const adjustedProjects = nudgeProjectPositions(PROJECTS, CONVERGENCES);
+    const projectEls = [];
+    const labelSideByDomain = {};
+
+    adjustedProjects.forEach(proj => {
+      if (proj.domainIds.length === 1) {
+        const cfg = strandConfigs[proj.domainIds[0]];
+        const pt = strandPointAt(orientation, cfg, proj.position);
+        const px = pt.x, py = pt.y;
+        const domain = domainById(proj.domainIds[0]);
+        const g = svgEl('g', { class: 'project-bead' });
+        g.dataset.projectId = proj.id;
+        const circle = svgEl('circle', {
+          cx: px, cy: py, r: 13,
+          class: 'project-bead-shape status-' + (proj.status || 'active'),
+          fill: proj.status === 'exploratory' ? '#FFECE1' : domain.color,
+          stroke: '#2F0147',
+        });
+        g.appendChild(circle);
+        // Place label on the OUTSIDE of the staff so it never crowds the centre
+        const dxFromStaff = orientation === 'vertical' ? px - axisOffset : py - axisOffset;
+        const side = dxFromStaff >= 0 ? 'right' : 'left';
+        const label = svgEl('text', { class: 'project-label' });
+        label.dataset.projectId = proj.id;
+        if (orientation === 'vertical') {
+          label.setAttribute('x', side === 'right' ? px + 22 : px - 22);
+          label.setAttribute('y', py + 6);
+          label.setAttribute('text-anchor', side === 'right' ? 'start' : 'end');
+        } else {
+          label.setAttribute('x', px);
+          label.setAttribute('y', side === 'right' ? py + 28 : py - 20);
+          label.setAttribute('text-anchor', 'middle');
+        }
+        label.textContent = proj.name;
+        layerProjects.appendChild(g);
+        layerLabels.appendChild(label);
+        projectEls.push({ g, shape: circle, label, project: proj, px, py });
+      } else {
+        // Multi-domain capsule (2 or more): render a polyline with caps on each endpoint,
+        // gradient runs from first to last domain.
+        const pts = proj.domainIds.map(id => {
+          const cfg = strandConfigs[id];
+          const p = strandPointAt(orientation, cfg, proj.position);
+          return { id, x: p.x, y: p.y, color: domainById(id).color };
+        });
+        // Sort by x (vertical) or y (horizontal) so the capsule reads as a single bridge
+        if (orientation === 'vertical') pts.sort((a, b) => a.x - b.x);
+        else pts.sort((a, b) => a.y - b.y);
+
+        const g = svgEl('g', { class: 'project-bridge' });
+        g.dataset.projectId = proj.id;
+
+        let defs = root.querySelector('defs');
+        if (!defs) { defs = svgEl('defs'); root.insertBefore(defs, root.firstChild); }
+        const gradId = 'bridge-grad-' + proj.id + '-' + orientation;
+        const grad = svgEl('linearGradient', {
+          id: gradId,
+          x1: pts[0].x + (orientation === 'horizontal' ? startOffset : 0),
+          y1: pts[0].y + (orientation === 'vertical' ? startOffset : 0),
+          x2: pts[pts.length-1].x + (orientation === 'horizontal' ? startOffset : 0),
+          y2: pts[pts.length-1].y + (orientation === 'vertical' ? startOffset : 0),
+          gradientUnits: 'userSpaceOnUse',
+        });
+        pts.forEach((pt, i) => {
+          const stop = svgEl('stop', {
+            offset: (i / (pts.length - 1) * 100) + '%',
+            'stop-color': pt.color,
+          });
+          grad.appendChild(stop);
+        });
+        defs.appendChild(grad);
+
+        // Polyline through all the points
+        const dStr = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+        const line = svgEl('path', {
+          d: dStr,
+          class: 'project-bridge-line',
+          stroke: 'url(#' + gradId + ')',
+          fill: 'none',
+        });
+        if (proj.status === 'exploratory') line.setAttribute('opacity', '0.6');
+        g.appendChild(line);
+
+        // Caps at each domain crossing
+        pts.forEach(pt => {
+          const cap = svgEl('circle', {
+            cx: pt.x, cy: pt.y, r: 9,
+            class: 'project-bridge-cap',
+            fill: pt.color,
+            stroke: '#2F0147',
+          });
+          g.appendChild(cap);
+        });
+
+        // Label at midpoint of the polyline
+        const midIdx = Math.floor(pts.length / 2);
+        const mid = pts.length % 2 === 1
+          ? pts[midIdx]
+          : { x: (pts[midIdx-1].x + pts[midIdx].x) / 2, y: (pts[midIdx-1].y + pts[midIdx].y) / 2 };
+        const dxFromStaff = orientation === 'vertical' ? mid.x - axisOffset : mid.y - axisOffset;
+        const offset = 14 * (dxFromStaff >= 0 ? 1 : -1);
+        const label = svgEl('text', { class: 'project-label' });
+        label.dataset.projectId = proj.id;
+        if (orientation === 'vertical') {
+          label.setAttribute('x', mid.x + offset);
+          label.setAttribute('y', mid.y - 18);
+          label.setAttribute('text-anchor', offset > 0 ? 'start' : 'end');
+        } else {
+          label.setAttribute('x', mid.x);
+          label.setAttribute('y', mid.y + offset + (offset > 0 ? 20 : -12));
+          label.setAttribute('text-anchor', 'middle');
+        }
+        label.textContent = proj.name;
+        layerProjects.appendChild(g);
+        layerLabels.appendChild(label);
+        projectEls.push({ g, line, label, project: proj, mx: mid.x, my: mid.y });
+      }
+    });
+
+    return { svgEl: root, strandObjects, strandLabels, rungEls, projectEls, viewBox: { W, H }, startOffset };
+  }
+
+  function highlightedDomainIds() {
+    if (state.selectedDomain) return new Set([state.selectedDomain]);
+    if (state.selectedProject) {
+      const p = projectById(state.selectedProject);
+      return p ? new Set(p.domainIds) : new Set();
+    }
+    if (state.selectedConvergence) {
+      const c = convergenceById(state.selectedConvergence);
+      return c ? new Set(c.domainIds) : new Set();
+    }
+    return new Set();
+  }
+  function isAnythingSelected() {
+    return !!(state.selectedDomain || state.selectedProject || state.selectedConvergence);
+  }
+  function applyStrandStateClasses(strandObj, { dim, highlight }) {
+    const apply = (el) => {
+      el.classList.remove('is-dim', 'is-highlighted');
+      if (dim)        { el.style.opacity = '0.18'; el.style.strokeWidth = ''; }
+      else if (highlight) {
+        el.style.opacity = '1';
+        el.style.strokeWidth = el.classList.contains('is-back') ? '5' : '5.5';
+      } else { el.style.opacity = ''; el.style.strokeWidth = ''; }
+    };
+    strandObj.frontEls.forEach(apply);
+    strandObj.backEls.forEach(apply);
+  }
+
+  function applyAppearance() {
+    const highlighted = highlightedDomainIds();
+    const anySelected = isAnythingSelected();
+
+    DOMAINS.forEach(d => {
+      const so = scene.strandObjects[d.id];
+      const lg = scene.strandLabels[d.id];
+      const isH = anySelected && highlighted.has(d.id);
+      const isD = anySelected && !highlighted.has(d.id);
+      applyStrandStateClasses(so, { dim: isD, highlight: isH });
+      lg.classList.toggle('is-dim', isD);
+    });
+    scene.rungEls.forEach(r => {
+      r.g.classList.remove('is-active', 'is-dim');
+      if (state.selectedConvergence === r.convergence.id) r.g.classList.add('is-active');
+      if (anySelected && state.selectedConvergence !== r.convergence.id) {
+        const bothLit = r.convergence.domainIds.every(id => highlighted.has(id));
+        if (!bothLit) r.g.classList.add('is-dim');
+      }
+    });
+    scene.projectEls.forEach(pe => {
+      pe.g.classList.remove('is-active', 'is-dim');
+      pe.label.classList.remove('is-dim');
+      const proj = pe.project;
+      if (state.selectedProject === proj.id) pe.g.classList.add('is-active');
+      if (anySelected && state.selectedProject !== proj.id) {
+        const anyLit = proj.domainIds.some(id => highlighted.has(id));
+        if (!anyLit) { pe.g.classList.add('is-dim'); pe.label.classList.add('is-dim'); }
+      }
+    });
+    renderLegend();
+  }
+
+  /* Panels — match the existing strand-panel exactly. */
+  function clearPanel() {
+    panelEl.classList.remove('open');
+    panelEl.setAttribute('aria-hidden', 'true');
+  }
+  function renderThemes(themes) {
+    panelThemesEl.innerHTML = '';
+    themes.forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'themeCard';
+      card.innerHTML = '<div class="themeNumber">' + (t.n || String(i+1).padStart(2,'0')) +
+                       '</div><h3 class="themeTitle"></h3><p class="themeDescription"></p>';
+      card.querySelector('.themeTitle').textContent = t.t || t.title;
+      card.querySelector('.themeDescription').textContent = t.d || t.description;
+      panelThemesEl.appendChild(card);
+    });
+  }
+  function showPanel({ name, tagline, themes, color, cta }) {
+    panelNameEl.textContent = name;
+    panelTaglineEl.textContent = tagline;
+    panelIconEl.style.background = color || 'var(--strand-selected, #A30B37)';
+    panelIconEl.style.borderRadius = '50%';
+    renderThemes(themes);
+    if (cta) {
+      panelCtaRow.style.display = '';
+      panelCta.href = cta.href || '#';
+      panelCta.firstChild.textContent = cta.label || 'See full work strand';
+    } else {
+      panelCtaRow.style.display = 'none';
+    }
+    panelEl.classList.add('open');
+    panelEl.setAttribute('aria-hidden', 'false');
+  }
+
+  function onSelect(domainId, projectId, convergenceId) {
+    state.selectedDomain = domainId || null;
+    state.selectedProject = projectId || null;
+    state.selectedConvergence = convergenceId || null;
+
+    if (domainId) {
+      const d = domainById(domainId);
+      showPanel({
+        name: d.name, tagline: d.tagline, themes: d.themes, color: d.color,
+        cta: { label: 'See full domain', href: '#/domains/' + d.id },
+      });
+    } else if (projectId) {
+      const p = projectById(projectId);
+      const projDomains = p.domainIds.map(domainById).filter(Boolean);
+      showPanel({
+        name: p.name,
+        tagline: p.tagline || p.summary,
+        themes: p.themes || [],
+        color: projDomains[0] ? projDomains[0].color : null,
+        cta: { label: 'See full project', href: '#/projects/' + p.id },
+      });
+    } else if (convergenceId) {
+      const c = convergenceById(convergenceId);
+      const conDomains = c.domainIds.map(domainById).filter(Boolean);
+      showPanel({
+        name: c.title,
+        tagline: 'A convergence between ' + conDomains.map(d => d.name).join(' & '),
+        themes: [{ n: 'CONVERGENCE', t: 'Why it matters', d: c.description }],
+        color: 'var(--ink)',
+        cta: null,
+      });
+    } else {
+      clearPanel();
+    }
+
+    applyAppearance();
+  }
+
+  function renderLegend() {
+    legendEl.innerHTML = '';
+    DOMAINS.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'legend-button';
+      const highlighted = highlightedDomainIds();
+      const anySelected = isAnythingSelected();
+      if (anySelected && !highlighted.has(d.id)) btn.classList.add('is-dim');
+      if (state.selectedDomain === d.id) btn.classList.add('is-active');
+      btn.innerHTML = '<span class="legend-swatch" style="background:' + d.color + ';"></span>' + d.shortName;
+      btn.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null));
+      legendEl.appendChild(btn);
+    });
+  }
+
+  function attachInteractions() {
+    DOMAINS.forEach(d => {
+      const so = scene.strandObjects[d.id];
+      so.hitbox.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null));
+      so.hitbox.addEventListener('pointerenter', () => {
+        if (!isAnythingSelected()) {
+          so.frontEls.forEach(el => el.style.strokeWidth = '4.8');
+          so.backEls.forEach(el => el.style.strokeWidth = '4.3');
+        }
+      });
+      so.hitbox.addEventListener('pointerleave', () => {
+        if (!isAnythingSelected()) {
+          so.frontEls.forEach(el => el.style.strokeWidth = '');
+          so.backEls.forEach(el => el.style.strokeWidth = '');
+        }
+      });
+    });
+    DOMAINS.forEach(d => {
+      const lg = scene.strandLabels[d.id];
+      lg.style.cursor = 'pointer';
+      lg.style.pointerEvents = 'auto';
+      lg.addEventListener('click', () => onSelect(state.selectedDomain === d.id ? null : d.id, null, null));
+    });
+    scene.rungEls.forEach(r => {
+      r.g.addEventListener('click', () => onSelect(null, null, state.selectedConvergence === r.convergence.id ? null : r.convergence.id));
+      r.bead.addEventListener('pointerenter', () => {
+        const rect = r.bead.getBoundingClientRect();
+        showTooltip(r.convergence.title, rect.left + rect.width/2 + window.scrollX, rect.top + window.scrollY);
+      });
+      r.bead.addEventListener('pointerleave', hideTooltip);
+    });
+    scene.projectEls.forEach(pe => {
+      pe.g.addEventListener('click', () => onSelect(null, state.selectedProject === pe.project.id ? null : pe.project.id, null));
+      pe.g.addEventListener('pointerenter', () => {
+        const rect = pe.g.getBoundingClientRect();
+        showTooltip(pe.project.name, rect.left + rect.width/2 + window.scrollX, rect.top + window.scrollY);
+      });
+      pe.g.addEventListener('pointerleave', hideTooltip);
+    });
+  }
+
+  function showTooltip(text, x, y) {
+    tooltipEl.textContent = text;
+    tooltipEl.style.left = x + 'px';
+    tooltipEl.style.top = y + 'px';
+    tooltipEl.classList.add('is-visible');
+  }
+  function hideTooltip() { tooltipEl.classList.remove('is-visible'); }
+
+  function playEntrance() {
+    const staff = scene.svgEl.querySelector('.staff');
+    const allFront = [], allBack = [];
+    DOMAINS.forEach(d => {
+      const so = scene.strandObjects[d.id];
+      allFront.push(...so.frontEls);
+      allBack.push(...so.backEls);
+    });
+    const allSegs = [...allBack, ...allFront];
+    if (staff) staff.style.opacity = '0';
+    allSegs.forEach(p => {
+      try {
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+        p.style.transition = 'stroke-dashoffset 1.1s ease';
+      } catch (e) { /* ignore */ }
+    });
+    const labels = Object.values(scene.strandLabels);
+    const projGroups = scene.projectEls.map(p => p.g);
+    const projLabels = scene.projectEls.map(p => p.label);
+    const rungGroups = scene.rungEls.map(r => r.g);
+    [...labels, ...projGroups, ...projLabels, ...rungGroups].forEach(el => {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.5s ease';
+    });
+
+    requestAnimationFrame(() => {
+      if (staff) { staff.style.transition = 'opacity 0.6s ease'; staff.style.opacity = '0.55'; }
+      allSegs.forEach((p, i) => {
+        setTimeout(() => { p.style.strokeDashoffset = 0; }, 300 + i * 18);
+      });
+      labels.forEach((el, i) => setTimeout(() => el.style.opacity = '1', 1100 + i * 80));
+      rungGroups.forEach((el, i) => setTimeout(() => el.style.opacity = '1', 1300 + i * 80));
+      projGroups.forEach((el, i) => setTimeout(() => el.style.opacity = '1', 1500 + i * 100));
+      projLabels.forEach((el, i) => setTimeout(() => el.style.opacity = '1', 1600 + i * 80));
+    });
+  }
+
+  function setOrientation(orientation) {
+    if (orientation === currentOrientation) return;
+    currentOrientation = orientation;
+    stageEl.dataset.orientation = orientation;
+    document.querySelectorAll('#orientation-toggle button').forEach(b =>
+      b.classList.toggle('is-active', b.dataset.orientation === orientation)
+    );
+    state = { selectedDomain: null, selectedProject: null, selectedConvergence: null };
+    clearPanel();
+    scene = buildScene(orientation);
+    attachInteractions();
+    applyAppearance();
+    playEntrance();
+  }
+
+  document.querySelectorAll('#orientation-toggle button').forEach(b => {
+    b.addEventListener('click', () => setOrientation(b.dataset.orientation));
+  });
+  panelCloseBtn.addEventListener('click', () => onSelect(null, null, null));
+
+  scene = buildScene(currentOrientation);
+  attachInteractions();
+  applyAppearance();
+  playEntrance();
+})();
+</script>
+
+</body>
+</html>

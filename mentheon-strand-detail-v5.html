@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentheon — Strand: VR Reminiscence Therapy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+
+  <style>
+    :root {
+      --bg:        #FFECE1;
+      --ink:       #2F0147;
+      --plum:      #3F0247;
+      --crimson:   #A30B37;
+      --grape:     #9C528B;
+      --bg-soft:   rgba(47, 1, 71, 0.04);
+      --ink-soft:  rgba(47, 1, 71, 0.15);
+      --ink-quiet: rgba(47, 1, 71, 0.55);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: 'Lato', sans-serif;
+      background: var(--bg); color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== Page chrome ===== */
+    .breadcrumb {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.75rem 3rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+    }
+    .breadcrumb a { color: var(--ink); text-decoration: none; opacity: 0.7; }
+    .breadcrumb a:hover { opacity: 1; color: var(--crimson); }
+    .breadcrumb-sep { padding: 0 0.6em; opacity: 0.4; }
+
+    .page {
+      max-width: 1280px;
+      margin: 1.5rem auto 5rem;
+      padding: 0 3rem;
+      position: relative;
+    }
+    .page-frame {
+      position: relative;
+      background: var(--bg);
+      border: 2px solid var(--ink);
+      padding: 3rem 3rem 3.5rem;
+    }
+    .corner-crop {
+      position: absolute;
+      width: 28px; height: 28px;
+      pointer-events: none;
+    }
+    .corner-crop--tl { top: -14px; left: -14px;  border-top: 3px solid var(--crimson); border-left:  3px solid var(--crimson); }
+    .corner-crop--tr { top: -14px; right: -14px; border-top: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+    .corner-crop--bl { bottom: -14px; left: -14px;  border-bottom: 3px solid var(--crimson); border-left:  3px solid var(--crimson); }
+    .corner-crop--br { bottom: -14px; right: -14px; border-bottom: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+
+    /* ===== Header ===== */
+    .header {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 2.5rem;
+      align-items: start;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--ink-soft);
+      margin-bottom: 2.5rem;
+    }
+    .header-icon {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(47, 1, 71, 0.18);
+      flex-shrink: 0;
+    }
+    .header-icon svg { width: 70%; height: 70%; color: var(--bg); }
+    .header-text { min-width: 0; }
+    .strand-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--crimson);
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .strand-kicker-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--crimson);
+      animation: kickerDot 2s ease-in-out infinite;
+    }
+    @keyframes kickerDot {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50%      { opacity: 1; transform: scale(1.2); }
+    }
+    .strand-name {
+      font-family: 'Lato', sans-serif;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      margin: 0 0 0.5rem;
+    }
+    .strand-tagline {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--ink);
+      opacity: 0.7;
+      margin: 0;
+      max-width: 50ch;
+    }
+
+    /* ===== Meta + beacon ===== */
+    .meta-row {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--ink-soft);
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--ink-quiet);
+      line-height: 1.3;
+    }
+    .meta-item strong {
+      display: block;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-top: 0.15rem;
+      letter-spacing: 0.04em;
+    }
+    .beacon {
+      flex: 1;
+      min-width: 320px;
+      cursor: pointer;
+      border: 1px dashed transparent;
+      transition: border-color 0.2s, background 0.2s;
+      padding: 0.5rem 0.75rem;
+      margin: 0 -0.75rem;
+      border-radius: 2px;
+    }
+    .beacon:hover {
+      border-color: var(--ink-soft);
+      background: var(--bg-soft);
+    }
+    .beacon:focus-visible {
+      outline: 2px solid var(--crimson);
+      outline-offset: 2px;
+    }
+    .beacon-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .beacon-expand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      color: var(--crimson);
+      font-weight: 700;
+    }
+    .beacon-expand-icon {
+      display: inline-block;
+      transition: transform 0.3s;
+      margin-left: 0.3em;
+    }
+    .beacon.is-expanded .beacon-expand-icon {
+      transform: rotate(180deg);
+    }
+    .beacon svg {
+      width: 100%;
+      height: 56px;
+      display: block;
+      overflow: visible;
+    }
+
+    /* ===== Expanded progress panel ===== */
+    .progress-expanded {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.4s ease 0.1s, margin 0.4s ease;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    .progress-expanded.is-open {
+      max-height: 700px;
+      opacity: 1;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    .progress-expanded-inner {
+      position: relative;
+      padding: 2rem 0 1rem;
+      border-top: 1px solid var(--ink-soft);
+    }
+    .progress-expanded-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--grape);
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8em;
+    }
+    .progress-expanded-title::before {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 1px;
+      background: var(--grape);
+    }
+    .progress-svg {
+      width: 100%;
+      height: 460px;
+      display: block;
+      overflow: visible;
+    }
+    .output-tip {
+      position: absolute;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0.7rem 0.9rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -100%) translateY(-8px);
+      transition: opacity 0.18s ease;
+      max-width: 240px;
+      letter-spacing: 0.03em;
+      z-index: 5;
+    }
+    .output-tip.is-visible { opacity: 1; }
+    .output-tip strong {
+      display: block;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 0;
+      margin-bottom: 0.25rem;
+      font-weight: 700;
+    }
+    .output-tip-meta {
+      color: rgba(255, 236, 225, 0.55);
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      margin-bottom: 0.4rem;
+    }
+    .branch { cursor: pointer; }
+
+    /* ===== Section headers ===== */
+    .section { margin-bottom: 3.5rem; }
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--grape);
+      font-weight: 700;
+      margin: 0 0 1.2rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.8em;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 1px;
+      background: var(--grape);
+      transform: translateY(-3px);
+    }
+    .section-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--ink-quiet);
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    /* ===== Abstract ===== */
+    .abstract {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--ink);
+      max-width: 75ch;
+      margin: 0;
+    }
+    .abstract::first-letter {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--crimson);
+      float: left;
+      line-height: 0.9;
+      margin: 0.1em 0.1em 0 0;
+    }
+
+    /* ===== Objectives — card grid (from v2) ===== */
+    .obj-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      counter-reset: obj;
+    }
+    .obj-item {
+      position: relative;
+      padding: 1.5rem 1.4rem 1.4rem 1.4rem;
+      background: var(--bg);
+      border: 1px solid var(--ink-soft);
+      transition: border-color 0.2s, transform 0.2s;
+      counter-increment: obj;
+    }
+    .obj-item::before {
+      content: counter(obj, decimal-leading-zero);
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--ink-quiet);
+      letter-spacing: 0.08em;
+    }
+    .obj-item::after {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 12px; height: 12px;
+      border-top: 2px solid var(--grape);
+      border-left: 2px solid var(--grape);
+      transition: border-color 0.2s;
+    }
+    .obj-item:hover {
+      border-color: var(--crimson);
+      transform: translateY(-2px);
+    }
+    .obj-item:hover::after {
+      border-color: var(--crimson);
+    }
+    .obj-verb {
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: var(--crimson);
+      margin: 0 0 0.45rem;
+      text-transform: lowercase;
+      font-variant: small-caps;
+      letter-spacing: 0.04em;
+    }
+    .obj-text {
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: var(--ink);
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    /* ===== Research questions ===== */
+    .rq-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .rq-item {
+      position: relative;
+      padding: 1.5rem 1.5rem 1.5rem 3.2rem;
+      background: var(--bg-soft);
+      border-left: 3px solid var(--grape);
+      transition: border-left-color 0.2s, background 0.2s;
+    }
+    .rq-item:hover {
+      border-left-color: var(--crimson);
+      background: rgba(163, 11, 55, 0.05);
+    }
+    .rq-item-num {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--grape);
+    }
+    .rq-item:hover .rq-item-num { color: var(--crimson); }
+    .rq-item-text {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    /* ===== CTAs ===== */
+    .cta-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.85rem 1.6rem;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: background-color 0.2s, color 0.2s, gap 0.2s;
+      font-family: 'Lato', sans-serif;
+    }
+    .cta--primary { background: var(--crimson); color: var(--bg); }
+    .cta--primary:hover { background: var(--ink); gap: 0.9rem; }
+    .cta--secondary {
+      background: transparent; color: var(--ink);
+      border: 2px solid var(--ink);
+    }
+    .cta--secondary:hover { background: var(--ink); color: var(--bg); }
+    .cta-arrow { transition: transform 0.2s; display: inline-block; }
+    .cta:hover .cta-arrow { transform: translateX(3px); }
+
+    @media (max-width: 880px) {
+      .breadcrumb, .page { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .page-frame { padding: 2rem 1.5rem 2.5rem; }
+      .header { grid-template-columns: 1fr; }
+      .header-icon { width: 100px; height: 100px; }
+      .progress-svg { height: 540px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .strand-kicker-dot { animation: none; opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="#">strands</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="#">vr-rt</a>
+  <span class="breadcrumb-sep">/</span>
+  <span>detail</span>
+</nav>
+
+<main class="page">
+  <article class="page-frame">
+    <span class="corner-crop corner-crop--tl"></span>
+    <span class="corner-crop corner-crop--tr"></span>
+    <span class="corner-crop corner-crop--bl"></span>
+    <span class="corner-crop corner-crop--br"></span>
+
+    <!-- ===== Header with beacon + expandable progress ===== -->
+    <header class="header">
+      <div class="header-icon" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+          <path d="M20 20 Q 50 35, 80 20"/><path d="M20 40 Q 50 55, 80 40"/>
+          <path d="M20 60 Q 50 75, 80 60"/><path d="M20 80 Q 50 95, 80 80"/>
+          <path d="M20 20 V 80"/><path d="M80 20 V 80"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <div class="strand-kicker"><span class="strand-kicker-dot"></span>strand · 03 of 06 · in progress</div>
+        <h1 class="strand-name">VR Reminiscence Therapy</h1>
+        <p class="strand-tagline">Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.</p>
+
+        <div class="meta-row">
+          <div class="meta-item">since<strong>oct 2024</strong></div>
+          <div class="meta-item">collaborators<strong>03</strong></div>
+          <div class="meta-item">phase<strong>development</strong></div>
+
+          <div class="beacon" id="beacon" role="button" tabindex="0" aria-expanded="false" aria-controls="progressExpanded">
+            <div class="beacon-label">
+              <span>progression</span>
+              <span class="beacon-expand">
+                <span id="beaconExpandText">expand</span>
+                <span class="beacon-expand-icon">▾</span>
+              </span>
+            </div>
+            <svg viewBox="0 0 600 56" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <marker id="beaconArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#2F0147"/>
+                </marker>
+              </defs>
+              <path id="beaconSpine" d="M20,28 L130,28 L240,28 L350,28 L460,28" stroke="#2F0147" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M460,28 L580,28" stroke="#2F0147" stroke-width="1.5" fill="none" stroke-dasharray="4 5" stroke-linecap="round" marker-end="url(#beaconArrow)" opacity="0.7"/>
+              <circle cx="20" cy="28" r="5" fill="#2F0147"/>
+              <circle cx="130" cy="28" r="5" fill="#2F0147"/>
+              <circle cx="240" cy="28" r="5" fill="#2F0147"/>
+              <line x1="185" y1="28" x2="185" y2="44" stroke="#9C528B" stroke-width="1.5"/>
+              <rect x="180.5" y="44" width="9" height="9" transform="rotate(45 185 48.5)" fill="#9C528B"/>
+              <line x1="295" y1="28" x2="295" y2="44" stroke="#2F0147" stroke-width="1.5"/>
+              <rect x="291" y="44" width="8" height="8" fill="#2F0147"/>
+              <line x1="405" y1="28" x2="405" y2="44" stroke="#A30B37" stroke-width="1.5"/>
+              <rect x="400" y="44" width="10" height="10" rx="2" fill="#A30B37"/>
+              <circle id="beaconPulse" cx="350" cy="28" r="9" fill="#A30B37" opacity="0.18"/>
+              <circle cx="350" cy="28" r="7" fill="#A30B37"/>
+              <circle cx="460" cy="28" r="5" fill="none" stroke="#2F0147" stroke-width="1.5" stroke-dasharray="2 2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Expanded progress panel -->
+        <div class="progress-expanded" id="progressExpanded" aria-hidden="true">
+          <div class="progress-expanded-inner">
+            <h2 class="progress-expanded-title">Progress · expanded</h2>
+            <svg
+              class="progress-svg"
+              id="progressSvg"
+              viewBox="0 0 1400 460"
+              preserveAspectRatio="xMidYMid meet"
+              aria-label="Strand progression timeline"
+            >
+              <defs>
+                <marker id="arrowFull" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="#2F0147"/>
+                </marker>
+              </defs>
+              <g id="spine">
+                <path id="spineActive" d="M120,140 L370,140 L620,140 L870,140 L1120,140" stroke="#2F0147" stroke-width="3" fill="none" stroke-linecap="round"/>
+                <path id="spineFuture" d="M1120,140 L1340,140" stroke="#2F0147" stroke-width="2" fill="none" stroke-dasharray="7 9" stroke-linecap="round" opacity="0" marker-end="url(#arrowFull)"/>
+              </g>
+
+              <g class="branch" data-branch="paper">
+                <path class="branch-line" d="M495,140 Q 495,230 495,310" stroke="#9C528B" stroke-width="2" fill="none" stroke-linecap="round" opacity="0"/>
+                <path class="branch-return" d="M495,310 Q 560,310 600,225 Q 615,170 620,140" stroke="#9C528B" stroke-width="1.25" fill="none" stroke-dasharray="3 5" opacity="0"/>
+                <g class="branch-node" transform="translate(495, 310)" opacity="0">
+                  <rect x="-13" y="-13" width="26" height="26" transform="rotate(45)" fill="#9C528B"/>
+                  <text x="0" y="50" text-anchor="middle" font-family="Lato, sans-serif" font-size="14" font-weight="700" fill="#2F0147">Designing for restraint</text>
+                  <text x="0" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#2F0147" opacity="0.6" letter-spacing="0.5">PAPER · CHI '25 LBW</text>
+                </g>
+              </g>
+
+              <g class="branch" data-branch="prototype">
+                <path class="branch-line" d="M745,140 Q 745,230 745,310" stroke="#2F0147" stroke-width="2" fill="none" stroke-linecap="round" opacity="0"/>
+                <line class="branch-terminus-cap" x1="730" y1="345" x2="760" y2="345" stroke="#2F0147" stroke-width="2" opacity="0"/>
+                <line class="branch-terminus-cap" x1="725" y1="352" x2="765" y2="352" stroke="#2F0147" stroke-width="1" opacity="0"/>
+                <g class="branch-node" transform="translate(745, 310)" opacity="0">
+                  <rect x="-13" y="-13" width="26" height="26" fill="#2F0147"/>
+                  <text x="0" y="-26" text-anchor="middle" font-family="Lato, sans-serif" font-size="14" font-weight="700" fill="#2F0147">A-Frame prop sandbox</text>
+                  <text x="0" y="-44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#2F0147" opacity="0.6" letter-spacing="0.5">PROTOTYPE · v0.2 · sept '25</text>
+                </g>
+              </g>
+
+              <g class="branch" data-branch="artefact">
+                <path class="branch-line" d="M995,140 Q 995,230 995,310" stroke="#A30B37" stroke-width="2" fill="none" stroke-linecap="round" opacity="0"/>
+                <path class="branch-return" d="M995,310 Q 1060,310 1095,225 Q 1110,170 1120,140" stroke="#A30B37" stroke-width="1.25" fill="none" stroke-dasharray="3 5" opacity="0"/>
+                <g class="branch-node" transform="translate(995, 310)" opacity="0">
+                  <rect x="-14" y="-14" width="28" height="28" rx="4" fill="#A30B37"/>
+                  <text x="0" y="50" text-anchor="middle" font-family="Lato, sans-serif" font-size="14" font-weight="700" fill="#2F0147">VR-RT clinical build</text>
+                  <text x="0" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#A30B37" opacity="0.85" font-weight="700" letter-spacing="0.5">ARTEFACT · v4 · in development</text>
+                </g>
+              </g>
+
+              <g id="phaseNodes">
+                <g class="phase phase--past" transform="translate(120, 140)">
+                  <circle r="13" fill="#2F0147"/>
+                  <text y="-30" text-anchor="middle" font-family="Lato, sans-serif" font-size="15" font-weight="700" fill="#2F0147">Nascent</text>
+                  <text y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#2F0147" opacity="0.55" letter-spacing="0.5">oct '24</text>
+                </g>
+                <g class="phase phase--past" transform="translate(370, 140)">
+                  <circle r="13" fill="#2F0147"/>
+                  <text y="-30" text-anchor="middle" font-family="Lato, sans-serif" font-size="15" font-weight="700" fill="#2F0147">Research</text>
+                  <text y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#2F0147" opacity="0.55" letter-spacing="0.5">jan '25</text>
+                </g>
+                <g class="phase phase--past" transform="translate(620, 140)">
+                  <circle r="13" fill="#2F0147"/>
+                  <text y="-30" text-anchor="middle" font-family="Lato, sans-serif" font-size="15" font-weight="700" fill="#2F0147">Design</text>
+                  <text y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#2F0147" opacity="0.55" letter-spacing="0.5">jul '25</text>
+                </g>
+                <g class="phase phase--current" transform="translate(870, 140)">
+                  <circle id="currentPulse" r="18" fill="#A30B37" opacity="0.18"/>
+                  <circle r="14" fill="#A30B37"/>
+                  <text y="-32" text-anchor="middle" font-family="Lato, sans-serif" font-size="16" font-weight="900" fill="#A30B37">Development</text>
+                  <text y="46" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#A30B37" font-weight="700" letter-spacing="0.5">current · feb '26</text>
+                </g>
+                <g class="phase phase--upcoming" transform="translate(1120, 140)" opacity="0">
+                  <circle r="13" fill="#FFECE1" stroke="#2F0147" stroke-width="2.5" stroke-dasharray="4 4"/>
+                  <text y="-30" text-anchor="middle" font-family="Lato, sans-serif" font-size="15" font-weight="700" fill="#2F0147" opacity="0.7">Evaluation</text>
+                  <text y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#2F0147" opacity="0.4" letter-spacing="0.5">projected</text>
+                </g>
+              </g>
+            </svg>
+            <div class="output-tip" id="outputTip" role="tooltip" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== Abstract ===== -->
+    <section class="section">
+      <h2 class="section-title">
+        Abstract
+        <span class="section-num">§ 01</span>
+      </h2>
+      <p class="abstract">Reminiscence therapy is widely used in dementia care, but is constrained by the availability of personalised material and the cognitive demands of conventional media. This strand investigates how WebXR environments — paired with a dynamic media-asset backend — can serve individualised reminiscence content through interactive props (television sets, picture frames, windows onto familiar scenes) within a low-arousal virtual room. The work aims to characterise the design space at the intersection of personalisation, sensory load, and clinical safety, and to produce a deployable software artefact suitable for evaluation as Software as a Medical Device.</p>
+    </section>
+
+    <!-- ===== Objectives — card grid ===== -->
+    <section class="section">
+      <h2 class="section-title">
+        Objectives
+        <span class="section-num">§ 02</span>
+      </h2>
+      <div class="obj-grid">
+        <div class="obj-item">
+          <p class="obj-verb">Characterise</p>
+          <p class="obj-text">Map the design space of personalised WebXR reminiscence at the intersection of recall support, sensory load, and clinical safety.</p>
+        </div>
+        <div class="obj-item">
+          <p class="obj-verb">Design</p>
+          <p class="obj-text">Develop a prop vocabulary — windows, frames, period-appropriate televisions — that scaffolds engagement without overwhelming users with mild-to-moderate dementia.</p>
+        </div>
+        <div class="obj-item">
+          <p class="obj-verb">Build</p>
+          <p class="obj-text">Engineer a lightweight backend capable of per-participant media curation that meets the deployment constraints of Software as a Medical Device.</p>
+        </div>
+        <div class="obj-item">
+          <p class="obj-verb">Instrument</p>
+          <p class="obj-text">Integrate physiological signals (HR, HRV, GSR) with in-session interaction telemetry to detect overload states in real time.</p>
+        </div>
+        <div class="obj-item">
+          <p class="obj-verb">Evaluate</p>
+          <p class="obj-text">Compare interactive prop-based reminiscence with passive video reminiscence on engagement and recall, in a deployable clinical setting.</p>
+        </div>
+        <div class="obj-item">
+          <p class="obj-verb">Disseminate</p>
+          <p class="obj-text">Publish findings through CHI and adjacent HCI venues, with accompanying artefact releases that researchers and clinicians can adopt and extend.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Research questions ===== -->
+    <section class="section">
+      <h2 class="section-title">
+        Research questions
+        <span class="section-num">§ 03</span>
+      </h2>
+      <ol class="rq-list">
+        <li class="rq-item">
+          <span class="rq-item-num">RQ1</span>
+          <p class="rq-item-text">How can personalised reminiscence content be delivered through WebXR props in a way that supports recall without inducing sensory overload in people with mild-to-moderate dementia?</p>
+        </li>
+        <li class="rq-item">
+          <span class="rq-item-num">RQ2</span>
+          <p class="rq-item-text">What backend architecture supports per-participant media curation while remaining lightweight enough for clinical deployment under SaMD constraints?</p>
+        </li>
+        <li class="rq-item">
+          <span class="rq-item-num">RQ3</span>
+          <p class="rq-item-text">Which physiological signals (HR, HRV, GSR) can be combined with in-session interaction data to detect emotional or cognitive overload in real time?</p>
+        </li>
+        <li class="rq-item">
+          <span class="rq-item-num">RQ4</span>
+          <p class="rq-item-text">How does interactive prop design — windows, frames, period-appropriate televisions — compare to passive video reminiscence on engagement and recall?</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== CTAs ===== -->
+    <div class="cta-row">
+      <a href="#" class="cta cta--primary">
+        Read the paper
+        <span class="cta-arrow" aria-hidden="true">→</span>
+      </a>
+      <a href="#" class="cta cta--secondary">Open prototype build</a>
+      <a href="#" class="cta cta--secondary">View source artefact</a>
+    </div>
+  </article>
+</main>
+
+<script type="module">
+import { animate, createTimeline, stagger, utils } from 'https://cdn.jsdelivr.net/npm/animejs@4.4.1/+esm';
+
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===== Beacon pulse ===== */
+if (!prefersReduced) {
+  animate('#beaconPulse', {
+    r: [9, 16],
+    opacity: [0.18, 0],
+    duration: 1600,
+    ease: 'outQuad',
+    loop: true,
+  });
+}
+
+/* ===== Beacon expand/collapse ===== */
+const beacon = document.getElementById('beacon');
+const expanded = document.getElementById('progressExpanded');
+const expandText = document.getElementById('beaconExpandText');
+let isExpanded = false;
+let progressAnimated = false;
+
+function toggleExpanded(force) {
+  isExpanded = (force === undefined) ? !isExpanded : force;
+  expanded.classList.toggle('is-open', isExpanded);
+  expanded.setAttribute('aria-hidden', String(!isExpanded));
+  beacon.classList.toggle('is-expanded', isExpanded);
+  beacon.setAttribute('aria-expanded', String(isExpanded));
+  expandText.textContent = isExpanded ? 'collapse' : 'expand';
+
+  if (isExpanded && !progressAnimated) {
+    progressAnimated = true;
+    animateProgressDiagram();
+  }
+}
+
+beacon.addEventListener('click', () => toggleExpanded());
+beacon.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleExpanded();
+  }
+});
+
+/* ===== Full progress diagram entrance ===== */
+function animateProgressDiagram() {
+  if (prefersReduced) {
+    document.querySelectorAll('.branch-line, .branch-return, .branch-node, .branch-terminus-cap, .phase--upcoming, #spineFuture')
+      .forEach(el => { el.style.opacity = el.classList.contains('branch-return') ? '0.6' : '1'; });
+    return;
+  }
+
+  const tl = createTimeline({ defaults: { ease: 'outQuad' } });
+  const spinePath = document.getElementById('spineActive');
+  const spineLen = spinePath.getTotalLength();
+  spinePath.style.strokeDasharray = spineLen;
+  spinePath.style.strokeDashoffset = spineLen;
+  tl.add(spinePath, { strokeDashoffset: [spineLen, 0], duration: 1100, ease: 'inOutQuad' });
+
+  const phases = document.querySelectorAll('.phase--past circle, .phase--past text, .phase--current circle, .phase--current text');
+  utils.set(phases, { opacity: 0, scale: 0.6 });
+  tl.add(phases, { opacity: 1, scale: 1, duration: 380, delay: stagger(70), ease: 'outBack(1.6)' }, '-=600');
+
+  ['paper', 'prototype', 'artefact'].forEach((branchType, i) => {
+    const branch = document.querySelector(`[data-branch="${branchType}"]`);
+    const line = branch.querySelector('.branch-line');
+    const node = branch.querySelector('.branch-node');
+    const ret  = branch.querySelector('.branch-return');
+    const caps = branch.querySelectorAll('.branch-terminus-cap');
+
+    const lineLen = line.getTotalLength();
+    line.style.strokeDasharray = lineLen;
+    line.style.strokeDashoffset = lineLen;
+    line.style.opacity = '1';
+    tl.add(line, { strokeDashoffset: [lineLen, 0], duration: 380, ease: 'inOutQuad' }, i === 0 ? '-=200' : '-=240');
+    tl.add(node, { opacity: [0, 1], translateY: [-8, 0], duration: 280, ease: 'outBack(1.8)' }, '-=140');
+    if (ret) tl.add(ret, { opacity: [0, 0.7], duration: 320 }, '-=150');
+    if (caps.length) tl.add(caps, { opacity: [0, 1], scaleX: [0.4, 1], duration: 260, delay: stagger(60) }, '-=200');
+  });
+
+  tl.add('#spineFuture', { opacity: [0, 1], duration: 420 }, '-=100');
+  tl.add('.phase--upcoming', { opacity: [0, 1], duration: 420 }, '-=320');
+
+  animate('#currentPulse', {
+    r: [18, 28],
+    opacity: [0.18, 0],
+    duration: 1700,
+    ease: 'outQuad',
+    loop: true,
+    delay: 1200,
+  });
+}
+
+/* ===== Output tooltip ===== */
+const tip = document.getElementById('outputTip');
+const tipData = {
+  paper: {
+    title: 'Designing for restraint in WebXR reminiscence',
+    meta: 'CHI \'25 · Late-breaking work',
+    desc: 'Co-authored. Returns to the main spine — the strand continued from this output.',
+  },
+  prototype: {
+    title: 'A-Frame WebXR prop sandbox',
+    meta: 'v0.2 · sept 2025 · terminal',
+    desc: 'Branched off and was superseded by the v4 clinical build.',
+  },
+  artefact: {
+    title: 'VR-RT clinical build',
+    meta: 'v4 · feb 2026 · in development',
+    desc: 'Targeting deployable evaluation under SaMD constraints.',
+  },
+};
+function showTip(branchEl, type) {
+  const node = branchEl.querySelector('.branch-node rect');
+  if (!node) return;
+  const rect = node.getBoundingClientRect();
+  const wrapRect = document.querySelector('.progress-expanded-inner').getBoundingClientRect();
+  const data = tipData[type];
+  if (!data) return;
+  tip.innerHTML = `<div class="output-tip-meta">${data.meta}</div><strong>${data.title}</strong>${data.desc}`;
+  tip.style.left = (rect.left + rect.width / 2 - wrapRect.left) + 'px';
+  tip.style.top  = (rect.top - wrapRect.top) + 'px';
+  tip.classList.add('is-visible');
+}
+function hideTip() { tip.classList.remove('is-visible'); }
+document.querySelectorAll('.branch').forEach(branch => {
+  branch.addEventListener('mouseenter', () => showTip(branch, branch.dataset.branch));
+  branch.addEventListener('mouseleave', hideTip);
+});
+</script>
+</body>
+</html>

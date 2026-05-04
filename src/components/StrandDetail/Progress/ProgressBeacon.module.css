@@ -1,0 +1,61 @@
+.beacon {
+  flex: 1;
+  min-width: 320px;
+  cursor: pointer;
+  border: 1px dashed transparent;
+  transition: border-color 0.2s, background 0.2s;
+  padding: 0.5rem 0.75rem;
+  margin: 0 -0.75rem;
+  border-radius: 2px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.beacon:hover {
+  border-color: rgba(47, 1, 71, 0.15);
+  background: rgba(47, 1, 71, 0.04);
+}
+
+.beacon:focus-visible {
+  outline: 2px solid #A30B37;
+  outline-offset: 2px;
+}
+
+.label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(47, 1, 71, 0.55);
+  margin-bottom: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: #A30B37;
+  font-weight: 700;
+}
+
+.expandIcon {
+  display: inline-block;
+  transition: transform 0.3s;
+  margin-left: 0.3em;
+}
+
+.beacon.expanded .expandIcon {
+  transform: rotate(180deg);
+}
+
+.svg {
+  width: 100%;
+  height: 56px;
+  display: block;
+  overflow: visible;
+}

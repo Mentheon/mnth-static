@@ -1,0 +1,42 @@
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.85rem 1.6rem;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background-color 0.2s, color 0.2s, gap 0.2s;
+  font-family: 'Lato', sans-serif;
+}
+
+.primary {
+  background: #A30B37;
+  color: #FFECE1;
+}
+
+.primary:hover {
+  background: #2F0147;
+  gap: 0.9rem;
+}
+
+.secondary {
+  background: transparent;
+  color: #2F0147;
+  border: 2px solid #2F0147;
+}
+
+.secondary:hover {
+  background: #2F0147;
+  color: #FFECE1;
+}
+
+.arrow {
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.cta:hover .arrow {
+  transform: translateX(3px);
+}
