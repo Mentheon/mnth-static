@@ -1,0 +1,58 @@
+/* ============================================================
+   CarouselPills.module.css — horizontal pill row beneath the
+   carousel. Same dot aesthetic as .concept-pillnav from
+   ConceptView.css (small grey dots, active = crimson, scale
+   up on active).
+   ============================================================ */
+
+.pillnav {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 0.7rem;
+  z-index: 6;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pillDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.35;
+  transition: background 220ms ease, opacity 220ms ease, transform 220ms ease;
+}
+
+.pill:hover .pillDot {
+  opacity: 0.7;
+  transform: scale(1.15);
+}
+
+.pillActive .pillDot,
+.pillActive:hover .pillDot {
+  background: var(--crimson);
+  opacity: 1;
+  transform: scale(1.4);
+}
+
+@media (max-width: 640px) {
+  .pillnav {
+    gap: 0.45rem;
+    bottom: 0.75rem;
+  }
+}

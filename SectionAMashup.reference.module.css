@@ -1,0 +1,136 @@
+/* ============================================================
+   SectionAMashup.module.css
+   ============================================================
+   Styling for the chained-vignette opener. Uses the same colour
+   tokens as ConceptView.css (--bg, --ink, --crimson, --plum) so
+   no new design tokens need defining at the root.
+   ============================================================ */
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 170px);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Top-right replay/skip controls. Subtle so they don't compete
+   with the animation. Visible on hover only would be nice, but
+   we keep them lightly visible so the skip affordance is obvious
+   to first-time visitors. */
+.controls {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controlBtn {
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border: 1px solid rgba(47, 1, 71, 0.25);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.controlBtn:hover {
+  background: rgba(47, 1, 71, 0.06);
+  border-color: rgba(47, 1, 71, 0.5);
+}
+
+/* Monitor-style readout in the top-left/right corners. Matches
+   the LEAD II label aesthetic from the original ConceptView ECG. */
+.readout {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  right: 8rem;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Animation canvas sits in the centre of the stage. The 800x520
+   viewBox is shared by every scene's coordinate space so we can
+   reuse positions across scenes (centre = 400,260). */
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Headline — hidden until the final scene. Same typography rules
+   as .concept-a-headline so the eventual handoff to your existing
+   StrandPanel feels seamless. */
+.headline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-align: center;
+  max-width: 1100px;
+  width: 90%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.line { display: block; }
+.fast {
+  display: inline-block;
+  font-weight: 900;
+  color: var(--crimson);
+  margin-top: 0.2em;
+  transform-origin: center;
+}
+
+/* Scroll cue at the bottom — vertical "Scroll" + downward chevron.
+   Bouncing animation is driven from JS (anime.js loop on the SVG). */
+.scrollCue {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0;
+  z-index: 4;
+}
+
+@media (max-width: 640px) {
+  .controls { top: 0.75rem; right: 0.75rem; }
+  .readout {
+    left: 0.75rem;
+    right: 5.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+  }
+}

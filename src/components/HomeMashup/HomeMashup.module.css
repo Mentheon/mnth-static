@@ -1,0 +1,55 @@
+/* ============================================================
+   HomeMashup.module.css — stage frame for the home-page carousel.
+   Sized to match the existing hero (viewport minus header).
+   The active scene's <svg> is absolutely positioned to fill .stage;
+   the Readout sits in the top corners and the CarouselPills row
+   sits centred at the bottom.
+   ============================================================ */
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 170px);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Headline overlay — only rendered when the parent passes
+   `showHeadline`. Sits centred over the canvas so the carousel scenes
+   read as a backdrop behind the type. Pointer-events disabled so
+   clicks fall through to the carousel pills below. */
+.headlineOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 1100px;
+  text-align: center;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+  z-index: 4;
+  /* Soft cream glow keeps the type legible on top of busy scenes
+     without a hard background slab. */
+  text-shadow:
+    0 0 24px rgba(255, 236, 225, 0.85),
+    0 0 12px rgba(255, 236, 225, 0.85);
+}
+.headlineLine { display: block; }
+.headlineFast {
+  display: inline-block;
+  font-weight: 900;
+  color: var(--crimson);
+  margin-top: 0.2em;
+}
+
+@media (max-width: 640px) {
+  .stage {
+    height: calc(100vh - 120px);
+  }
+}

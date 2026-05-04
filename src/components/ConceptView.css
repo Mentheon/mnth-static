@@ -30,6 +30,16 @@
 .concept-a {
   background: var(--bg);
 }
+
+/* When section A hosts the HomeMashup carousel (the new main view of
+   the concepts page), drop the default flex centering + 2rem padding
+   so the carousel fills the full snap viewport edge-to-edge.
+   HomeMashup's own .stage already sets height: calc(100vh - 170px),
+   matching .concept-section's min-height — no extra child sizing needed. */
+.concept-a--mashup {
+  padding: 0;
+  display: block;
+}
 .concept-a-headline {
   font-family: 'Lato', sans-serif;
   font-weight: 700;

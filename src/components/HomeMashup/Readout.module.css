@@ -1,0 +1,36 @@
+/* ============================================================
+   Readout.module.css — corner monitor strip styling.
+   Matches the LEAD II label aesthetic from ConceptView.css.
+   ============================================================ */
+
+.readout {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.left,
+.right {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .readout {
+    left: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+  }
+}

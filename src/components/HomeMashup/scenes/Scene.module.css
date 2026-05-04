@@ -1,0 +1,15 @@
+/* ============================================================
+   Scene.module.css — shared canvas frame for every vignette.
+   Each scene renders its own <svg viewBox="0 0 800 520"> inside
+   .canvas; the orchestrator's stage container provides the
+   surrounding chrome (readout, pills, etc.).
+   ============================================================ */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}

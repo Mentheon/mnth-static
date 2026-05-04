@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
-import HeroSection from './components/HeroSection'
+import HomeMashup from './components/HomeMashup'
 import RDStrands from './components/RDStrands'
 import StrandPanel from './components/StrandPanel'
 import Helix from './components/Helix'
@@ -57,7 +57,7 @@ export default function App() {
         <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
       ) : (
         <>
-          <HeroSection />
+          <HomeMashup />
           {/* Top: three circular bubbles (Kindreon / Aevorix / Acumentra). */}
           <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
           {/* Middle: scrollable helix. Snapping a project here lights

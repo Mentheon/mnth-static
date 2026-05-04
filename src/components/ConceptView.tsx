@@ -3,6 +3,7 @@ import { animate, createTimeline, stagger, utils } from 'animejs'
 import RDStrands from './RDStrands'
 import StrandPanel from './StrandPanel'
 import Helix from './Helix'
+import HomeMashup from './HomeMashup'
 import { STRANDS } from '../data/strands'
 import './ConceptView.css'
 
@@ -588,42 +589,15 @@ export default function ConceptView() {
         ))}
       </nav>
 
-      {/* ============= a) Digital health is moving... fast ============= */}
+      {/* ============= a) Healthtech mashup carousel — main view of the
+                          concepts page. The "Digital health is moving…
+                          fast" headline overlays the rolling scenes. ============= */}
       <section
-        className="concept-section concept-a"
+        className="concept-section concept-a concept-a--mashup"
         ref={sectionARef}
         data-section="a"
       >
-        <h1 className="concept-a-headline">
-          {/* Lead-up: words fade in with a stagger. */}
-          <span className="concept-a-line">
-            <span data-word="0" className="concept-a-word">Digital</span>&nbsp;
-            <span data-word="1" className="concept-a-word">health</span>&nbsp;
-            <span data-word="2" className="concept-a-word">is</span>&nbsp;
-            <span data-word="3" className="concept-a-word">moving</span>
-            <span data-word="4" className="concept-a-word concept-a-word--ellipsis">…</span>
-          </span>
-          {/* Punchline: each letter scrambles before settling on f-a-s-t. */}
-          <span className="concept-a-line concept-a-line--punchline">
-            <span className="concept-a-fast" data-fast="">
-              <span className="concept-a-letter" data-letter="0">f</span>
-              <span className="concept-a-letter" data-letter="1">a</span>
-              <span className="concept-a-letter" data-letter="2">s</span>
-              <span className="concept-a-letter" data-letter="3">t</span>
-            </span>
-          </span>
-          {/* ECG strip immediately below the punchline. Amplitude is
-              driven LIVE by smoothed mouse-cursor velocity (see the
-              ECG controller in playSectionA). */}
-          <span className="concept-a-ecg" aria-hidden="true">
-            <span className="concept-a-ecg-lead">
-              Lead<span className="concept-a-ecg-lead-num">II</span>
-            </span>
-            <svg className="concept-a-ecg-svg" viewBox="0 0 1600 120" preserveAspectRatio="none">
-              <path className="concept-a-ecg-trace" d="" />
-            </svg>
-          </span>
-        </h1>
+        <HomeMashup showHeadline />
       </section>
 
       {/* ============= b) We get it + roadmap ============= */}
