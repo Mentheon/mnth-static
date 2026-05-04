@@ -14,38 +14,54 @@
   overflow: hidden;
 }
 
-/* Headline overlay — only rendered when the parent passes
-   `showHeadline`. Sits centred over the canvas so the carousel scenes
-   read as a backdrop behind the type. Pointer-events disabled so
-   clicks fall through to the carousel pills below. */
-.headlineOverlay {
+/* Headline split — when `showHeadline` is on, the lead-in sits at the
+   top of the stage and the punchline sits at the bottom. The middle
+   canvas (.canvasArea) gets inset top + bottom so scenes never paint
+   under the type. No backdrop, no overlap, animations stay clean. */
+.canvasArea {
   position: absolute;
-  top: 50%;
+  inset: 0;
+}
+.canvasAreaInset {
+  /* Canvas fills the stage; the headline rides on TOP of the canvas
+     (z-index 4) instead of pushing it down. Gives the type real
+     breathing room from the site header above without being cramped
+     against the animation either. */
+  top: 0;
+  bottom: 3rem;     /* just clears the carousel pills row */
+}
+.headlineTop {
+  position: absolute;
+  /* Sits at the top of the canvas area, well below the site header. */
+  top: 4rem;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 1100px;
+  transform: translateX(-50%);
+  max-width: 90%;
   text-align: center;
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: clamp(2.4rem, 6vw, 5.5rem);
-  color: var(--ink);
+  font-size: clamp(1.8rem, 4.5vw, 4rem);
   line-height: 1.05;
   letter-spacing: -0.01em;
+  color: var(--ink);
   pointer-events: none;
   z-index: 4;
-  /* Soft cream glow keeps the type legible on top of busy scenes
-     without a hard background slab. */
-  text-shadow:
-    0 0 24px rgba(255, 236, 225, 0.85),
-    0 0 12px rgba(255, 236, 225, 0.85);
+  white-space: nowrap;     /* keep "moving… fast" on one line */
 }
-.headlineLine { display: block; }
 .headlineFast {
-  display: inline-block;
   font-weight: 900;
   color: var(--crimson);
-  margin-top: 0.2em;
+}
+
+@media (max-width: 640px) {
+  .canvasAreaInset {
+    top: 0;
+    bottom: 2.5rem;
+  }
+  .headlineTop {
+    top: 2.5rem;
+    white-space: normal;   /* let the line wrap on tight screens */
+  }
 }
 
 @media (max-width: 640px) {

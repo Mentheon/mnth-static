@@ -83,18 +83,22 @@ export default function HomeMashup({ showHeadline = false }: HomeMashupProps) {
     <div className={styles.stage}>
       <Readout left={readout.left} right={readout.right} />
 
-      <ActiveScene
-        key={SCENES[currentIndex].id}
-        onReadoutChange={handleReadoutChange}
-        onComplete={handleSceneComplete}
-      />
-
       {showHeadline && (
-        <div className={styles.headlineOverlay} aria-hidden="true">
-          <span className={styles.headlineLine}>Digital health is moving…</span>
-          <span className={styles.headlineFast}>fast</span>
+        <div className={styles.headlineTop} aria-hidden="true">
+          Digital health is moving…&nbsp;<span className={styles.headlineFast}>fast</span>
         </div>
       )}
+
+      {/* The scene's <svg> absolute-fills this wrapper. When the
+          headline is shown above the canvas, canvasAreaInset reserves
+          space at the top so scenes don't paint under the type. */}
+      <div className={`${styles.canvasArea} ${showHeadline ? styles.canvasAreaInset : ''}`}>
+        <ActiveScene
+          key={SCENES[currentIndex].id}
+          onReadoutChange={handleReadoutChange}
+          onComplete={handleSceneComplete}
+        />
+      </div>
 
       <CarouselPills
         scenes={SCENES}
