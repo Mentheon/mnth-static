@@ -695,7 +695,7 @@ export default function ConceptView() {
         ref={sectionCRef}
         data-section="c"
       >
-        <p className="concept-c-eyebrow">Our ongoing R&amp;D strands</p>
+        <p className="concept-c-eyebrow">Some work of our own...</p>
         <div className="concept-c-host">
           {/* Single centred column: strand picker on top, helix in the
               middle, info panel below. While a strand is open the entire
