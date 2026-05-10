@@ -49,28 +49,61 @@ export default function Header({ currentHash }: HeaderProps) {
      full viewport so the header doesn't compact in the first inch
      of scroll. ConceptView's own scroller is internal to the page
      and won't trigger window scroll, so this never fires there. */
+  /* Scroll-distance triggered collapse. Fires at half a viewport so
+     the header DOES resize on the user's first meaningful downward
+     gesture (matching the "more screen real estate" intent), but the
+     companion re-snap effect below catches the side-effect — section
+     min-height grows when --header-h shrinks, so snap points shift
+     mid-scroll and could leave the user parked between segments.
+     We re-snap to the nearest section once the header height
+     transition (~300 ms) settles, so segment 2 lands centred even
+     when the resize fires mid-traversal. */
   useEffect(() => {
+    const scroller = document.querySelector('.concept-scroller') as HTMLElement | null
     const check = () => {
-      const y = window.scrollY || document.documentElement.scrollTop || 0
-      setIsScrolledPast(y > window.innerHeight * 0.8)
+      const y = scroller
+        ? scroller.scrollTop
+        : (window.scrollY || document.documentElement.scrollTop || 0)
+      setIsScrolledPast(y > window.innerHeight * 0.5)
     }
-    window.addEventListener('scroll', check, { passive: true })
+    const target: EventTarget = scroller ?? window
+    target.addEventListener('scroll', check, { passive: true })
     check()
-    return () => window.removeEventListener('scroll', check)
+    return () => target.removeEventListener('scroll', check)
   }, [currentHash])
-
-  /* ConceptView signal — dispatched as `mentheon:section` whenever
-     the snap-scroller crosses a section boundary. We collapse only
-     after the user has moved beyond section 'a' (the headline /
-     mashup), so the first segment keeps the full brand mark. */
   useEffect(() => {
-    const handler = (e: Event) => {
-      const id = (e as CustomEvent<{ section: string | null }>).detail?.section
-      setIsPastFirstSection(!!id && id !== 'a')
-    }
-    document.addEventListener('mentheon:section', handler as EventListener)
-    return () => document.removeEventListener('mentheon:section', handler as EventListener)
-  }, [])
+    setIsPastFirstSection(isScrolledPast)
+  }, [isScrolledPast])
+
+  /* When isCompact flips (in either direction), the header animates
+     its height over ~300 ms, --header-h updates via ResizeObserver,
+     and every .concept-section's min-height recalculates. Their
+     snap points (= offsetTop in the scroller) shift accordingly. If
+     the user was mid-scroll, scrollTop no longer corresponds to
+     either A's or B's new snap point — feels stuck. Solution:
+     ~380 ms after isCompact changes (header has settled), find the
+     section whose offsetTop is closest to the current scrollTop and
+     scroll to it. The 8-px epsilon prevents a no-op scroll triggering
+     a snap-event feedback loop. */
+  useEffect(() => {
+    const scroller = document.querySelector('.concept-scroller') as HTMLElement | null
+    if (!scroller || scroller.scrollTop < 10) return
+    const id = window.setTimeout(() => {
+      const sections = Array.from(scroller.querySelectorAll('.concept-section')) as HTMLElement[]
+      if (!sections.length) return
+      const currentY = scroller.scrollTop
+      let closest = sections[0]
+      let bestDist = Infinity
+      for (const s of sections) {
+        const dist = Math.abs(s.offsetTop - currentY)
+        if (dist < bestDist) { bestDist = dist; closest = s }
+      }
+      if (Math.abs(closest.offsetTop - currentY) > 8) {
+        scroller.scrollTo({ top: closest.offsetTop, behavior: 'smooth' })
+      }
+    }, 380)
+    return () => window.clearTimeout(id)
+  }, [isCompact])
 
   return (
     <header

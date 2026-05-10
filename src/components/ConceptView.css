@@ -40,14 +40,20 @@
 
 .concept-section {
   min-height: calc(100dvh - var(--header-h, 170px));
-  /* `center` (was `start`) anchors each section's MIDDLE to the
-     scroller's middle. For sections that fit exactly inside one
-     viewport this is identical to `start`, but for sections that
-     grow slightly past it the visual stays balanced top-to-bottom
-     rather than clipping the bottom. `scroll-snap-stop: always`
-     keeps every section a hard stop — momentum can't carry past
-     two snaps at once. */
-  scroll-snap-align: center;
+  /* `start` keeps each section's TOP edge anchored to the scroller's
+     top edge. Briefly switched to `center` for a "centred view"
+     effect, but when adjacent sections didn't have identical heights
+     (e.g. section C grows past viewport with the taller helix), the
+     centre snap points sat with a gap between them and the browser
+     could rest the scroll mid-way — reading as a "stuck" state
+     between the first and second segments. `start` makes the snap
+     points contiguous (section N's start = section N-1's end), so
+     momentum always commits to one stop or the next. The visual
+     centring people perceive comes from the section's flex
+     (`align-items: center; justify-content: center`), not from the
+     snap alignment, so nothing's lost. `scroll-snap-stop: always`
+     keeps every section a hard stop. */
+  scroll-snap-align: start;
   scroll-snap-stop: always;
   display: flex;
   align-items: center;
