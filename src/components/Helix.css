@@ -184,7 +184,18 @@ section.helix {
    ============================================================ */
 .helix-selector {
   position: absolute;
-  left: 0; right: 0; top: 60%;
+  left: 0; right: 0;
+  /* `60%` of the viewport puts the selector visually mid-stage on
+     tall windows, but on common laptop heights (where helix-stage is
+     ~270 px) 60% falls at ~165 px — *behind* the rod-logo overlay
+     (LARGE_ROD = 180 px tall, opaque background). The snap then
+     parks projects at a y-coord hidden by the rod, which reads as
+     the bubble being "clipped". `max(60%, 200px)` floors the
+     selector at 200 px from the top — clear of the rod with a small
+     visual buffer — while still tracking 60% on tall viewports.
+     The JS measuredSelectorOffset reads the rendered position
+     either way, so snap math stays consistent. */
+  top: max(60%, 200px);
   transform: translateY(-50%);
   display: flex; align-items: center; gap: 12px;
   padding: 0 16px;

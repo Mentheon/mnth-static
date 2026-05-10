@@ -14,8 +14,13 @@ interface HelixProps {
 // has just entered the viewport) or small (once the user has page-
 // scrolled past the trigger threshold). CSS transition handles the
 // visible morph between the two snapshots.
-const LARGE_ROD = 120
-const SMALL_ROD = 38
+// Large default rod size restored — the previous 120 was too small,
+// the brand mark didn't read at the top of the helix viewport. Small
+// (used after the user has page-scrolled past the trigger threshold)
+// kept compact so the rod doesn't cover too much of the helix scroll
+// content as a sticky overlay.
+const LARGE_ROD = 180
+const SMALL_ROD = 56
 // Page-scroll progress at which the rod flips from large → small.
 // progress 0 = section just entering view; 1 = section's top has
 // reached viewport top. ~0.45 means the rod minimises about halfway
@@ -175,13 +180,13 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       }
 
       const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
-      // Deadzone: if the user has parked within ~10 px of the chosen
-      // project's snap target, treat that as "close enough" — keep the
-      // selection live but DON'T yank the scroll back to the exact
-      // ideal. This gives a small margin above/below each snap so the
-      // user can nudge the helix manually (e.g. fine-tune Kindreon's
-      // alignment with the selector) without the snap fighting them.
-      const SNAP_DEADZONE = 10
+      // Tightened deadzone — was 10 px which let the topmost (Kindreon)
+      // and bottom-most (Acumentra) bubbles drift visibly off the
+      // selector line because the snap wouldn't pull back when the
+      // user's idle-scroll position fell anywhere within that band. 3
+      // px is small enough to hide subpixel rendering jitter but big
+      // enough that the snap still doesn't fight an exact landing.
+      const SNAP_DEADZONE = 3
       if (Math.abs(stage.scrollTop - chosen.idealScroll) < SNAP_DEADZONE) {
         if (rdId !== lastReportedRdId.current) {
           lastReportedRdId.current = rdId

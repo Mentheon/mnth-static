@@ -435,13 +435,32 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
 
     /* -------- Layout constants for THIS orientation -------- */
     const W = orientation === 'vertical' ? 820 : 1280  // SVG viewBox width
-    // The rod logo and strand labels are now rendered by the React shell
-    // as a static header overlay (Helix.tsx → .helix-header). The SVG no
-    // longer needs vertical room above the strand area for them, so H
-    // drops back to roughly lengthAxis + small margins.
-    const H = orientation === 'vertical' ? 810 : 540  // SVG viewBox height
-    const labelGap   = orientation === 'vertical' ? 40 : 80    // Just a small top margin (no labels in SVG anymore)
-    const tailMargin = 80                                       // Reserved at the trailing edge so strands don't touch it
+    // 900 (vertical) — bumped from 810 so the SVG's intrinsic-aspect
+    // height (= W * H / 820) grows with it, giving max-scroll more
+    // headroom for the bottom-most project (Acumentra). At H=810 the
+    // SVG was 632 px tall at 640 px wide; on tall viewports (stage at
+    // its 380 max-height) max-scroll = 632 − 380 = 252, while C's
+    // idealScroll was 246 — only 6 px of headroom, well within
+    // browser smooth-scroll easing precision so C visibly clamped at
+    // max-scroll a few pixels short of the line. H=900 → intrinsic
+    // 702 → max-scroll 322 → ~20 px headroom.
+    const H = orientation === 'vertical' ? 900 : 540  // SVG viewBox height
+    // 120 (vertical) — bigger top buffer than the original 40 so the
+    // topmost project (Kindreon at t=0.4) renders FAR ENOUGH down the
+    // SVG that its pxY clears the 200 px selector floor (see
+    // .helix-selector top: max(60%, 200px) in Helix.css) at the
+    // common helix-viewport widths (~470–640 px). Smaller values let
+    // K's pxY fall below 200 on narrower windows, idealScroll clamps
+    // to 0, and the snap visibly fails for K.
+    const labelGap   = orientation === 'vertical' ? 120 : 80
+    // 80 — restored from a temporary 140 expansion. Larger tails
+    // pulled C's vbY up too far (out of max-scroll range on tall
+    // viewports where stage = 380), and C still has ample bottom
+    // breathing room from the SVG's intrinsic-aspect height (632 px
+    // at 640 wide vs 272 px stage = 360 px max-scroll, C lands at
+    // ~274 px = ~86 px below). Asymmetry buys K reachability without
+    // sacrificing C's. */
+    const tailMargin = orientation === 'vertical' ? 80 : 80
     // Length of the staff axis (the "along" dimension).
     const lengthAxis = orientation === 'vertical' ? H - labelGap - tailMargin : W - labelGap - tailMargin
     // Centreline of the staff in the OFF-axis dimension.
@@ -591,8 +610,20 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
         const sideSign = dxFromStaff >= 0 ? 1 : -1
         const side = sideSign >= 0 ? 'right' : 'left'
         const outboard = axisOffset + sideSign * (amplitude + LABEL_GUTTER)
-        const px = orientation === 'vertical' ? outboard : pt.x
+        // Vertical: pull the bead onto the STAFF AXIS instead of the
+        // outboard column. Acumentra (single domain) was the only
+        // project visually offset from the central rod-line — the
+        // capsule projects sit on it via geometric midpoint — so the
+        // selector line crossing through the staff lined up with
+        // Aevorix/Kindreon but missed Acumentra by ~166 px. Putting
+        // the bead on staff makes all three projects share the same
+        // x reference; the strand-coloured leader still tells the
+        // user which strand the bead belongs to.
+        const px = orientation === 'vertical' ? axisOffset : pt.x
         const py = orientation === 'vertical' ? pt.y : outboard
+        // Keep `outboard` available for the horizontal-orientation
+        // path below; the lint-quiet tag.
+        void outboard
 
         const g = svgEl('g', { class: 'project-bead' })
         g.dataset.projectId = proj.id
@@ -704,16 +735,18 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
           g.appendChild(cap)
         })
 
-        // Multi-domain capsule label — capsule line stays on-strand, but the
-        // label sits OUTSIDE the spiral in the outboard column at the capsule
-        // row, with a horizontal leader from the capsule midpoint. Side is
-        // geometric where the midpoint clearly leans one way; for capsules
-        // whose midpoint sits on the staff (e.g. four symmetric strands), it
-        // falls back to alternation by project order so labels don't stack.
-        const midIdx = Math.floor(pts.length / 2)
-        const mid = pts.length % 2 === 1
-          ? pts[midIdx]
-          : { x: (pts[midIdx-1].x + pts[midIdx].x) / 2, y: (pts[midIdx-1].y + pts[midIdx].y) / 2 }
+        // GEOMETRIC midpoint of the capsule polyline — average of the
+        // extreme strand points. For odd-count capsules this is NOT
+        // the same as the literal middle strand (e.g. Kindreon's
+        // sorted x's are research/design/development; pts[1] = design
+        // sits 24 px LEFT of the line's actual centre, throwing the
+        // label off the staff axis while Aevorix's even-count
+        // average happened to land exactly on it). All strands share
+        // the same y at a given t so y is just pts[0].y.
+        const mid = {
+          x: (pts[0].x + pts[pts.length - 1].x) / 2,
+          y: pts[0].y,
+        }
         const dxFromStaff = orientation === 'vertical' ? mid.x - axisOffset : mid.y - axisOffset
         const projIdx = PROJECTS.findIndex(p => p.id === proj.id)
         const sideSign = Math.abs(dxFromStaff) > 16
@@ -1394,14 +1427,15 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
       if (proj.domainIds.length === 1) {
         const cfg = scene.strandConfigs[proj.domainIds[0]]
         const pt = strandPointAt(orientation, cfg, proj.position)
-        // Side is locked at initial render so the bead never flips columns
-        // as the strand drifts — the leader just lengthens or shortens.
-        // baseAmplitude (not the live amplitude) keeps the column stable
-        // through the idle-drift breathing.
         const sideSign = pe.sideSign != null ? pe.sideSign : 1
         const outboard = cfg.axisOffset + sideSign * (cfg.baseAmplitude + LABEL_GUTTER)
-        const px = orientation === 'vertical' ? outboard : pt.x
+        // Match the build-time placement: vertical pulls the bead onto
+        // the staff axis so it shares an x with Kindreon's and Aevorix's
+        // capsule midpoints. The outboard is still computed for the
+        // horizontal branch below.
+        const px = orientation === 'vertical' ? cfg.axisOffset : pt.x
         const py = orientation === 'vertical' ? pt.y : outboard
+        void outboard
         pe.shape.setAttribute('cx', px)
         pe.shape.setAttribute('cy', py)
         pe.px = px; pe.py = py
@@ -1442,12 +1476,16 @@ export function mountHelix(refs: HelixRefs): HelixHandle {
             c.setAttribute('cy', pts[i].y)
           }
         })
-        // Recompute capsule midpoint, then re-anchor the label/leader to the
-        // outboard column at the new midpoint y.
-        const midIdx = Math.floor(pts.length / 2)
-        const mid = pts.length % 2 === 1
-          ? pts[midIdx]
-          : { x: (pts[midIdx-1].x + pts[midIdx].x) / 2, y: (pts[midIdx-1].y + pts[midIdx].y) / 2 }
+        // Recompute capsule midpoint to the GEOMETRIC centre of the
+        // polyline (extreme x-average) — must match buildScene's
+        // formula or every drift frame would slide the label x
+        // back to the literal-middle-strand position (which on
+        // Kindreon's 3 strands is design.x = 385.7, not the
+        // staff-centred 410 the build pass now establishes).
+        const mid = {
+          x: (pts[0].x + pts[pts.length - 1].x) / 2,
+          y: pts[0].y,
+        }
         pe.mx = mid.x; pe.my = mid.y
         const sideSign = pe.sideSign != null ? pe.sideSign : 1
         const cfg = scene.strandConfigs[proj.domainIds[0]]
