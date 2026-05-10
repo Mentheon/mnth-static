@@ -49,22 +49,38 @@ export default function Header({ currentHash }: HeaderProps) {
      full viewport so the header doesn't compact in the first inch
      of scroll. ConceptView's own scroller is internal to the page
      and won't trigger window scroll, so this never fires there. */
-  /* Scroll-distance triggered collapse. Fires at half a viewport so
-     the header DOES resize on the user's first meaningful downward
-     gesture (matching the "more screen real estate" intent), but the
-     companion re-snap effect below catches the side-effect — section
-     min-height grows when --header-h shrinks, so snap points shift
-     mid-scroll and could leave the user parked between segments.
-     We re-snap to the nearest section once the header height
-     transition (~300 ms) settles, so segment 2 lands centred even
-     when the resize fires mid-traversal. */
+  /* Header collapses when scrollTop crosses 50 % of the FIRST
+     segment's height. For ConceptView that's the scroller's own
+     clientHeight (= viewport − header, matching section A's
+     min-height). For routes without the scroller, fall back to
+     window.innerHeight. Picking the segment-relative midpoint
+     (vs a flat 50 % of the viewport) makes the resize fire at
+     the exact point where section A's snap is still in force but
+     forward momentum is locked in — the collapse rides the
+     existing motion instead of competing with it. The
+     post-transition re-snap below cleans up any snap-point drift
+     so segment 2 lands centred. */
   useEffect(() => {
     const scroller = document.querySelector('.concept-scroller') as HTMLElement | null
+    /* Hysteresis — separate thresholds for COLLAPSE vs EXPAND so
+       the scroller wobbling around a single midpoint can't make
+       the header flash. Once compact, the user has to scroll back
+       to ~20 % of a segment to expand again; once expanded, they
+       have to push to 50 % to collapse. The 0.3-segment dead band
+       in between absorbs the re-snap / sub-pixel jitter that was
+       cycling the state. */
+    const COLLAPSE_AT = 0.5
+    const EXPAND_AT   = 0.2
     const check = () => {
       const y = scroller
         ? scroller.scrollTop
         : (window.scrollY || document.documentElement.scrollTop || 0)
-      setIsScrolledPast(y > window.innerHeight * 0.5)
+      const segmentH = scroller ? scroller.clientHeight : window.innerHeight
+      setIsScrolledPast(prev => {
+        if (prev && y < segmentH * EXPAND_AT) return false
+        if (!prev && y > segmentH * COLLAPSE_AT) return true
+        return prev
+      })
     }
     const target: EventTarget = scroller ?? window
     target.addEventListener('scroll', check, { passive: true })
@@ -75,35 +91,15 @@ export default function Header({ currentHash }: HeaderProps) {
     setIsPastFirstSection(isScrolledPast)
   }, [isScrolledPast])
 
-  /* When isCompact flips (in either direction), the header animates
-     its height over ~300 ms, --header-h updates via ResizeObserver,
-     and every .concept-section's min-height recalculates. Their
-     snap points (= offsetTop in the scroller) shift accordingly. If
-     the user was mid-scroll, scrollTop no longer corresponds to
-     either A's or B's new snap point — feels stuck. Solution:
-     ~380 ms after isCompact changes (header has settled), find the
-     section whose offsetTop is closest to the current scrollTop and
-     scroll to it. The 8-px epsilon prevents a no-op scroll triggering
-     a snap-event feedback loop. */
-  useEffect(() => {
-    const scroller = document.querySelector('.concept-scroller') as HTMLElement | null
-    if (!scroller || scroller.scrollTop < 10) return
-    const id = window.setTimeout(() => {
-      const sections = Array.from(scroller.querySelectorAll('.concept-section')) as HTMLElement[]
-      if (!sections.length) return
-      const currentY = scroller.scrollTop
-      let closest = sections[0]
-      let bestDist = Infinity
-      for (const s of sections) {
-        const dist = Math.abs(s.offsetTop - currentY)
-        if (dist < bestDist) { bestDist = dist; closest = s }
-      }
-      if (Math.abs(closest.offsetTop - currentY) > 8) {
-        scroller.scrollTo({ top: closest.offsetTop, behavior: 'smooth' })
-      }
-    }, 380)
-    return () => window.clearTimeout(id)
-  }, [isCompact])
+  /* Re-snap after the header transition is intentionally NOT done
+     here any more. The browser's native scroll-snap-type:y mandatory
+     already lands the user on the nearest section once they release
+     the scroll gesture; a JS-driven scrollTo on top of that produced
+     a visible "double scroll" — the user would feel the browser
+     snap to B, then ~380 ms later the JS would fire scrollTo and
+     scroll again. The hysteresis in the collapse-trigger effect
+     above prevents the threshold thrash that originally motivated
+     this re-snap; we let the browser do its job. */
 
   return (
     <header
