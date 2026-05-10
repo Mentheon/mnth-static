@@ -746,22 +746,27 @@ export default function ConceptView() {
           <div className="concept-c-helix-area">
             <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
           </div>
-          {/* Contextual "see more" affordance — only renders once a
-              strand is open, so the user knows section D exists below
-              and can opt into it (no auto-scroll yanks). Clicking
-              jumps the snap container to D. */}
-          {openStrand && (
-            <button
-              type="button"
-              className="concept-c-seemore"
-              onClick={() => sectionDRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              aria-label={`See full details for ${openStrand.label}`}
-            >
-              <span className="concept-c-seemore-label">See more</span>
-              <span className="concept-c-seemore-arrow" aria-hidden="true">↓</span>
-            </button>
-          )}
         </div>
+        {/* Contextual "see more" affordance — only renders once a
+            strand is open, so the user knows section D exists below
+            and can opt into it (no auto-scroll yanks). Clicking jumps
+            the snap container to D. Pinned to the viewport bottom via
+            position: fixed so content overflow on short windows can
+            never crop it; visible only while the user is on section
+            C (hidden on D since they're already on the panel, hidden
+            on A/B since the strand panel doesn't exist yet from the
+            user's vantage). */}
+        {openStrand && (
+          <button
+            type="button"
+            className={`concept-c-seemore ${currentSection === 'c' ? 'concept-c-seemore--visible' : ''}`}
+            onClick={() => sectionDRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            aria-label={`See full details for ${openStrand.label}`}
+          >
+            <span className="concept-c-seemore-label">See more</span>
+            <span className="concept-c-seemore-arrow" aria-hidden="true">↓</span>
+          </button>
+        )}
       </section>
 
       {/* ============= d) Selected strand's info card ============= */}

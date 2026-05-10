@@ -409,17 +409,30 @@
   justify-content: center;
 }
 
-/* "See more ↓" affordance, mounts below the helix the moment a
-   strand is selected. Tells the user section D exists without any
-   auto-scroll yanking; clicking it smooth-scrolls to D. */
+/* "See more ↓" affordance — pinned to the viewport bottom rather
+   than sitting in the section's grid, so however cramped the helix
+   section gets on a short window, the button is GUARANTEED visible
+   while section C is active. opacity + pointer-events are gated on
+   `--visible` so it fades in only when the user is on C (hidden on
+   A/B because there's no panel yet from their vantage, hidden on D
+   because they're already there). */
 .concept-c-seemore {
-  /* Layout — centred under the helix, sits in the grid's panel slot. */
-  grid-area: panel;
-  justify-self: center;
-  margin-top: clamp(0.5rem, 2dvh, 1.5rem);
+  position: fixed;
+  bottom: clamp(1rem, 3dvh, 1.75rem);
+  left: 50%;
+  /* translate(-50%) horizontally centres on the viewport mid-line.
+     The Y component is 0 by default and is only nudged in the
+     hover/animation rules below — must remain `translate(-50%, …)`
+     in every transform on this element so the X centring sticks. */
+  transform: translate(-50%, 0);
+  z-index: 60;
+  /* Hidden until the user is on section C; opacity transition makes
+     the show/hide read as a calm fade rather than a pop. */
+  opacity: 0;
+  pointer-events: none;
   /* Reset native button styling. */
   appearance: none;
-  background: transparent;
+  background: var(--bg);
   border: 1.5px solid var(--ink);
   border-radius: 999px;
   padding: 0.55rem 1.4rem;
@@ -435,16 +448,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-  /* Fade in when it mounts. */
-  animation: concept-c-seemore-in 0.45s ease-out both;
+  /* Soft drop-shadow keeps the pill readable when it overlaps the
+     bottom of the helix viewport on tall screens. */
+  box-shadow: 0 4px 14px rgba(47, 1, 71, 0.18);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.3s ease;
+}
+.concept-c-seemore--visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 .concept-c-seemore:hover,
 .concept-c-seemore:focus-visible {
   background-color: var(--crimson);
   color: var(--bg);
   border-color: var(--crimson);
-  transform: translateY(-1px);
+  transform: translate(-50%, -2px);
 }
 .concept-c-seemore-arrow {
   display: inline-block;
@@ -453,16 +475,11 @@
   /* Gentle vertical bob — draws the eye without being noisy. */
   animation: concept-c-seemore-bob 1.6s ease-in-out infinite;
 }
-@keyframes concept-c-seemore-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 @keyframes concept-c-seemore-bob {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(3px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .concept-c-seemore { animation: none; }
   .concept-c-seemore-arrow { animation: none; }
 }
 
