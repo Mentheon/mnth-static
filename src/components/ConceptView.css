@@ -21,7 +21,11 @@
      typical viewports. Anything truly tiny falls back to proximity
      in the @media below. */
   scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
+  /* Was `smooth` — switched to `auto` so the snap lands instantly
+     instead of easing for ~300 ms. Per-segment transitions feel
+     more positively gravitational; the user's input commits to the
+     next section without a soft glide. */
+  scroll-behavior: auto;
 }
 
 /* Safety hatch: on extremely short viewports (below 560 px tall) the

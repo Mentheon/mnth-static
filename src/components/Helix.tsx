@@ -194,13 +194,11 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       }
 
       const rdId = HELIX_TO_RD[chosen.id] ?? chosen.id
-      // Tightened deadzone — was 10 px which let the topmost (Kindreon)
-      // and bottom-most (Acumentra) bubbles drift visibly off the
-      // selector line because the snap wouldn't pull back when the
-      // user's idle-scroll position fell anywhere within that band. 3
-      // px is small enough to hide subpixel rendering jitter but big
-      // enough that the snap still doesn't fight an exact landing.
-      const SNAP_DEADZONE = 3
+      // 1 px deadzone — tighter "gravity" so the snap pulls the bead
+      // dead-on the selector line instead of accepting near-misses.
+      // Subpixel rendering jitter is below this threshold so we still
+      // don't oscillate on identical positions.
+      const SNAP_DEADZONE = 1
       if (Math.abs(stage.scrollTop - chosen.idealScroll) < SNAP_DEADZONE) {
         if (rdId !== lastReportedRdId.current) {
           lastReportedRdId.current = rdId
@@ -235,8 +233,11 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       // blocked Kindreon from ever being selected.
       if (Date.now() < programmaticScrollUntil.current) return
       if (snapTimer) window.clearTimeout(snapTimer)
-      // Wait until scroll has been idle for ~150 ms before snapping.
-      snapTimer = window.setTimeout(snapToNearest, 150)
+      // Reduced from 150 → 70 ms idle so the snap kicks in noticeably
+      // sooner after the user releases the scroll. Faster "gravity"
+      // toward the nearest project; still a small buffer so a
+      // momentary pause mid-flick doesn't trigger a stray snap.
+      snapTimer = window.setTimeout(snapToNearest, 70)
     }
 
     stage.addEventListener('scroll', onScroll, { passive: true })
