@@ -49,14 +49,18 @@
 }
 
 .rdGroup.selected {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.85);
-  max-width: 0;
-  pointer-events: none;
+  /* Stays visible — was previously hidden (opacity 0 + max-width 0)
+     which both hid the crimson highlight applied by StrandIcon AND
+     dropped the row from three circles to two, knocking the picker
+     off-centre. Now it remains in the row with a subtle scale-up so
+     the active strand reads as "current" while the row centring
+     stays balanced. */
+  transform: scale(1.06);
+  filter: drop-shadow(0 4px 14px rgba(163, 11, 55, 0.35));
 }
 
 .rdGroup.dimmed {
-  opacity: 0.45;
+  opacity: 0.4;
 }
 
 .rdGroup.dimmed:hover {

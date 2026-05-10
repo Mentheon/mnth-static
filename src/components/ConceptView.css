@@ -409,6 +409,63 @@
   justify-content: center;
 }
 
+/* "See more ↓" affordance, mounts below the helix the moment a
+   strand is selected. Tells the user section D exists without any
+   auto-scroll yanking; clicking it smooth-scrolls to D. */
+.concept-c-seemore {
+  /* Layout — centred under the helix, sits in the grid's panel slot. */
+  grid-area: panel;
+  justify-self: center;
+  margin-top: clamp(0.5rem, 2dvh, 1.5rem);
+  /* Reset native button styling. */
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.55rem 1.4rem;
+  /* Type. */
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  /* Composition. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  /* Fade in when it mounts. */
+  animation: concept-c-seemore-in 0.45s ease-out both;
+}
+.concept-c-seemore:hover,
+.concept-c-seemore:focus-visible {
+  background-color: var(--crimson);
+  color: var(--bg);
+  border-color: var(--crimson);
+  transform: translateY(-1px);
+}
+.concept-c-seemore-arrow {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1;
+  /* Gentle vertical bob — draws the eye without being noisy. */
+  animation: concept-c-seemore-bob 1.6s ease-in-out infinite;
+}
+@keyframes concept-c-seemore-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes concept-c-seemore-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .concept-c-seemore { animation: none; }
+  .concept-c-seemore-arrow { animation: none; }
+}
+
 .concept-c-panel-area {
   grid-area: panel;
   width: 100%;
@@ -419,6 +476,33 @@
      comfortably co-exist below the same fold. */
   max-width: 960px;
   margin: 0 auto;
+}
+
+/* ---------- Section D: standalone strand panel ----------
+   Hosts the StrandPanel as its own snap stop directly below section
+   C. Centred, capped at the same 960 px the in-section variant uses,
+   with an inner overflow-y so a tall panel (Aevorix's four themes)
+   stays scrollable inside its snap viewport instead of clipping. */
+.concept-d {
+  background: var(--bg);
+  flex-direction: column;
+  /* Section is one snap viewport; the panel sits flush at the top
+     with a small breathing margin. Centring vertically would leave
+     dead bands above and below on tall displays — top-anchoring
+     reads as continuous with the helix above. */
+  justify-content: flex-start;
+  padding-top: clamp(0.75rem, 4dvh, 3rem);
+}
+.concept-d-host {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  /* If the panel content is taller than the available section budget
+     (e.g. Aevorix on a short laptop window), let it scroll inside
+     this container — keeps the outer snap clean. */
+  max-height: calc(100dvh - var(--header-h, 170px) - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ---------- Side pill nav ----------

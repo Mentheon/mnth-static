@@ -23,6 +23,9 @@ export default function ConceptView() {
   const sectionARef = useRef<HTMLElement>(null)
   const sectionBRef = useRef<HTMLElement>(null)
   const sectionCRef = useRef<HTMLElement>(null)
+  // Section D — the strand-info panel as its own snap stop. Mounts only
+  // when a strand is selected; the helix remains the C snap above it.
+  const sectionDRef = useRef<HTMLElement>(null)
 
   // Tracks which sections have already played their entrance once,
   // so re-entering a section doesn't restart its animation jarringly.
@@ -33,12 +36,22 @@ export default function ConceptView() {
   const openStrand = STRANDS.find(s => s.id === openStrandId) ?? null
 
   // Which carousel section is currently in view — drives the side-pill
-  // active-state indicator.
-  const [currentSection, setCurrentSection] = useState<'a' | 'b' | 'c'>('a')
+  // active-state indicator. 'd' fires only when a strand is open AND
+  // the user has actually scrolled to the panel section.
+  const [currentSection, setCurrentSection] = useState<'a' | 'b' | 'c' | 'd'>('a')
+
+  /* No auto-scroll on strand open. Selecting a strand (via helix snap
+     OR clicking a strand button) just MOUNTS section D and updates the
+     panel content — the user stays where they are, so they can keep
+     browsing the helix without being yanked. To read the card they
+     either scroll down naturally (mandatory snap lands on D) or click
+     the D pill in the side nav. */
 
   /* IntersectionObserver — fires entrance when a section is mostly
      in view inside the snap scroller, AND tracks which section is
-     active for the pill nav. */
+     active for the pill nav. Re-runs when the D section mounts so it
+     joins the observed set; without this, the D pill would never
+     activate when the user scrolls onto the panel. */
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
@@ -46,6 +59,7 @@ export default function ConceptView() {
     if (sectionARef.current) observed.push(sectionARef.current)
     if (sectionBRef.current) observed.push(sectionBRef.current)
     if (sectionCRef.current) observed.push(sectionCRef.current)
+    if (sectionDRef.current) observed.push(sectionDRef.current)
 
     const observer = new IntersectionObserver(
       entries => {
@@ -54,7 +68,7 @@ export default function ConceptView() {
           const id = (entry.target as HTMLElement).dataset.section
           if (!id) return
           // Pill state — fires whenever a section becomes the dominant one.
-          if (id === 'a' || id === 'b' || id === 'c') setCurrentSection(id)
+          if (id === 'a' || id === 'b' || id === 'c' || id === 'd') setCurrentSection(id)
           if (playedRef.current.has(id)) return
           playedRef.current.add(id)
           if (id === 'a') playSectionA()
@@ -66,7 +80,10 @@ export default function ConceptView() {
     )
     observed.forEach(el => observer.observe(el))
     return () => observer.disconnect()
-  }, [])
+    // Depend on whether section D exists, NOT on openStrand object
+    // identity (which is recreated every render). Re-runs ONLY when
+    // section D mounts/unmounts.
+  }, [openStrandId !== null])
 
   /* ---------- Section A: counter rollover + ECG ----- */
   function playSectionA() {
@@ -557,16 +574,20 @@ export default function ConceptView() {
 
   /* Smooth-scroll the snap container to a specific section (used by
      the side pill nav). */
-  function jumpTo(id: 'a' | 'b' | 'c') {
-    const map = { a: sectionARef, b: sectionBRef, c: sectionCRef }
+  function jumpTo(id: 'a' | 'b' | 'c' | 'd') {
+    const map = { a: sectionARef, b: sectionBRef, c: sectionCRef, d: sectionDRef }
     map[id].current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  // Pills metadata — kept in render order top→bottom.
-  const PILLS: Array<{ id: 'a' | 'b' | 'c'; label: string }> = [
+  // Pills metadata — kept in render order top→bottom. The D pill only
+  // appears once a strand is open (i.e. section D is mounted), so the
+  // nav grows from 3 to 4 dots in step with the page's actual snap
+  // stops — clicking it jumps the user to the strand-info card.
+  const PILLS: Array<{ id: 'a' | 'b' | 'c' | 'd'; label: string }> = [
     { id: 'a', label: 'Fast' },
     { id: 'b', label: 'We get it' },
     { id: 'c', label: 'R&D strands' },
+    ...(openStrand ? [{ id: 'd' as const, label: 'Strand details' }] : []),
   ]
 
   return (
@@ -697,29 +718,57 @@ export default function ConceptView() {
       >
         <p className="concept-c-eyebrow">Some work of our own...</p>
         <div className="concept-c-host">
-          {/* Single centred column: strand picker on top, helix in the
-              middle, info panel below. While a strand is open the entire
-              picker row collapses out of view (the panel header itself
-              identifies the active strand), giving the slightly-shorter
-              helix and the info panel enough room to sit together below. */}
-          <div className={`concept-c-strands-area ${openStrand ? 'concept-c-strands-area--hidden' : ''}`}>
+          {/* Strand picker + helix only — the info panel has been
+              promoted to its own snap stop (section D) below, so the
+              user gets a clean snap between "browse the helix" and
+              "read the open strand's panel". */}
+          <div className="concept-c-strands-area">
             <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
           </div>
           <div className="concept-c-helix-area">
             <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
           </div>
+          {/* Contextual "see more" affordance — only renders once a
+              strand is open, so the user knows section D exists below
+              and can opt into it (no auto-scroll yanks). Clicking
+              jumps the snap container to D. */}
           {openStrand && (
-            <div className="concept-c-panel-area">
-              <StrandPanel
-                key={openStrand.id}
-                strand={openStrand}
-                isOpen={openStrandId !== null}
-                onClose={() => setOpenStrandId(null)}
-              />
-            </div>
+            <button
+              type="button"
+              className="concept-c-seemore"
+              onClick={() => sectionDRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              aria-label={`See full details for ${openStrand.label}`}
+            >
+              <span className="concept-c-seemore-label">See more</span>
+              <span className="concept-c-seemore-arrow" aria-hidden="true">↓</span>
+            </button>
           )}
         </div>
       </section>
+
+      {/* ============= d) Selected strand's info card ============= */}
+      {/* Mounts only when a strand is open. Because it sits as a sibling
+          snap section, scroll-snap treats it as a separate stop — users
+          can snap up to the helix or down to the card without either
+          clipping the other. The auto-scroll effect below brings this
+          section into view the moment a strand is selected, so the
+          interaction still reads as "click → see the card". */}
+      {openStrand && (
+        <section
+          className="concept-section concept-d"
+          ref={sectionDRef}
+          data-section="d"
+        >
+          <div className="concept-d-host">
+            <StrandPanel
+              key={openStrand.id}
+              strand={openStrand}
+              isOpen={openStrandId !== null}
+              onClose={() => setOpenStrandId(null)}
+            />
+          </div>
+        </section>
+      )}
     </div>
   )
 }
