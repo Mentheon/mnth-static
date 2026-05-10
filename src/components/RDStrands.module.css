@@ -1,21 +1,23 @@
 .rd {
   text-align: center;
-  /* RDStrands now sits ABOVE the helix scroller. Bottom padding kept
-     tight (was 8rem) so the three product circles flow directly into
-     the helix below them — they read as one combined unit. */
-  padding: 4rem 2rem 0.5rem;
+  /* Even tighter top padding so MBP-class viewports don't blow the
+     section's height budget before the helix even gets to render. */
+  padding: clamp(0.5rem, 2.4dvh, 4rem) 2rem 0.25rem;
   max-width: 1100px;
   margin: 0 auto;
   scroll-margin-top: 20px;
 }
 
 .rdTitle {
-  font-size: 2.5rem;
+  font-size: clamp(1.25rem, 2dvh + 0.4rem, 2.5rem);
   font-family: 'Lato', sans-serif;
   color: var(--ink);
   font-weight: 700;
-  margin: 0 0 3.5rem;
-  line-height: 1.15;
+  /* Bottom margin tightened — was clamp(1rem, 4dvh, 3.5rem). At
+     800dvh that produced 32 px of empty space below the title; this
+     halves it without crowding tall layouts. */
+  margin: 0 0 clamp(0.5rem, 2.4dvh, 3.5rem);
+  line-height: 1.1;
 }
 
 .thin {
@@ -25,14 +27,16 @@
 .rdRow {
   display: flex;
   justify-content: center;
-  gap: 8rem;
-  margin-top: 2rem;
+  /* Gap and top margin scale with viewport so the row doesn't
+     dominate the section on shorter windows. */
+  gap: clamp(2rem, 8dvh, 8rem);
+  margin-top: clamp(0.5rem, 2dvh, 2rem);
   transition: gap 0.4s ease, margin-top 0.4s ease;
 }
 
 .rdRow.collapsed {
-  gap: 4rem;
-  margin-top: 1rem;
+  gap: clamp(1.5rem, 4dvh, 4rem);
+  margin-top: clamp(0.25rem, 1dvh, 1rem);
 }
 
 .rdGroup {
@@ -68,8 +72,11 @@
 }
 
 .svgDisc {
-  width: 130px;
-  height: 130px;
+  /* Fluid disc — scales between ~80 px (short viewports) and 130 px
+     (tall ones). Was a fixed 130 px which made the picker dominate
+     on short windows. */
+  width: clamp(82px, 14dvh, 130px);
+  height: clamp(82px, 14dvh, 130px);
   display: block;
   border-radius: 50%;
   transition: transform 0.2s ease-out, filter 0.25s ease;
@@ -83,9 +90,10 @@
 }
 
 .label {
-  margin-top: 1rem;
+  margin-top: 0.6rem;
   font-weight: bold;
-  font-size: 1.5rem;
+  /* Was 1.5rem flat — scales with viewport height. */
+  font-size: clamp(1rem, 1.6dvh + 0.5rem, 1.5rem);
   text-align: center;
   color: var(--ink);
 }

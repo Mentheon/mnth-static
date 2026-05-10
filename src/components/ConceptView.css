@@ -14,17 +14,23 @@
   height: calc(100dvh - var(--header-h, 170px));
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* `proximity` by default — short viewports often can't fit a whole
-     section so mandatory would clip the surplus. The @media block
-     below upgrades to `mandatory` once we have enough vertical room
-     for the snap to behave well. */
-  scroll-snap-type: y proximity;
+  /* `mandatory` keeps the snap strong and definitive — every scroll
+     gesture lands on a section boundary, no in-between states. Now
+     that section content scales with `dvh`-driven clamps (helix-stage,
+     roadmap, RDStrands), the mandatory snap doesn't clip anything on
+     typical viewports. Anything truly tiny falls back to proximity
+     in the @media below. */
+  scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
 }
 
-@media (min-height: 800px) {
+/* Safety hatch: on extremely short viewports (below 560 px tall) the
+   section budget is so small even our scaled content can spill, and
+   mandatory snap would lock that surplus out of reach. Drop to
+   proximity there so the user can still scroll past the surplus. */
+@media (max-height: 560px) {
   .concept-scroller {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
   }
 }
 
@@ -143,7 +149,10 @@
 .concept-b {
   background: var(--bg);
   flex-direction: column;
-  gap: 2rem;
+  /* Was a flat 2rem — gap scales so the eyebrow / tagline / SVG
+     don't collectively blow the section height budget on shorter
+     laptop viewports. */
+  gap: clamp(0.75rem, 2dvh, 2rem);
 }
 .concept-b-eyebrow {
   font-size: 0.78rem;
@@ -157,17 +166,26 @@
 .concept-b-tagline {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: clamp(1.8rem, 4vw, 3rem);
+  /* Add a dvh component to the type ramp so the tagline shrinks on
+     short viewports too (the original ramp only listened to vw). */
+  font-size: clamp(1.4rem, 2.8dvh + 0.5rem, 3rem);
   color: var(--ink);
   text-align: center;
   margin: 0;
   max-width: 800px;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 .roadmap {
   width: 100%;
-  max-width: 1100px;
+  /* Cap by the SHORTER of (a) the design max 1100 px wide, and (b)
+     the width that keeps the viewBox 800×440 (≈1.818:1) under 52dvh
+     of vertical space — chosen so the roadmap + eyebrow + tagline +
+     gaps fit comfortably inside the section budget at typical MBP
+     heights (~720dvh). Without this second clamp, the roadmap
+     renders ~605 px tall at 1100 wide and overflows by ~200 px. */
+  max-width: min(1100px, calc(52dvh * 1.818));
   position: relative;
+  margin: 0 auto;
 }
 .roadmap-svg {
   width: 100%;
@@ -321,9 +339,11 @@
      .concept-section centres vertically, which is fine when no panel
      is open but causes the strand circles to drift off the viewport
      top once the side-by-side helix+panel row grows tall. Top-
-     anchoring keeps the strand row pinned where the user clicked. */
+     anchoring keeps the strand row pinned where the user clicked.
+     Padding-top scales with dvh so short viewports don't waste a
+     big block of empty space before the strand circles. */
   justify-content: flex-start;
-  padding-top: 3rem;
+  padding-top: clamp(0.75rem, 4dvh, 3rem);
 }
 .concept-c-eyebrow {
   font-size: 0.78rem;

@@ -86,30 +86,24 @@ section.helix {
 .helix-stage {
   width: 100%; position: relative;
   z-index: 1;                 /* under .helix-line and .helix-header */
-  /* Slightly shorter scroll window (was 400 px) so the helix and the
-     info panel below it can both fit inside one viewport when a
-     strand is open. */
-  height: 360px;
-  min-height: 300px;
-  max-height: 420px;
+  /* Tightened from 42dvh to 34dvh — at typical MBP heights (≈800 px)
+     42dvh = 336 left the section a clear 60 px short of fitting
+     RDStrands + helix together. 34dvh = 272 buys back the headroom.
+     Floor 240 / ceiling 380 still cover tiny / desktop displays. */
+  height: clamp(240px, 34dvh, 380px);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
-.helix-stage[data-orientation="horizontal"] { height: 360px; overflow-y: hidden; }
+.helix-stage[data-orientation="horizontal"] { height: clamp(240px, 34dvh, 380px); overflow-y: hidden; }
 
 .helix-svg {
   width: 100%;
   height: auto;
-  /* Restored to 540 px (was 480) so narrower viewports keep enough
-     `bandY` (the empty top band that grows when min-height exceeds
-     the SVG's intrinsic aspect height) to leave Kindreon's pxY below
-     the selector line. Without that, narrow widths starve the band,
-     Kindreon climbs above the selector, and the snap can't pull it
-     down to align. At 640 px wide the intrinsic height (~632) still
-     wins, so the helix isn't visibly any taller in the common case. */
-  min-height: 540px;
+  /* Min-height scales in step with the stage above so band-Y stays
+     proportional and Kindreon's snap math doesn't drift. */
+  min-height: clamp(360px, 52dvh, 540px);
   display: block;
   overflow: visible;
 }
