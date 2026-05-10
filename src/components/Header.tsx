@@ -9,14 +9,18 @@ interface HeaderProps {
 export default function Header({ currentHash }: HeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
 
-  /* When the user scrolls past a small threshold inside the embedded
-     .concept-scroller (or the page itself, on routes without one),
-     the header collapses to a compact strip. Hovering the strip
-     re-expands the visible content via CSS — section snap layout
-     stays anchored to the COMPACT height (the .site element keeps
-     its 70 px box; the inner .siteOverlay grows on hover and
-     overlays the page below without shifting layout). */
-  const [isCompact, setIsCompact] = useState(false)
+  /* Compact state has two triggers, depending on the active route:
+     1. ConceptView publishes its current section via the
+        `mentheon:section` custom event. The header folds compact
+        once the user has moved PAST the first segment (section
+        'a'); on 'a' it stays full size.
+     2. On non-ConceptView routes (Marginalia, Strand detail), there
+        is no section signal — fall back to a window-scroll
+        threshold sized to roughly one viewport so the header only
+        compacts after the user has actually scrolled meaningfully. */
+  const [isScrolledPast, setIsScrolledPast] = useState(false)
+  const [isPastFirstSection, setIsPastFirstSection] = useState(false)
+  const isCompact = isScrolledPast || isPastFirstSection
 
   /* ResizeObserver — publishes the header's *layout-reserved* height
      to `--header-h`. Because hover only changes .siteOverlay (which
@@ -40,25 +44,33 @@ export default function Header({ currentHash }: HeaderProps) {
     }
   }, [])
 
-  /* Scroll detection — collapses the header once the user has moved
-     past ~60 px in either the embedded carousel scroller or the
-     window itself. Re-runs on route change in case the active page
-     swaps between those (Marginalia / Strand detail use window
-     scroll; ConceptView uses the .concept-scroller). */
+  /* Window-scroll fallback for routes WITHOUT ConceptView's section
+     event — Marginalia article reads, Strand detail. Threshold is a
+     full viewport so the header doesn't compact in the first inch
+     of scroll. ConceptView's own scroller is internal to the page
+     and won't trigger window scroll, so this never fires there. */
   useEffect(() => {
-    const SCROLL_THRESHOLD = 60
-    const scroller = document.querySelector('.concept-scroller') as HTMLElement | null
     const check = () => {
-      const y = scroller
-        ? scroller.scrollTop
-        : (window.scrollY || document.documentElement.scrollTop || 0)
-      setIsCompact(y > SCROLL_THRESHOLD)
+      const y = window.scrollY || document.documentElement.scrollTop || 0
+      setIsScrolledPast(y > window.innerHeight * 0.8)
     }
-    const target: EventTarget = scroller ?? window
-    target.addEventListener('scroll', check, { passive: true })
+    window.addEventListener('scroll', check, { passive: true })
     check()
-    return () => target.removeEventListener('scroll', check)
+    return () => window.removeEventListener('scroll', check)
   }, [currentHash])
+
+  /* ConceptView signal — dispatched as `mentheon:section` whenever
+     the snap-scroller crosses a section boundary. We collapse only
+     after the user has moved beyond section 'a' (the headline /
+     mashup), so the first segment keeps the full brand mark. */
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<{ section: string | null }>).detail?.section
+      setIsPastFirstSection(!!id && id !== 'a')
+    }
+    document.addEventListener('mentheon:section', handler as EventListener)
+    return () => document.removeEventListener('mentheon:section', handler as EventListener)
+  }, [])
 
   return (
     <header

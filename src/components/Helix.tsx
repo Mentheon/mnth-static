@@ -268,6 +268,14 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
      ---------------------------------------------------------------- */
   useEffect(() => {
     function onWindowScroll() {
+      // While a strand is open, force the rod to its small size —
+      // the brand mark steps out of the way so the panel and helix
+      // get the screen real estate. Wins over the page-scroll lerp
+      // below regardless of where the section sits in the viewport.
+      if (selectedStrandId !== null) {
+        setRodSize(SMALL_ROD)
+        return
+      }
       const section = sectionRef.current
       if (!section) return
       const rect = section.getBoundingClientRect()
@@ -289,7 +297,7 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       window.removeEventListener('scroll', onWindowScroll)
       window.removeEventListener('resize', onWindowScroll)
     }
-  }, [])
+  }, [selectedStrandId])
 
   /* ----------------------------------------------------------------
      Two-way binding: when an R&D Strands button is clicked elsewhere,

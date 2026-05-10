@@ -47,6 +47,24 @@ export default function ConceptView() {
      either scroll down naturally (mandatory snap lands on D) or click
      the D pill in the side nav. */
 
+  /* Broadcast which section is currently active on a `document`
+     custom event so siblings (Header) can react without prop-
+     drilling. The header listens for this and folds itself compact
+     once the user has moved past section 'a'. On unmount we
+     dispatch null so other routes don't inherit a stale section. */
+  useEffect(() => {
+    document.dispatchEvent(
+      new CustomEvent('mentheon:section', { detail: { section: currentSection } }),
+    )
+  }, [currentSection])
+  useEffect(() => {
+    return () => {
+      document.dispatchEvent(
+        new CustomEvent('mentheon:section', { detail: { section: null } }),
+      )
+    }
+  }, [])
+
   /* IntersectionObserver — fires entrance when a section is mostly
      in view inside the snap scroller, AND tracks which section is
      active for the pill nav. Re-runs when the D section mounts so it
