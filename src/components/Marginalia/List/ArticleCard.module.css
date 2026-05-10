@@ -60,6 +60,10 @@
   overflow: hidden;
 }
 
+.tagsRow {
+  margin: 0 0 1rem;
+}
+
 .cta {
   margin-top: auto;
   font-family: 'JetBrains Mono', monospace;

@@ -1,0 +1,32 @@
+/* StrandTags — small grape pills indicating strand affiliation. */
+
+.row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(156, 82, 139, 0.15);  /* grape @ 15% — soft pill */
+  color: var(--grape);
+  font-family: 'Lato', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+/* Detail variant is interactive — hover suggests it's a link. */
+.tagDetail {
+  cursor: pointer;
+}
+.tagDetail:hover {
+  background: var(--crimson);
+  color: var(--bg);
+}

@@ -8,11 +8,11 @@ import styles from './Marginalia.module.css'
 // other value tries to find a matching article and renders its detail.
 // An unknown slug falls through to a small "not found" stub so a stale
 // deep-link doesn't crash the app.
-export default function Marginalia({ slug }: MarginaliaProps) {
+export default function Marginalia({ slug, strandFilter = null }: MarginaliaProps) {
   const articles = loadArticles()
 
   if (slug === null) {
-    return <MarginaliaList articles={articles} />
+    return <MarginaliaList articles={articles} activeStrand={strandFilter} />
   }
 
   const article = findArticle(slug)

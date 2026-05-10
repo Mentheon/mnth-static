@@ -40,6 +40,18 @@ const files = import.meta.glob('../../content/marginalia/*.md', {
   eager: true,
 }) as Record<string, string>
 
+// Strand frontmatter is single-line, comma-separated:
+//   strands: kindred, vitalis
+// Trim each, drop blanks, lowercase to match the canonical IDs in
+// data/strands.ts. Missing / empty field → empty array (general article).
+function parseStrands(raw: string | undefined): string[] {
+  if (!raw) return []
+  return raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+}
+
 const articles: Article[] = Object.entries(files).map(([path, raw]) => {
   const { frontmatter, body } = parseFrontmatter(raw)
   return {
@@ -49,6 +61,7 @@ const articles: Article[] = Object.entries(files).map(([path, raw]) => {
     type: coerceType(frontmatter.type),
     author: frontmatter.author ?? 'NQ Smith',
     summary: frontmatter.summary ?? '',
+    strands: parseStrands(frontmatter.strands),
     body,
     bodyHtml: renderMarkdown(body),
   }

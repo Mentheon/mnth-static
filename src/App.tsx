@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
-import HomeMashup from './components/HomeMashup'
-import RDStrands from './components/RDStrands'
-import StrandPanel from './components/StrandPanel'
-import Helix from './components/Helix'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
 import StrandDetail from './components/StrandDetail'
@@ -24,9 +20,12 @@ export default function App() {
   const hash = useHash()
   // `#strand` (no id) and `#strand/<id>` both route to the detail view.
   const isStrandRoute = hash === '#strand' || hash.startsWith('#strand/')
-  // `#marginalia` and `#marginalia/<slug>` both route to the news section
-  // (list view vs. article detail).
-  const isMarginaliaRoute = hash === '#marginalia' || hash.startsWith('#marginalia/')
+  // `#marginalia`, `#marginalia/<slug>`, and `#marginalia?strand=<id>`
+  // all route to the news section. Strip the query when checking the
+  // path-style match so `#marginalia?strand=kindred` still resolves.
+  const hashPath = hash.split('?')[0]
+  const isMarginaliaRoute =
+    hashPath === '#marginalia' || hashPath.startsWith('#marginalia/')
   const page =
     hash === '#who'     ? 'who'        :
     hash === '#concept' ? 'concept'    :
@@ -46,48 +45,32 @@ export default function App() {
 
   // Mirror the `#strand/<id>` slug-extraction pattern. `null` means
   // we're on the index/list view; any other value asks for the detail
-  // page of that article slug.
-  const marginaliaSlug = hash.startsWith('#marginalia/')
-    ? hash.slice('#marginalia/'.length)
+  // page of that article slug. Strip the `?...` query first.
+  const marginaliaSlug = hashPath.startsWith('#marginalia/')
+    ? hashPath.slice('#marginalia/'.length)
     : null
 
-  // Selected R&D Strand id, shared between the StrandPanel, the
-  // RDStrands buttons, and the Helix — scrolling the helix snaps to a
-  // project and updates this; clicking an RDStrands button updates this
-  // and scrolls the helix to align that project with the selector.
-  const [openStrandId, setOpenStrandId] = useState<string | null>(null)
-  const openStrand = STRANDS.find(s => s.id === openStrandId) ?? null
+  // Optional strand filter for the marginalia list view. URL shape is
+  // `#marginalia?strand=<id>`. `URLSearchParams` happily parses the
+  // bit after the `?` regardless of where it sits in the URL.
+  const queryStr = hash.includes('?') ? hash.split('?').slice(1).join('?') : ''
+  const strandFilter = new URLSearchParams(queryStr).get('strand')
 
   return (
     <>
       <Header currentHash={hash} />
       {page === 'who' ? (
         <WhoPage />
-      ) : page === 'concept' ? (
-        <ConceptView />
       ) : page === 'strand' && detailStrand.progress ? (
         <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
       ) : page === 'marginalia' ? (
-        <Marginalia slug={marginaliaSlug} />
+        <Marginalia slug={marginaliaSlug} strandFilter={strandFilter} />
       ) : (
-        <>
-          <HomeMashup />
-          {/* Top: three circular bubbles (Kindreon / Aevorix / Acumentra). */}
-          <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
-          {/* Middle: scrollable helix. Snapping a project here lights
-              the matching bubble above; clicking a bubble scrolls the
-              helix to that project. */}
-          <Helix selectedStrandId={openStrandId} onSelect={setOpenStrandId} />
-          {/* Bottom: detail panel for whatever's currently selected. */}
-          {openStrand && (
-            <StrandPanel
-              key={openStrand.id}
-              strand={openStrand}
-              isOpen={openStrandId !== null}
-              onClose={() => setOpenStrandId(null)}
-            />
-          )}
-        </>
+        // Default + #concept both render the ConceptView. The legacy
+        // home view (HomeMashup → RDStrands → Helix → StrandPanel) is
+        // intentionally unwired right now; recover it from git history
+        // if you want it back as a separate route.
+        <ConceptView />
       )}
     </>
   )

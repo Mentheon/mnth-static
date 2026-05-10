@@ -4,6 +4,7 @@ date: 2026-03-28
 type: paper-summary
 author: NQ Smith
 summary: Notes on a late-breaking work that argues for stripping WebXR scenes back, not building them up.
+strands: kindred
 ---
 
 A late-breaking work that turned up in the CHI '25 program caught my eye this month: *"What you don't add: subtractive design heuristics for therapeutic WebXR"* (Hossain et al.). It's only four pages, and most of it is anecdotal — but it pushes against a tendency I see in a lot of clinical XR work, including some of our own early sketches, which is to keep adding props until the room feels furnished.

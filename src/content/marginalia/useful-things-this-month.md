@@ -4,6 +4,7 @@ date: 2026-04-22
 type: link-roundup
 author: NQ Smith
 summary: A small reading list — five links from April that are worth your time.
+strands: vitrix
 ---
 
 A short, not-quite-systematic round-up of things I found useful this month. None of them are new; all of them sat with me long enough to be worth passing on.

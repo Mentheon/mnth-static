@@ -79,6 +79,10 @@
   max-width: 65ch;
 }
 
+.tagsRow {
+  margin-top: 1rem;
+}
+
 .backRow {
   margin-top: 3rem;
   padding-top: 1.5rem;

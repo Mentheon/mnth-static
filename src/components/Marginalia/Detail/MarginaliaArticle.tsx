@@ -1,6 +1,7 @@
 import type { Article } from '../types'
 import ArticleBody from './ArticleBody'
 import ArticleMeta from '../shared/ArticleMeta'
+import StrandTags from '../shared/StrandTags'
 import styles from './MarginaliaArticle.module.css'
 
 interface MarginaliaArticleProps {
@@ -33,6 +34,11 @@ export default function MarginaliaArticle({ article }: MarginaliaArticleProps) {
             <h1 className={styles.title}>{article.title}</h1>
             {article.summary && (
               <p className={styles.tagline}>{article.summary}</p>
+            )}
+            {article.strands.length > 0 && (
+              <div className={styles.tagsRow}>
+                <StrandTags strands={article.strands} variant="detail" />
+              </div>
             )}
           </header>
 

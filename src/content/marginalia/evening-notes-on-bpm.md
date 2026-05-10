@@ -4,6 +4,7 @@ date: 2026-04-05
 type: note
 author: NQ Smith
 summary: A short aside on heart-rate variability authoring — the difference between a number on a chart and a number a designer can act on.
+strands: vitalis, vitrix
 ---
 
 I sat with a heart-rate trace tonight — one I'd recorded in a calm-room session last week, then forgotten about — and was reminded, again, how little use a raw BPM line is for design decisions. The number moves all the time. Of course it moves; it's a body. The interesting question isn't *what was the user's heart rate at second 38?* but *was it doing the kind of moving we wanted it to be doing?*

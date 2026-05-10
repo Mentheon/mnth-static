@@ -48,6 +48,7 @@ The parser is intentionally minimal — single-line `key: value` pairs only. No 
 | `type`    | yes      | one of the recognised types (see below) | Anything else falls back to `note` |
 | `author`  | optional | plain string         | Defaults to `NQ Smith` |
 | `summary` | optional | plain string         | Shown on the list-view card. Aim for ~140 chars / two lines max — the card clamps. Empty = card shows just title + meta. |
+| `strands` | optional | comma-separated IDs  | Cross-link to one or more R&D strands — `kindred` / `vitalis` / `vitrix`. Renders as small grape pills on the card and detail header, and makes the article appear under that strand's filter chip. Missing / empty = the article is "general" and only appears in the All view. Unknown IDs are silently dropped. Example: `strands: kindred, vitalis` |
 
 ### Quoting
 

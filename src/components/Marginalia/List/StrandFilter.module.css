@@ -1,0 +1,54 @@
+/* StrandFilter — pill-style chip strip above the article grid.
+   Inactive chips are outline ink-soft; active is filled crimson with
+   cream type. Count badge sits to the right of the label, dimmer. */
+
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0 0 2rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 1, 71, 0.2);
+  background: transparent;
+  text-decoration: none;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.chip:hover {
+  background: rgba(47, 1, 71, 0.04);
+  border-color: var(--ink);
+}
+
+.chipActive,
+.chipActive:hover {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: var(--bg);
+}
+
+.label { line-height: 1; }
+
+.count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+}
+.chipActive .count { opacity: 0.85; }

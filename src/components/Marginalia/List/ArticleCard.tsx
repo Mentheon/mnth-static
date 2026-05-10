@@ -1,5 +1,6 @@
 import type { Article } from '../types'
 import ArticleMeta from '../shared/ArticleMeta'
+import StrandTags from '../shared/StrandTags'
 import styles from './ArticleCard.module.css'
 
 interface ArticleCardProps {
@@ -21,6 +22,11 @@ export default function ArticleCard({ article }: ArticleCardProps) {
       <ArticleMeta article={article} variant="card" />
       <h3 className={styles.title}>{article.title}</h3>
       <p className={styles.summary}>{article.summary}</p>
+      {article.strands.length > 0 && (
+        <div className={styles.tagsRow}>
+          <StrandTags strands={article.strands} variant="card" />
+        </div>
+      )}
       <span className={styles.cta} aria-hidden="true">
         Read <span className={styles.arrow}>&rarr;</span>
       </span>

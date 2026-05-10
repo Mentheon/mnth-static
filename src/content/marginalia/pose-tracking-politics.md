@@ -4,6 +4,7 @@ date: 2026-04-12
 type: essay
 author: NQ Smith
 summary: Calibration is never neutral. Notes on consent, defaults, and what a body in WebXR is allowed to be.
+strands: kindred, vitalis
 ---
 
 A headset is a survey instrument before it is anything else. It surveys the room, then the user — head, hands, sometimes the gaze, sometimes the face. The act of pose tracking is so well-rehearsed by now that we treat it as plumbing, but plumbing is precisely the thing that decides what flows where. In WebXR the plumbing is short, fast, and almost completely invisible to the person being measured.
