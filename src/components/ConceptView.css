@@ -6,16 +6,30 @@
    ============================================================ */
 
 .concept-scroller {
-  /* Header above is 170px (desktop). Use viewport minus that. */
-  height: calc(100vh - 170px);
+  /* Header height comes from JS (Header.tsx writes --header-h on <html>
+     via ResizeObserver). 170px fallback covers the first frame before
+     the observer fires AND any case where the var fails to publish.
+     `100dvh` over `100vh` so iOS Safari's address-bar collapse doesn't
+     silently inflate the scroller mid-scroll. */
+  height: calc(100dvh - var(--header-h, 170px));
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
+  /* `proximity` by default — short viewports often can't fit a whole
+     section so mandatory would clip the surplus. The @media block
+     below upgrades to `mandatory` once we have enough vertical room
+     for the snap to behave well. */
+  scroll-snap-type: y proximity;
   scroll-behavior: smooth;
 }
 
+@media (min-height: 800px) {
+  .concept-scroller {
+    scroll-snap-type: y mandatory;
+  }
+}
+
 .concept-section {
-  min-height: calc(100vh - 170px);
+  min-height: calc(100dvh - var(--header-h, 170px));
   scroll-snap-align: start;
   scroll-snap-stop: always;
   display: flex;

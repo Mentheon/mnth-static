@@ -172,7 +172,9 @@ section.helix {
   position: absolute;
   left: 50%;
   top: 0;
-  height: 100vh;
+  /* dvh matches the section sizer (ConceptView.css) so the line
+     doesn't overshoot when iOS Safari's address bar collapses. */
+  height: 100dvh;
   width: 2.5px;
   background: var(--ink);
   transform: translateX(-50%);

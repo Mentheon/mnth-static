@@ -9,7 +9,9 @@
 .stage {
   position: relative;
   width: 100%;
-  height: calc(100vh - 170px);
+  /* Match the scroller's section sizing — see ConceptView.css for the
+     --header-h JS-published variable and the dvh rationale. */
+  height: calc(100dvh - var(--header-h, 170px));
   background: var(--bg);
   overflow: hidden;
 }
@@ -66,6 +68,8 @@
 
 @media (max-width: 640px) {
   .stage {
-    height: calc(100vh - 120px);
+    /* Same dvh + dynamic header offset as the desktop rule above —
+       the old 120 px guess was just as fragile as the 170 px one. */
+    height: calc(100dvh - var(--header-h, 120px));
   }
 }
