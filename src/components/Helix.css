@@ -94,7 +94,16 @@ section.helix {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  /* Hide the scrollbar but keep scroll interaction. The strands
+     should read as a clean spiral; the visible scrollbar was breaking
+     that visual without adding value (the selector line + bubble snap
+     are the navigation cues). Three vendor-prefix variants cover all
+     evergreen browsers. */
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* legacy Edge / IE */
+}
+.helix-stage::-webkit-scrollbar {
+  display: none;                  /* Chrome / Safari / WebKit */
 }
 .helix-stage[data-orientation="horizontal"] { height: clamp(240px, 34dvh, 380px); overflow-y: hidden; }
 

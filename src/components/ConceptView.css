@@ -497,12 +497,12 @@
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  /* If the panel content is taller than the available section budget
-     (e.g. Aevorix on a short laptop window), let it scroll inside
-     this container — keeps the outer snap clean. */
-  max-height: calc(100dvh - var(--header-h, 170px) - 6rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  /* No internal scroll — was capturing the wheel/trackpad before
+     the parent scroller could move between sections. The panel now
+     renders at its natural height; if it exceeds the section, the
+     parent .concept-scroller's snap behaviour takes over (and the
+     panel content remains visible because the snap landing point
+     is the top of section D). */
 }
 
 /* ---------- Side pill nav ----------
