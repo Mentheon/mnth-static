@@ -75,6 +75,20 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
   // so logo starts large; it'll be set correctly on first scroll fire.
   const [rodSize, setRodSize] = useState(LARGE_ROD)
 
+  // True while the user's cursor is hovering ANY strand button in the
+  // RDStrands picker — also folds the rod compact (anticipates the
+  // selection that's about to happen, signals which screen real
+  // estate is about to matter).
+  const [isStrandHovered, setIsStrandHovered] = useState(false)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const hovering = !!(e as CustomEvent<{ hovering: boolean }>).detail?.hovering
+      setIsStrandHovered(hovering)
+    }
+    document.addEventListener('mentheon:strand-hover', handler as EventListener)
+    return () => document.removeEventListener('mentheon:strand-hover', handler as EventListener)
+  }, [])
+
   /* ----------------------------------------------------------------
      Mount the helix scene + wire scroll-snap. Run ONCE on mount.
      ---------------------------------------------------------------- */
@@ -268,11 +282,12 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
      ---------------------------------------------------------------- */
   useEffect(() => {
     function onWindowScroll() {
-      // While a strand is open, force the rod to its small size —
-      // the brand mark steps out of the way so the panel and helix
-      // get the screen real estate. Wins over the page-scroll lerp
+      // While a strand is open OR the cursor is hovering one of the
+      // RDStrands buttons, force the rod to its small size — the
+      // brand mark steps out of the way so the panel and helix get
+      // the screen real estate. Wins over the page-scroll lerp
       // below regardless of where the section sits in the viewport.
-      if (selectedStrandId !== null) {
+      if (selectedStrandId !== null || isStrandHovered) {
         setRodSize(SMALL_ROD)
         return
       }
@@ -297,7 +312,7 @@ export default function Helix({ selectedStrandId, onSelect }: HelixProps) {
       window.removeEventListener('scroll', onWindowScroll)
       window.removeEventListener('resize', onWindowScroll)
     }
-  }, [selectedStrandId])
+  }, [selectedStrandId, isStrandHovered])
 
   /* ----------------------------------------------------------------
      Two-way binding: when an R&D Strands button is clicked elsewhere,

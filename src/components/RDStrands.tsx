@@ -44,6 +44,12 @@ export default function RDStrands({ openId, onSelect }: RDStrandsProps) {
                 aria-expanded={isSelected}
                 aria-controls="strand-panel"
                 aria-label={strand.label}
+                onMouseEnter={() => document.dispatchEvent(
+                  new CustomEvent('mentheon:strand-hover', { detail: { hovering: true } }),
+                )}
+                onMouseLeave={() => document.dispatchEvent(
+                  new CustomEvent('mentheon:strand-hover', { detail: { hovering: false } }),
+                )}
               >
                 <StrandIcon
                   strandId={strand.id}
