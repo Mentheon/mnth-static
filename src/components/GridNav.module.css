@@ -12,10 +12,17 @@
   /* Scales with the header's compact/expanded state. The CSS var
      comes from .siteOverlay (Header.module.css). transform-origin
      pivots from the top-right corner so the nav stays anchored to
-     the right edge as it shrinks/grows. */
+     the right edge as it shrinks/grows. The --nav-opacity var fades
+     the nav out entirely while the header is compact, then back in
+     when the user hovers — keeps the compact strip uncluttered. */
   transform: scale(var(--header-scale, 1));
   transform-origin: 100% 0;
-  transition: transform 0.3s ease;
+  opacity: var(--nav-opacity, 1);
+  /* `pointer-events: none` while invisible so the offscreen ghost
+     of the nav can't capture clicks. The * 0 trick reads the
+     opacity var and turns it into either `auto` or `none`. */
+  pointer-events: var(--nav-pointer, auto);
+  transition: transform 0.3s ease, opacity 0.25s ease;
 }
 
 .navItem {

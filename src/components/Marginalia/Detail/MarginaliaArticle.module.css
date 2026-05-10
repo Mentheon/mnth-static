@@ -117,3 +117,9 @@
   .page { padding-left: 1.25rem; padding-right: 1.25rem; }
   .frame { padding: 2rem 1.5rem 2.5rem; }
 }
+/* Phone-class — keep the article reader legible at 360 px wide. */
+@media (max-width: 480px) {
+  .breadcrumb,
+  .page { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .frame { padding: 1.5rem 1rem 2rem; }
+}

@@ -86,11 +86,13 @@ section.helix {
 .helix-stage {
   width: 100%; position: relative;
   z-index: 1;                 /* under .helix-line and .helix-header */
-  /* Tightened from 42dvh to 34dvh — at typical MBP heights (≈800 px)
-     42dvh = 336 left the section a clear 60 px short of fitting
-     RDStrands + helix together. 34dvh = 272 buys back the headroom.
-     Floor 240 / ceiling 380 still cover tiny / desktop displays. */
-  height: clamp(240px, 34dvh, 380px);
+  /* Taller stage — was clamp(220, 34dvh, 380). The header collapsing
+     on scroll plus the RDStrands picker compacting gave back enough
+     vertical room for a fuller spiral. clamp(280, 44dvh, 480) so
+     the helix reads as the section's hero on tall displays while
+     still fitting comfortably on phones (44dvh × 700 = 308 < 480
+     ceiling). */
+  height: clamp(280px, 44dvh, 480px);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -105,14 +107,15 @@ section.helix {
 .helix-stage::-webkit-scrollbar {
   display: none;                  /* Chrome / Safari / WebKit */
 }
-.helix-stage[data-orientation="horizontal"] { height: clamp(240px, 34dvh, 380px); overflow-y: hidden; }
+.helix-stage[data-orientation="horizontal"] { height: clamp(280px, 44dvh, 480px); overflow-y: hidden; }
 
 .helix-svg {
   width: 100%;
   height: auto;
-  /* Min-height scales in step with the stage above so band-Y stays
-     proportional and Kindreon's snap math doesn't drift. */
-  min-height: clamp(360px, 52dvh, 540px);
+  /* SVG floor scales in step with the now-taller stage so the
+     band-Y above Kindreon (where the rod overlay clears) stays
+     proportional and the snap math doesn't drift. */
+  min-height: clamp(440px, 66dvh, 660px);
   display: block;
   overflow: visible;
 }

@@ -40,7 +40,14 @@
 
 .concept-section {
   min-height: calc(100dvh - var(--header-h, 170px));
-  scroll-snap-align: start;
+  /* `center` (was `start`) anchors each section's MIDDLE to the
+     scroller's middle. For sections that fit exactly inside one
+     viewport this is identical to `start`, but for sections that
+     grow slightly past it the visual stays balanced top-to-bottom
+     rather than clipping the bottom. `scroll-snap-stop: always`
+     keeps every section a hard stop — momentum can't carry past
+     two snaps at once. */
+  scroll-snap-align: center;
   scroll-snap-stop: always;
   display: flex;
   align-items: center;
@@ -339,15 +346,12 @@
   background: var(--bg);
   flex-direction: column;
   gap: 1rem;
-  /* Anchor content to the top of the section. The default
-     .concept-section centres vertically, which is fine when no panel
-     is open but causes the strand circles to drift off the viewport
-     top once the side-by-side helix+panel row grows tall. Top-
-     anchoring keeps the strand row pinned where the user clicked.
-     Padding-top scales with dvh so short viewports don't waste a
-     big block of empty space before the strand circles. */
-  justify-content: flex-start;
-  padding-top: clamp(0.75rem, 4dvh, 3rem);
+  /* Centred vertically (inherits .concept-section's
+     `justify-content: center`). The panel section was promoted to
+     section D so C no longer has to top-anchor for a side-by-side
+     layout — letting the eyebrow + strand picker + helix stack
+     centre in the section reads as a deliberately balanced view
+     under the section snap. */
 }
 .concept-c-eyebrow {
   font-size: 0.78rem;
@@ -389,15 +393,12 @@
 .concept-c-strands-area {
   grid-area: strands;
   width: 100%;
-  /* Animate the picker row collapsing when a strand is selected, so
-     it doesn't pop out of layout abruptly. The max-height needs to be
-     comfortably larger than the natural content height (title + 130 px
-     bubble + label + paddings ≈ 420 px) — anything tighter clips the
-     button labels underneath. */
-  overflow: hidden;
-  max-height: 560px;
-  opacity: 1;
-  transition: max-height 0.4s ease, opacity 0.3s ease;
+  /* No `overflow: hidden` / `max-height` clamp — those were vestiges
+     of an earlier collapse-on-select animation (now gone), and they
+     were clipping the top of the active bubble whenever
+     .rdGroup.selected applied its scale(1.06) — the scaled-up top
+     edge poked above the row's natural bound by ~3-4 px and got
+     cropped by the overflow rule. */
 }
 
 .concept-c-strands-area--hidden {
@@ -574,3 +575,128 @@
 @media (max-width: 640px) {
   .concept-pillnav { left: 0.6rem; gap: 0.55rem; }
 }
+
+/* ============================================================
+   Mobile fork (phone-class widths)
+   ============================================================
+   Below ~720 px the page shifts behaviour:
+   - scroll-snap relaxes to `proximity` so the OS's native momentum
+     and rubber-band gestures aren't fought by mandatory locks;
+   - the side pill-nav is hidden (22 px dots are unusable on touch);
+   - the section padding is tightened to claw back vertical room;
+   - the roadmap SVG scrolls horizontally rather than shrinking
+     itself illegibly small;
+   - the see-more button respects iOS / Android home-indicator
+     safe areas;
+   - section D's panel pads itself down to a phone-comfortable size.
+   The structural fork (helix → stacked list) is in JS via
+   useIsMobile() in ConceptView.tsx. */
+@media (max-width: 720px) {
+  /* Mandatory snap stays on for mobile too — section content has
+     been compacted to fit (RDStrands tight row, helix-stage 220 min,
+     roadmap labels small), so the per-section snap is reliable and
+     reads more decisive than the soft proximity fallback. The
+     @media (max-height: 560px) safety hatch above still kicks in
+     for landscape phones where verticals truly run out. */
+  .concept-pillnav {
+    /* Slim inline progress indicator flush to the left edge —
+       replaces the round 22-px dots with thin vertical bars (4-px
+       wide × 28-px tall) that read as a tidy progress track. Sits
+       at viewport left:0 with no rim padding so it feels native
+       to the screen edge. */
+    display: flex;
+    left: 0;
+    gap: 4px;
+    z-index: 60;
+  }
+  .concept-pill {
+    width: 4px;
+    height: 28px;
+    padding: 0;
+  }
+  .concept-pill-dot {
+    /* Override the round desktop pill — slim bar segment. */
+    width: 4px;
+    height: 100%;
+    background: rgba(47, 1, 71, 0.18);
+    border-radius: 0 2px 2px 0;
+    transform: none;
+    transition: background-color 0.25s ease, transform 0.25s ease;
+  }
+  .concept-pill--active .concept-pill-dot {
+    background: var(--crimson);
+    transform: none;
+  }
+  .concept-pill:hover .concept-pill-dot {
+    /* Subtle haptic-feel cue for touch — slight width nudge. */
+    transform: scaleX(1.6);
+    transform-origin: left center;
+  }
+  .concept-section {
+    /* Tighter padding — phones can't afford 2rem each side. */
+    padding: 1rem;
+  }
+  .concept-c {
+    padding-top: 0.5rem;
+  }
+  .concept-c-eyebrow {
+    font-size: 0.72rem;
+  }
+  /* Roadmap — scale natively to the viewport width rather than
+     forcing a horizontal-scroll track. The SVG already uses
+     `width: 100%; height: auto` and `preserveAspectRatio: xMidYMid
+     meet`, so it shrinks proportionally and stays fully on screen.
+     Drop the upstream max-width caps so the height-based clamp
+     doesn't fight the available width on a phone. */
+  .roadmap {
+    overflow: visible;
+    max-width: 100%;
+  }
+  .roadmap-svg {
+    width: 100%;
+    height: auto;
+  }
+  /* Mobile SVG-text compacting — restore a smaller font ramp that
+     reads as a tidy 4-step key under the timeline rather than the
+     bulky 28 / 80 px viewBox values that made the labels eat the
+     section's vertical budget. 22 px viewBox at the typical 0.45
+     scale renders ~10 px on screen — small but legible at arm's
+     length. Letter-spacing pulled in too so each name is its own
+     tight block, easier to read at thumb distance. */
+  .roadmap-node-label,
+  .roadmap-node-label-above {
+    font-size: 22px;
+    letter-spacing: 0;
+  }
+  .roadmap-node-label-above {
+    font-size: 18px;
+    letter-spacing: 0.06em;
+  }
+  .roadmap-node-emoji {
+    font-size: 52px;
+  }
+  .roadmap-node--satellite .roadmap-node-emoji {
+    font-size: 44px;
+  }
+  /* Shrink the node circles in step so the row stays balanced
+     with the now-smaller labels. */
+  .roadmap-node-circle {
+    /* The base circles are rendered at r=50 (primary) / r=42
+       (satellite). Scale them down for mobile so the labels and
+       emojis breathe. */
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  /* See-more button — keep clear of phone home-indicator. */
+  .concept-c-seemore {
+    bottom: max(clamp(1rem, 3dvh, 1.75rem), calc(env(safe-area-inset-bottom) + 0.75rem));
+  }
+  /* Section D — panel fits a phone with sensible padding. */
+  .concept-d {
+    padding-top: 0.5rem;
+  }
+  .concept-d-host {
+    max-width: 100%;
+  }
+}
+

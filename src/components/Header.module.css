@@ -36,9 +36,15 @@
   height: 186px;
   background-color: var(--bg);
   transition: height 0.3s ease;
-  /* CSS variable read by .logoWrap and .gridContainer (in
-     GridNav.module.css) to scale themselves in step. */
+  /* CSS variables read by .logoWrap and .gridContainer (in
+     GridNav.module.css) to scale / fade themselves in step:
+       --header-scale  scale factor (logo + nav)
+       --nav-opacity   GridNav opacity (hidden when compact)
+       --nav-pointer   pointer-events on nav (none when hidden, so
+                       the invisible nav can't capture clicks). */
   --header-scale: 1;
+  --nav-opacity: 1;
+  --nav-pointer: auto;
   /* Soft shadow on the overlay distinguishes the expanded header
      from the page below when hovered. Subtle by default so the
      non-hover compact state doesn't carry a visible drop-shadow. */
@@ -48,12 +54,19 @@
   height: 70px;
   overflow: hidden;
   --header-scale: 0.32;
+  /* Nav items disappear entirely when the header is compact — keeps
+     the strip clean for the screen-real-estate-saving state and
+     reduces visual noise. They come back on hover. */
+  --nav-opacity: 0;
+  --nav-pointer: none;
 }
 
 .siteCompact .siteOverlay:hover {
   height: 186px;
   overflow: visible;
   --header-scale: 1;
+  --nav-opacity: 1;
+  --nav-pointer: auto;
   box-shadow: 0 6px 18px rgba(47, 1, 71, 0.12);
 }
 
@@ -83,14 +96,25 @@
 }
 
 @media (max-width: 1080px) {
-  /* On narrow viewports the header collapses to a normal flow
-     stacked layout — drop the fixed-height + scaled-content
-     mechanics and let the markup size itself. The compact /
-     hover-expand behaviour is desktop-only. */
-  .site,
-  .siteCompact {
+  /* On narrow viewports the header drops the fixed-height +
+     absolute-positioned mechanics and uses normal flow. The
+     compact state still kicks in (scroll past first section /
+     window-scroll threshold) — just with mobile-appropriate
+     numbers (~50 px tall vs desktop's 70 px) and a logo that
+     scales via `max-height` rather than `transform`. */
+  .site {
     height: auto;
     padding: 8px 16px 16px;
+    transition: height 0.3s ease, padding 0.3s ease;
+  }
+  .siteCompact {
+    /* Tight 50-px strip — preserves the brand mark presence while
+       returning ~80 % of the natural mobile header height to the
+       page below. `overflow: hidden` makes sure no scaled-down
+       artefacts leak. */
+    height: 50px;
+    padding: 4px 16px;
+    overflow: hidden;
   }
   .siteOverlay,
   .siteCompact .siteOverlay,
@@ -98,14 +122,47 @@
     position: static;
     height: auto;
     overflow: visible;
-    --header-scale: 1;
     box-shadow: none;
+    --header-scale: 1;
+  }
+  /* On compact mobile, nav fades + locks pointer-events the same way
+     as desktop — leaves only the logo visible in the slim strip. */
+  .siteCompact .siteOverlay {
+    --nav-opacity: 0;
+    --nav-pointer: none;
+  }
+  /* No hover-expand on mobile (touch interaction model), so the
+     :hover rule stays at its post-compact look. The user re-expands
+     by scrolling back to the top of the page. */
+  .siteCompact .siteOverlay:hover {
+    --nav-opacity: 0;
+    --nav-pointer: none;
   }
   .logoWrap {
     position: static;
     width: 100%;
     max-width: 518px;
+    height: auto;
     margin: 0 auto;
     transform: none;
+    transition: max-width 0.3s ease;
+  }
+  .logoWrap img {
+    width: 100%;
+    max-width: 518px;
+    height: auto;
+    transition: max-height 0.3s ease, width 0.3s ease;
+  }
+  /* Compact-mobile logo: shrink the brand mark to a strip — clamp
+     by `max-height` instead of scaling, so aspect ratio stays
+     intrinsic and the image stays crisp. width: auto lets it
+     proportionally compress along with the cap. */
+  .siteCompact .logoWrap {
+    max-width: none;
+  }
+  .siteCompact .logoWrap img {
+    width: auto;
+    max-height: 36px;
+    max-width: 100%;
   }
 }

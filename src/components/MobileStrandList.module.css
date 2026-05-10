@@ -1,0 +1,131 @@
+/* Section C's mobile presentation — a stacked list of strand cards
+   that replaces the helix + RDStrands picker on phone-class widths.
+   Touch-first sizing: minimum 44 px tap targets, generous spacing,
+   no decorative animations that would slow first interaction. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  font-family: 'Lato', sans-serif;
+  color: var(--ink);
+}
+
+.heading {
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0.25rem 0 0.5rem;
+  text-align: center;
+}
+.thin { font-weight: 400; }
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg);
+  border: 1.5px solid rgba(47, 1, 71, 0.18);
+  border-radius: 10px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+  width: 100%;
+  /* Touch-feedback: matches RDStrands' subtle shadow on desktop. */
+  box-shadow: 0 1px 3px rgba(47, 1, 71, 0.06);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+.card:active {
+  transform: scale(0.99);
+}
+.cardActive {
+  border-color: var(--crimson);
+  background-color: rgba(163, 11, 55, 0.05);
+  box-shadow: 0 4px 14px rgba(163, 11, 55, 0.12);
+}
+
+.iconWrap {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+.tagline {
+  font-size: 0.85rem;
+  line-height: 1.3;
+  opacity: 0.72;
+}
+
+/* Meta row — themes count + optional phase. Keeps the card scannable
+   on a phone (gives a sense of "depth" without expanding to the full
+   panel). */
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.78;
+}
+.metaPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.metaDot {
+  opacity: 0.5;
+}
+.metaPhase {
+  font-weight: 700;
+  color: var(--crimson);
+  opacity: 0.85;
+}
+
+.chev {
+  flex: 0 0 auto;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--crimson);
+  opacity: 0.6;
+  margin-left: 0.25rem;
+}
+.cardActive .chev {
+  opacity: 1;
+}

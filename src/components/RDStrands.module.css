@@ -54,9 +54,15 @@
      dropped the row from three circles to two, knocking the picker
      off-centre. Now it remains in the row with a subtle scale-up so
      the active strand reads as "current" while the row centring
-     stays balanced. */
+     stays balanced.
+
+     `drop-shadow` removed — the crimson 35-%-alpha halo it
+     produced extended past the circle's edge and contrasted with
+     the page's cream background as a soft pink fringe (the
+     "artefacting" you saw near the borders). The StrandIcon's
+     crimson fill + the scale already mark the active state; no
+     external glow needed. */
   transform: scale(1.06);
-  filter: drop-shadow(0 4px 14px rgba(163, 11, 55, 0.35));
 }
 
 .rdGroup.dimmed {
@@ -112,5 +118,53 @@
   }
   .rdRow.collapsed {
     gap: 2rem;
+  }
+}
+
+/* Phone-class — tighten the picker so all three strand bubbles sit
+   in one horizontal row WITHOUT wrapping, alongside the helix below,
+   inside the section's viewport budget. Width-based clamps (vw)
+   replace the height-based clamps so the bubbles shrink with the
+   actual horizontal room, not just dvh. The redundant rdTitle
+   collapses out — the section eyebrow already names the row. */
+@media (max-width: 720px) {
+  .rd {
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+  .rdTitle {
+    /* The concept-c-eyebrow above already says "Some work of our
+       own..." — drop this duplicate to free vertical room for the
+       bubbles and the helix below. */
+    display: none;
+  }
+  .rdRow,
+  .rdRow.collapsed {
+    /* Tighter gap; never wrap on mobile so the three bubbles stay
+       on one row. */
+    gap: clamp(0.5rem, 3vw, 1.25rem);
+    margin-top: 0;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+  }
+  .rdGroup {
+    /* Shrink the group's box and padding so three fit at 360 px. */
+    max-width: 33%;
+    padding: 0;
+  }
+  .svgDisc {
+    /* Width-based clamp — three 60-px discs + 2 × ~12-px gaps ≈ 200,
+       leaving the helix below the real estate it needs. Scales up to
+       ~92 px on tablets. */
+    width: clamp(56px, 19vw, 92px);
+    height: clamp(56px, 19vw, 92px);
+  }
+  .label {
+    margin-top: 0.4rem;
+    font-size: clamp(0.78rem, 3vw, 0.95rem);
+    /* Keep names on one line; ellipsis if a label is unusually long. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 }

@@ -739,7 +739,9 @@ export default function ConceptView() {
           {/* Strand picker + helix only — the info panel has been
               promoted to its own snap stop (section D) below, so the
               user gets a clean snap between "browse the helix" and
-              "read the open strand's panel". */}
+              "read the open strand's panel". Kept on mobile too — the
+              spiral is part of the brand and the CSS clamps in
+              Helix.css already shrink it to fit narrow widths. */}
           <div className="concept-c-strands-area">
             <RDStrands openId={openStrandId} onSelect={setOpenStrandId} />
           </div>
