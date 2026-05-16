@@ -652,10 +652,11 @@
 @keyframes helix3dScrimIn { from { opacity: 0; } to { opacity: 1; } }
 .helix3d-root .strand-drawer {
   position: absolute; left: 0; top: 0; z-index: 600;
-  width: min(560px, calc(100vw - 32px));
+  width: min(720px, calc(100vw - 32px));
   transform: translate(-9999px, -9999px);  /* parked until positioned */
-  will-change: transform, max-height;
-  overflow-y: auto; overscroll-behavior: contain;
+  will-change: transform;
+  /* not scrollable — the panel shows in full (overflow clipped by
+     the scene if it ever exceeds the viewport). */
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
   cursor: none;
 }

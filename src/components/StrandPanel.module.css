@@ -217,13 +217,15 @@
 :global(.helix3d-root) .ctaLink:hover { background-color: #2F0147; }
 
 /* ===== Dark variant — Helix3D dark theme only =====
-   Mirrors the dark-mode mock: plum surface, cream outline + text,
-   accents kept (magenta rule, crimson corner/CTA). */
+   Surface matches the dark scene background exactly: var(--bg) /
+   var(--ink) are inherited from .helix3d-root[data-theme="dark"]
+   (#1A0226 plum bg, #FFECE1 cream ink), so the panel reads as part
+   of the dark site. Accents (magenta rule, crimson corner/CTA) kept. */
 :global(.helix3d-root[data-theme="dark"]) .panelInner {
-  background-color: #2F0147;
-  border-color: #FFECE1;
+  background-color: var(--bg);
+  border-color: var(--ink);
 }
-:global(.helix3d-root[data-theme="dark"]) .closeButton { color: #FFECE1; }
+:global(.helix3d-root[data-theme="dark"]) .closeButton { color: var(--ink); }
 :global(.helix3d-root[data-theme="dark"]) .closeButton:hover { color: #D63158; }
 :global(.helix3d-root[data-theme="dark"]) .panelHeader {
   border-bottom-color: rgba(255, 236, 225, 0.18);
@@ -231,7 +233,7 @@
 :global(.helix3d-root[data-theme="dark"]) .strandName,
 :global(.helix3d-root[data-theme="dark"]) .tagline,
 :global(.helix3d-root[data-theme="dark"]) .themeTitle,
-:global(.helix3d-root[data-theme="dark"]) .themeDescription { color: #FFECE1; }
+:global(.helix3d-root[data-theme="dark"]) .themeDescription { color: var(--ink); }
 :global(.helix3d-root[data-theme="dark"]) .themeCard {
   background-color: rgba(255, 236, 225, 0.05);
 }

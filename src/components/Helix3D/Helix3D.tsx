@@ -1010,11 +1010,14 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           const dp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
           const dx = (dp.x * 0.5 + 0.5) * w
           const dy = (-dp.y * 0.5 + 0.5) * h
-          const dw = drawer.offsetWidth || 560
-          const left = Math.max(16, Math.min(dx - dw / 2, w - dw - 16))
-          const top = Math.max(56, Math.min(dy + 36, h - 140))
+          // Pinned to the RIGHT of the node (its left edge sits just
+          // right of the node), vertically lifted so it reads as
+          // beside it. Clamped to stay on-screen; no max-height
+          // (not scrollable).
+          const dw = drawer.offsetWidth || 720
+          const left = Math.max(16, Math.min(dx + 32, w - dw - 16))
+          const top = Math.max(56, Math.min(dy - 80, h - 220))
           drawer.style.transform = `translate(${left}px, ${top}px)`
-          drawer.style.maxHeight = `${Math.max(240, h - top - 16)}px`
         }
       }
     }
