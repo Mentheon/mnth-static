@@ -262,13 +262,15 @@ export default function Helix3D() {
     let rotor: THREE.Group
     let rod: THREE.Group
     let serpentMesh: THREE.Mesh & { userData: { head?: THREE.Group } }
-    /* Sketch-mode alternative for the coil: a hollow cylindrical
-       wireframe (LineSegments) hugging the tube, theme --ink. Built
-       next to serpentMesh; exactly one of the two is visible — see
-       applySketchMode. Only the coil strand swaps; rod / head /
-       node orbs stay solid. */
+    /* Sketch-mode alternative for the coil: the external sketch of
+       the tube — only longitudinal lines along the helix (no cross
+       rings), LineSegments, theme --ink. Built next to serpentMesh;
+       exactly one of the two is visible — see applySketchMode. */
     let serpentLine: THREE.Line
     let sketchMode = false
+    /* Independent override: when true the node orbs render solid &
+       opaque even in sketch mode (own nav toggle). */
+    let nodeSolid = false
     let serpentCurve: HelixCurve
     interface NodeRec {
       strand: Strand
@@ -434,15 +436,14 @@ export default function Helix3D() {
       serpentMesh = new THREE.Mesh(geo, mat) as typeof serpentMesh
       rotor.add(serpentMesh)
 
-      // Sketch alternative: a HOLLOW cylindrical wireframe of the
-      // same tube — longitudinal lines running along the helix plus
-      // periodic cross-section rings, no triangle diagonals. Built
-      // from a throwaway TubeGeometry's parametric grid so the wire
-      // hugs the strand's actual girth and reads as a see-through
-      // 3D tube. (TubeGeometry lays vertices out as
-      // index = i*(radial+1)+j, i = tubular ring, j = around.)
+      // Sketch alternative: the external sketch of the tube —
+      // ONLY the longitudinal lines running along the helix (no
+      // per-segment cross rings, no triangle diagonals). Sampled
+      // from a throwaway TubeGeometry's parametric grid so the
+      // lines hug the strand's actual girth. (TubeGeometry lays
+      // vertices out as index = i*(radial+1)+j, i = tubular ring,
+      // j = around.)
       const WIRE_RADIAL = 8          // longitudinal lines around the tube
-      const WIRE_RING_EVERY = 5      // a cross ring every N tubular steps
       const wireTube = new THREE.TubeGeometry(
         serpentCurve, SERPENT.tubeSegs, SERPENT.bodyR, WIRE_RADIAL, false,
       )
@@ -452,9 +453,6 @@ export default function Helix3D() {
       const pushV = (k: number) => segPts.push(wp.getX(k), wp.getY(k), wp.getZ(k))
       for (let j = 0; j <= WIRE_RADIAL; j++) {
         for (let i = 0; i < SERPENT.tubeSegs; i++) { pushV(vIdx(i, j)); pushV(vIdx(i + 1, j)) }
-      }
-      for (let i = 0; i <= SERPENT.tubeSegs; i += WIRE_RING_EVERY) {
-        for (let j = 0; j < WIRE_RADIAL; j++) { pushV(vIdx(i, j)); pushV(vIdx(i, j + 1)) }
       }
       wireTube.dispose()
       const lineGeo = new THREE.BufferGeometry()
@@ -521,7 +519,7 @@ export default function Helix3D() {
         const orbMat = new THREE.MeshStandardMaterial({
           color: C.grape, roughness: 0.35, metalness: 0.45,
           emissive: new THREE.Color(0x000000), emissiveIntensity: 0,
-          wireframe: sketchMode,
+          wireframe: sketchMode && !nodeSolid,
         })
         const orb = new THREE.Mesh(new THREE.SphereGeometry(NODE.orbR, 24, 18), orbMat)
         orb.position.copy(orbPos)
@@ -1041,14 +1039,20 @@ export default function Helix3D() {
        the action (says "sketch" while solid, "solid" while sketched)
        and carries .is-active + aria-pressed for styling/a11y. */
     const renderToggle = $('#render-toggle')!
+    const nodeToggle = $('#node-toggle')!
+    /* Orb wireframe = sketch mode AND not overridden solid. Shared
+       by both toggles so they compose correctly. */
+    function setNodeWire() {
+      const wire = sketchMode && !nodeSolid
+      nodes.forEach((n) => {
+        ;(n.orb.material as THREE.MeshStandardMaterial).wireframe = wire
+      })
+    }
     function applySketchMode(on: boolean) {
       sketchMode = on
       serpentLine.visible = on
       serpentMesh.visible = !on
-      // Nodes track the toggle too: solid grape orbs ↔ grape wire.
-      nodes.forEach((n) => {
-        ;(n.orb.material as THREE.MeshStandardMaterial).wireframe = on
-      })
+      setNodeWire()
       renderToggle.classList.toggle('is-active', on)
       renderToggle.setAttribute('aria-pressed', String(on))
       renderToggle.textContent = on ? 'solid' : 'sketch'
@@ -1056,6 +1060,20 @@ export default function Helix3D() {
     const onRenderToggle = () => applySketchMode(!sketchMode)
     renderToggle.addEventListener('click', onRenderToggle)
     cleanups.push(() => renderToggle.removeEventListener('click', onRenderToggle))
+
+    /* ---- NODE TOGGLE — keep the orbs solid/opaque in sketch mode.
+       Independent of the coil toggle; when active the grape orbs
+       stay filled even while the strand is wireframed. */
+    function applyNodeSolid(on: boolean) {
+      nodeSolid = on
+      setNodeWire()
+      nodeToggle.classList.toggle('is-active', on)
+      nodeToggle.setAttribute('aria-pressed', String(on))
+      nodeToggle.textContent = on ? 'wire nodes' : 'solid nodes'
+    }
+    const onNodeToggle = () => applyNodeSolid(!nodeSolid)
+    nodeToggle.addEventListener('click', onNodeToggle)
+    cleanups.push(() => nodeToggle.removeEventListener('click', onNodeToggle))
 
     /* ---- MARQUEE — the scrolling top strip ----
        The strip text is NOT in the JSX — edit this `phrases` array.
@@ -1346,6 +1364,7 @@ export default function Helix3D() {
             <button data-view="list" role="tab" aria-selected="false">list</button>
           </div>
           <button className="render-toggle" id="render-toggle" type="button" aria-pressed="false" aria-label="Toggle sketch render">sketch</button>
+          <button className="render-toggle" id="node-toggle" type="button" aria-pressed="false" aria-label="Toggle solid nodes">solid nodes</button>
           <button className="theme-switch" id="theme-switch" aria-label="Toggle theme">
             <svg className="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" /></svg>
             <svg className="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
