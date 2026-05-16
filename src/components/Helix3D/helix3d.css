@@ -384,6 +384,13 @@
   margin-top: 0.12rem;
   display: block;
 }
+/* Light mode: the cream label chip blends into the bright scene, so
+   give it a plum rectangular border for legibility — matching how
+   the dark-mode chip already reads against its dark fill. */
+.helix3d-root[data-theme="light"] .node-label-name {
+  border: 1px solid var(--plum);
+}
+
 .helix3d-root .node-label.is-active .node-label-pip { background: var(--crimson); transform: scale(1.4); }
 .helix3d-root .node-label.is-active .node-label-name { color: var(--crimson); }
 

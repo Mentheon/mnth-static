@@ -134,7 +134,7 @@ const LOADER_LOGO_SVG = `
   </svg>
 `
 
-export default function Helix3D() {
+export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } = {}) {
   /* The single React-managed DOM node. All imperative DOM access
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
@@ -248,7 +248,7 @@ export default function Helix3D() {
        orbR = orb size; ringR1/ringR2 = the two pulse-ring radii;
        pulseSpeed = pulses per second. */
     const NODE = {
-      count: 6, orbR: 0.16, ringR1: 0.22, ringR2: 0.30, pulseSpeed: 1.4,
+      count: 6, orbR: 0.16, ringR1: 0.22, ringR2: 0.30, pulseSpeed: 0.25,
     }
 
     /* ---- Scene-graph handles & interaction state ----
@@ -835,8 +835,8 @@ export default function Helix3D() {
         const activeMul = isActive ? 1 : 0.18
         n.ring1.scale.setScalar(1 + phase * 0.6)
         n.ring2.scale.setScalar(1 + phase2 * 0.6)
-        ;(n.ring1.material as THREE.MeshBasicMaterial).opacity = (0.6 * (1 - phase)) * activeMul
-        ;(n.ring2.material as THREE.MeshBasicMaterial).opacity = (0.45 * (1 - phase2)) * activeMul
+        ;(n.ring1.material as THREE.MeshBasicMaterial).opacity = (0.7 * (1 - phase)) * activeMul
+        ;(n.ring2.material as THREE.MeshBasicMaterial).opacity = (0.55 * (1 - phase2)) * activeMul
 
         n.ring1.lookAt(camera.position)
         n.ring2.lookAt(camera.position)
@@ -1276,6 +1276,14 @@ export default function Helix3D() {
     initScrollNav()   // wheel/swipe traversal; starts in default view
 
     ;(async function entry() {
+      if (skipIntro) {
+        // Dev re-render: jump straight to the scene — hide the
+        // loader (the gate stays hidden by default since runGate
+        // never runs) and start rendering immediately.
+        $('#loader')?.classList.add('is-hidden')
+        startScene()
+        return
+      }
       await runLoader()
       if (destroyed) return
       await runGate()
