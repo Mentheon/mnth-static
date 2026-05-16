@@ -293,6 +293,26 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     let rotorAngle = 0
     let rotorTarget: number | null = null
 
+    /* Drag-to-spin + inertia. While `dragging`, horizontal pointer
+       motion rotates the rotor directly (DRAG_SENS rad/px). On
+       release the last velocity becomes `spinVel` (rad/s) and
+       decays each frame (SPIN_DECAY retained per second) until it
+       drops below SPIN_STOP, then idle behaviour resumes.
+       `dragMoved` flags a genuine drag so the trailing click
+       doesn't also focus/open a node; `suppressClick` carries that
+       to the click handler. */
+    let dragging = false
+    let dragMoved = false
+    let dragStartX = 0
+    let dragLastX = 0
+    let dragLastT = 0
+    let spinVel = 0
+    let suppressClick = false
+    const DRAG_SENS = 0.006        // rotor radians per px dragged
+    const DRAG_CLICK_PX = 5        // under this travel = a click, not a drag
+    const SPIN_DECAY = 0.22        // fraction of velocity kept per second
+    const SPIN_STOP = 0.02         // rad/s below which inertia ends
+
     /* Scroll navigation + camera dolly. `focusIndex` is the node the
        coil is parked on. Each frame the camera eases toward
        camPosTarget while looking at camLookCurrent (itself eased
@@ -373,11 +393,19 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       dom.addEventListener('pointermove', onPointerMove)
       dom.addEventListener('pointerleave', onLeave)
       dom.addEventListener('click', onClick)
+      dom.addEventListener('pointerdown', onDragDown)
+      dom.addEventListener('pointermove', onDragMove)
+      dom.addEventListener('pointerup', onDragUp)
+      dom.addEventListener('pointercancel', onDragCancel)
       cleanups.push(() => {
         window.removeEventListener('resize', onResize)
         dom.removeEventListener('pointermove', onPointerMove)
         dom.removeEventListener('pointerleave', onLeave)
         dom.removeEventListener('click', onClick)
+        dom.removeEventListener('pointerdown', onDragDown)
+        dom.removeEventListener('pointermove', onDragMove)
+        dom.removeEventListener('pointerup', onDragUp)
+        dom.removeEventListener('pointercancel', onDragCancel)
       })
     }
 
@@ -599,6 +627,47 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
     }
 
+    /* ---- DRAG-TO-SPIN ---- grab the canvas and fling the coil;
+       it keeps spinning with decaying momentum. Grabbing drops you
+       into the free wide view (clears focus + camera) so the whole
+       spiral is visible while it spins. */
+    function onDragDown(e: PointerEvent) {
+      if (e.button !== 0 || panelOpen) return
+      dragging = true
+      dragMoved = false
+      dragStartX = dragLastX = e.clientX
+      dragLastT = performance.now()
+      spinVel = 0
+      rotorTarget = null              // cancel any snap/ease
+      focusIndex = -1                 // grabbing = exploratory default
+      resetCamera()
+      try { renderer.domElement.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    }
+    function onDragMove(e: PointerEvent) {
+      if (!dragging) return
+      const now = performance.now()
+      const dt = Math.max((now - dragLastT) / 1000, 0.001)
+      const dx = e.clientX - dragLastX
+      rotorAngle += dx * DRAG_SENS
+      spinVel = (dx * DRAG_SENS) / dt   // latest instantaneous velocity
+      if (Math.abs(e.clientX - dragStartX) > DRAG_CLICK_PX) dragMoved = true
+      dragLastX = e.clientX
+      dragLastT = now
+    }
+    function onDragUp(e: PointerEvent) {
+      if (!dragging) return
+      dragging = false
+      try { renderer.domElement.releasePointerCapture(e.pointerId) } catch { /* noop */ }
+      if (!dragMoved) { spinVel = 0; return }    // it was a click
+      suppressClick = true                       // swallow the trailing click
+      // If the pointer paused before release, don't fling stale velocity.
+      if (performance.now() - dragLastT > 90) spinVel = 0
+    }
+    function onDragCancel() {
+      dragging = false
+      spinVel = 0
+    }
+
     /* Two-step: a first click only FOCUSES the node (zoom/snap +
        bubble, like scrolling to it). Clicking the already-focused
        node again opens the StrandPanel. (The "view more" bubble is
@@ -608,8 +677,10 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       else focusByIndex(idx)
     }
 
-    /* Canvas click → focus / open the hovered node (see onNodeClick). */
+    /* Canvas click → focus / open the hovered node (see onNodeClick).
+       Skipped if this "click" was actually the end of a drag-spin. */
     function onClick() {
+      if (suppressClick) { suppressClick = false; return }
       if (!hoveredId) return
       const idx = nodes.findIndex((x) => x.strand.id === hoveredId)
       if (idx >= 0) onNodeClick(idx)
@@ -638,6 +709,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       focusIndex = THREE.MathUtils.clamp(i, 0, NODE.count - 1)
       const n = nodes[focusIndex]
       if (!n) return
+      spinVel = 0                                    // cancel any fling so the snap wins
       snapRotorTo(n.strand.id)                       // sets rotorTarget
       const rHoriz = Math.hypot(n.orbPos.x, n.orbPos.z)
       camLookTarget.set(0, n.orbPos.y, rHoriz)
@@ -685,6 +757,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        all the way to default. */
     function exitToDefault() {
       if (panelOpen) { panelOpen = false; setPanelStrand(null) }
+      spinVel = 0
       focusIndex = -1
       resetCamera()
       setLabelHover(null)
@@ -805,10 +878,16 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        (for the pulse phase). Order: spin → pulse rings → glow light
        → raycast hover → reposition labels → draw. */
     function render(dt: number, elapsed: number) {
-      // 1. Rotor: ease toward the traverse/click target; else
-      //    gently auto-spin ONLY in the default view (paused while
-      //    focused on a node, hovering one, or paneled).
-      if (rotorTarget !== null) {
+      // 1. Rotor priority: active drag (angle set in onDragMove) →
+      //    decaying fling momentum → snap/ease to target → gentle
+      //    idle auto-spin (default view only).
+      if (dragging) {
+        /* rotorAngle is updated live by onDragMove */
+      } else if (Math.abs(spinVel) > SPIN_STOP) {
+        rotorAngle += spinVel * dt
+        spinVel *= Math.pow(SPIN_DECAY, dt)   // frame-rate-independent decay
+      } else if (rotorTarget !== null) {
+        spinVel = 0
         const diff = rotorTarget - rotorAngle
         if (Math.abs(diff) < 0.005) {
           rotorAngle = rotorTarget
