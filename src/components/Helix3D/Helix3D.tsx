@@ -8,12 +8,15 @@ import './helix3d.css'
 /* =================================================================
    Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
 
-   IN-BETWEEN VARIANT. Click a glow-node → the coil snaps it to
-   front, the camera dollies in, and the real StrandPanel opens as
-   a centre modal (concept data adapted via toDataStrand). Idle =
-   gentle auto-spin. The scroll-locked traversal of the same scene
-   is the frozen sibling ScrollLockView.tsx — change behaviour
-   here, not there.
+   IN-BETWEEN VARIANT. Scroll/swipe traverses the spiral node by
+   node (snap + camera dolly in) WITHOUT opening anything; the
+   focused (or hovered) node shows a "view more" bubble. Clicking
+   the bubble or the node opens the real StrandPanel as a centre
+   modal (concept data adapted via toDataStrand). Scrolling past
+   the first node (up) or last node (down) returns to the DEFAULT
+   view: wide camera, gentle idle spin, nothing selected. The
+   scroll-LOCKED variant (auto-opens, clamps at ends) is the frozen
+   sibling ScrollLockView.tsx — change behaviour here, not there.
 
    Faithful React port of the standalone v5 WebGL prototype. The
    imperative scene/loader logic lives in a single mount effect and
@@ -291,12 +294,17 @@ export default function Helix3D() {
        camPosTarget while looking at camLookCurrent (itself eased
        toward camLookTarget); a focused node is framed CAM_DOLLY
        units away (vs the ~8.5 resting distance). */
-    let focusIndex = 0
-    /* Gentle idle auto-spin (rad/sec) — runs whenever no panel is
-       open and nothing is easing to a target. */
+    /* focusIndex tracks scroll traversal across the range
+       -1 .. NODE.count. The two extremes (-1 and NODE.count) are the
+       DEFAULT view (wide camera, gentle idle spin, nothing
+       selected). 0..count-1 mean the coil is parked + zoomed on
+       that node, showing its "view more" bubble. Starts default. */
+    let focusIndex = -1
+    const isFocused = () => focusIndex >= 0 && focusIndex < NODE.count
+    /* Gentle idle auto-spin (rad/sec) — default view only (not while
+       focused, hovering, or paneled). */
     const ROTOR_FREE_SPEED = 0.05
-    /* True while the StrandPanel modal is open: freezes the spin so
-       the focused node holds still behind/under the card. */
+    /* True while the StrandPanel modal is open: freezes the spin. */
     let panelOpen = false
     const CAM_DOLLY = 3.2
     const camPosTarget   = new THREE.Vector3(0, 0, 8.5)
@@ -569,7 +577,7 @@ export default function Helix3D() {
        snap the node sits at world ≈ (0, y, rHoriz), so we look
        there and pull back CAM_DOLLY units. `instant` jumps with no
        animation (unused now, kept for flexibility). Also lights the
-       node. Called by openPanel() on click. */
+       node. Called by traverse() (scroll) and openPanel() (click). */
     function focusByIndex(i: number, instant = false) {
       focusIndex = THREE.MathUtils.clamp(i, 0, NODE.count - 1)
       const n = nodes[focusIndex]
@@ -605,13 +613,69 @@ export default function Helix3D() {
     }
 
     /* Invoked from the React close handler via closePanelRef (close
-       button / backdrop / Esc). Drops the zoom and lets the idle
-       spin resume. The React side clears panelStrand itself. */
+       button / backdrop / Esc). Returns to wherever you were: the
+       focused node (re-framed) if one is selected, else the wide
+       default. The React side clears panelStrand itself. */
     function closePanel() {
       panelOpen = false
-      resetCamera()
+      if (isFocused()) focusByIndex(focusIndex)
+      else resetCamera()
     }
     closePanelRef.current = closePanel
+
+    /* Step the traversal by `dir` (±1) across -1 .. NODE.count.
+       Landing on a real node frames + lights it (no panel). Landing
+       on either extreme returns to the default view. */
+    function traverse(dir: number) {
+      const next = Math.max(-1, Math.min(NODE.count, focusIndex + dir))
+      if (next === focusIndex) return
+      focusIndex = next
+      if (next < 0 || next >= NODE.count) {
+        // exited the spiral → default view
+        resetCamera()
+        deactivate()
+      } else {
+        focusByIndex(next)   // snap + dolly + light + bubble
+      }
+    }
+
+    /* Wheel / swipe drives traverse(), one node per gesture, with a
+       cooldown so a trackpad flick can't skip several. Ignored
+       while the panel is open or the list view is up. */
+    function initScrollNav() {
+      let locked = false
+      const step = (dir: number) => {
+        if (locked || panelOpen) return
+        const prev = focusIndex
+        traverse(dir)
+        if (focusIndex === prev) return        // at an extreme — no-op
+        locked = true
+        const tm = setTimeout(() => { locked = false }, 700)
+        cleanups.push(() => clearTimeout(tm))
+      }
+      const onWheel = (e: WheelEvent) => {
+        if (panelOpen || listview.classList.contains('is-visible')) return
+        e.preventDefault()
+        if (Math.abs(e.deltaY) < 6) return
+        step(e.deltaY > 0 ? 1 : -1)
+      }
+      let touchY = 0
+      const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
+      const onTouchEnd = (e: TouchEvent) => {
+        if (panelOpen || listview.classList.contains('is-visible')) return
+        const dy = (e.changedTouches[0]?.clientY ?? touchY) - touchY
+        if (Math.abs(dy) < 40) return
+        step(dy < 0 ? 1 : -1)                  // swipe up → next
+      }
+      root!.addEventListener('wheel', onWheel, { passive: false })
+      root!.addEventListener('touchstart', onTouchStart, { passive: true })
+      root!.addEventListener('touchend', onTouchEnd, { passive: true })
+      cleanups.push(() => {
+        root!.removeEventListener('wheel', onWheel)
+        root!.removeEventListener('touchstart', onTouchStart)
+        root!.removeEventListener('touchend', onTouchEnd)
+      })
+    }
 
     /* Light up a strand: orb crimson + emissive, flag its HTML
        label. Hover affordance + click target (the StrandPanel,
@@ -631,8 +695,15 @@ export default function Helix3D() {
         l.classList.toggle('is-active', l.dataset.id === id)
       })
     }
-    /* Hover-off: reset every orb to base, clear label flags. */
+    /* Hover-off: if a node is scroll-focused, keep it lit (fall
+       back to it so its bubble stays). Otherwise (default view)
+       clear every orb + label flag. */
     function deactivate() {
+      const fid = isFocused() ? nodes[focusIndex]?.strand.id : undefined
+      if (fid) {
+        if (hoveredId !== fid) { hoveredId = null; activate(fid) }
+        return
+      }
       if (hoveredId === null) return
       hoveredId = null
       nodes.forEach((n) => {
@@ -649,9 +720,9 @@ export default function Helix3D() {
        (for the pulse phase). Order: spin → pulse rings → glow light
        → raycast hover → reposition labels → draw. */
     function render(dt: number, elapsed: number) {
-      // 1. Rotor: ease toward the click target (set by focusByIndex
-      //    via openPanel); else gently auto-spin when idle, but
-      //    hold still while the panel is open.
+      // 1. Rotor: ease toward the traverse/click target; else
+      //    gently auto-spin ONLY in the default view (paused while
+      //    focused on a node, hovering one, or paneled).
       if (rotorTarget !== null) {
         const diff = rotorTarget - rotorAngle
         if (Math.abs(diff) < 0.005) {
@@ -660,7 +731,7 @@ export default function Helix3D() {
         } else {
           rotorAngle += diff * Math.min(1, dt * 6)
         }
-      } else if (!panelOpen) {
+      } else if (!panelOpen && !isFocused() && !hoveredId) {
         rotorAngle += ROTOR_FREE_SPEED * dt
       }
       rotor.rotation.y = rotorAngle
@@ -754,6 +825,21 @@ export default function Helix3D() {
           : (isBehind ? depthOpacity * 0.35 : depthOpacity)
         label.style.opacity = String(final)
       })
+
+      // "view more" bubble — pinned just below the active (focused
+      // or hovered) node; hidden in the default view / when paneled.
+      if (hoveredId && !panelOpen) {
+        const n = nodes.find((x) => x.strand.id === hoveredId)
+        if (n) {
+          const bp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const bx = (bp.x * 0.5 + 0.5) * w
+          const by = (-bp.y * 0.5 + 0.5) * h
+          bubbleEl.style.transform = `translate(${bx}px, ${by}px) translate(-50%, 28px)`
+          bubbleEl.classList.add('is-visible')
+        }
+      } else {
+        bubbleEl.classList.remove('is-visible')
+      }
     }
 
     /* RAF driver. dt is clamped to 50ms so a backgrounded tab that
@@ -854,8 +940,19 @@ export default function Helix3D() {
     const helixFog    = $('#helix-fog')!
     const helixCenter = $('#helix-center-label')!
     const nodeLabelsEl = $('#node-labels')!
+    const bubbleEl    = $('#node-bubble') as HTMLButtonElement
     const listview    = $('#listview')!
     const toggle      = $('#view-toggle')!
+
+    /* "view more" bubble → open the active node's StrandPanel.
+       Positioned each frame in updateLabels(). */
+    const onBubbleClick = () => {
+      if (!hoveredId) return
+      const idx = nodes.findIndex((x) => x.strand.id === hoveredId)
+      if (idx >= 0) openPanel(idx)
+    }
+    bubbleEl.addEventListener('click', onBubbleClick)
+    cleanups.push(() => bubbleEl.removeEventListener('click', onBubbleClick))
 
     const onToggleClick = (e: Event) => {
       const btn = (e.target as HTMLElement).closest('button')
@@ -1059,8 +1156,7 @@ export default function Helix3D() {
     buildList()
     initThree()
     initCursor()
-    // No scroll-nav here (that's ScrollLockView). Idle spin until a
-    // node is clicked → openPanel zooms + opens StrandPanel.
+    initScrollNav()   // wheel/swipe traversal; starts in default view
 
     ;(async function entry() {
       await runLoader()
@@ -1217,8 +1313,15 @@ export default function Helix3D() {
 
         <div className="node-labels" id="node-labels" />
 
+        {/* "view more" bubble — shown for the active node (scroll-
+            focused or hovered), positioned every frame by
+            updateLabels(); click opens its StrandPanel. */}
+        <button className="node-bubble" id="node-bubble" type="button">
+          view more <span aria-hidden="true">→</span>
+        </button>
+
         {/* (Peek card removed — the StrandPanel modal below replaces
-            it; opened on node/label/list click.) */}
+            it; opened via the bubble, the node, or a list row.) */}
 
         {/* List view — inner is filled by buildList(); shown when the
             nav toggle switches to "list". */}
