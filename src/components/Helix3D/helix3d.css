@@ -8,6 +8,56 @@
    the rest of the site. Theme is driven by a `data-theme`
    attribute set on the `.helix3d-root` element itself (NOT on
    :root) — see Helix3D.tsx.
+   =================================================================
+
+   ░░ STYLE MAP — where to edit each on-screen segment ░░
+   Jump to the banner shown, then the listed selector(s). All rules
+   are prefixed `.helix3d-root `.
+
+   • THEME COLOURS (everything's palette) ...... ":root-equivalent"
+       block immediately below — `.helix3d-root[data-theme=...]`.
+       Change --ink / --crimson / --grape / --bg etc. here; the 3D
+       meshes read these too (via Helix3D.tsx themeColours()).
+   • LOADER splash ............ banner "LOADER"  → .loader,
+       .loader-welcome, .loader-caption, .loader-skip, .loader-corner
+   • CUSTOM CURSOR ............ banner "CURSOR"  → .cursor-dot,
+       .cursor-ring (.is-active = over interactive)
+   • SOUND/SILENT GATE ........ banner "GATE"    → .gate, .gate-mark,
+       .gate-tag, .gate-choices, .gate-btn
+   • TOP MARQUEE strip ........ banner "MARQUEE / NAV" → .marquee,
+       .marquee-track (+ @keyframes helix3dMarquee)
+   • TOP NAV bar .............. same banner → .nav, .nav-mark
+   • VIEW (staff/list) toggle . same banner → .view-toggle (+ button)
+   • SKETCH / NODE toggles .... same banner → .render-toggle
+       (both #render-toggle and #node-toggle use this class)
+   • THEME switch button ...... same banner → .theme-switch
+   • MENU button (hamburger) .. same banner → .menu-btn
+   • STAGE + readout strip .... banner "STAGE" → .stage,
+       .stage-readout
+   • 3D CANVAS holder ......... banner "WEBGL HOLDER" → .helix3d
+   • NODE TAG labels .......... same banner → .node-label,
+       .node-label-pip (the red "pivot"), -name, -sub
+       (.is-active = pointer-hovered only)
+   • "VIEW MORE" bubble ....... same banner → .node-bubble
+       (.is-visible toggled per-frame)
+   • EDGE FOG vignette ........ same banner → .helix-fog
+   • CENTRE headline .......... same banner → .helix-center-label
+       (.kicker, .title, .title .accent)
+   • LIST VIEW rows ........... banner "LIST VIEW" → .listview,
+       .list-item, .list-disc, .list-title, .list-tag, .list-arrow
+   • CORNER crop marks ........ banner "CORNERS / FOOTER / MENU /
+       TRANSITION" → .corner-crop--tl/tr/bl/br
+   • FOOTER strip ............. same banner → .footer-strip
+   • FULL-SCREEN MENU ......... same banner → .menu-overlay,
+       .menu-item, .menu-bottom
+   • STRAND DETAIL modal ...... banner "STRAND PANEL MODAL" →
+       .strand-modal (backdrop), .strand-modal-inner (the StrandPanel
+       component itself is styled in StrandPanel.module.css)
+   • MARGINALIA right tab ..... NOT here — MarginaliaTab.module.css
+       (rendered as a sibling of .helix3d-root by App.tsx)
+
+   Note: .peek and .transition-overlay rules still exist below but
+   their markup was removed from this variant — safe to ignore.
    ================================================================= */
 
 .helix3d-root,

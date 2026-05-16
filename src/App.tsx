@@ -41,6 +41,8 @@ export default function App() {
   // marquee/nav/footer chrome — render it standalone, without the
   // shared site Header.
   if (page === 'helix3d') {
+    // The Marginalia tab is rendered inside Helix3D (only on this
+    // view), not in the shared shell.
     return <Helix3D />
   }
   // Frozen scroll-locked variant of the same 3D concept.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { animate } from 'animejs'
 import StrandPanel from '../StrandPanel'
+import MarginaliaTab from '../MarginaliaTab'
 import type { Strand as DataStrand } from '../../data/strands'
 import './helix3d.css'
 
@@ -673,6 +674,23 @@ export default function Helix3D() {
     }
     closePanelRef.current = closePanel
 
+    /* Esc → fully zoom back OUT to the default wide view (closing
+       the panel too if it's open). Distinct from the panel's × /
+       backdrop, which return to the focused node; Esc always exits
+       all the way to default. */
+    function exitToDefault() {
+      if (panelOpen) { panelOpen = false; setPanelStrand(null) }
+      focusIndex = -1
+      resetCamera()
+      setLabelHover(null)
+      deactivate()        // focusIndex is -1 → clears the lit orb
+    }
+    const onEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') exitToDefault()
+    }
+    window.addEventListener('keydown', onEscKey)
+    cleanups.push(() => window.removeEventListener('keydown', onEscKey))
+
     /* Step the traversal by `dir` (±1). focusIndex is either -1
        (DEFAULT view) or 0..count-1 (a node).
        • From default: scroll DOWN enters the spiral at the FIRST
@@ -1294,14 +1312,8 @@ export default function Helix3D() {
     }
   }, [])
 
-  /* Esc closes the StrandPanel modal. Only bound while it's open;
-     re-runs when panelStrand changes so the closure stays fresh. */
-  useEffect(() => {
-    if (!panelStrand) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handlePanelClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [panelStrand])
+  /* (Esc handling lives in the scene effect — exitToDefault — so it
+     works whether or not the panel is open: it always zooms out.) */
 
   /* ---- MARKUP ----
      Full-viewport takeover (no shared site Header on this route).
@@ -1475,6 +1487,12 @@ export default function Helix3D() {
           </div>
         </div>
       )}
+
+      {/* Marginalia right-margin tab — only on this view. Child of
+          .helix3d-root so it themes with data-theme and stacks
+          correctly among the scene layers (above nav/marquee,
+          below the modal/gate/loader). */}
+      <MarginaliaTab />
     </div>
   )
 }

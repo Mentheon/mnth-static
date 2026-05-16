@@ -1,0 +1,86 @@
+/* Right-margin Marginalia tab. Follows the site schema: JetBrains
+   Mono uppercase + wide letter-spacing for the label, --ink surface
+   with --bg text, crimson ✲ accent, crimson hover, 4px radius on the
+   inboard corners only (it's flush to the right edge). */
+
+.tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.5rem 0.55rem;
+
+  background: var(--ink);
+  color: var(--bg);
+  text-decoration: none;
+  border-radius: 4px 0 0 4px;
+  box-shadow: -4px 0 16px rgba(47, 1, 71, 0.18);
+
+  transition:
+    background 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tab:hover,
+.tab:focus-visible {
+  background: var(--crimson);
+  /* Keep the vertical centring while nudging outboard on hover. */
+  transform: translateY(-50%) translateX(-5px);
+  outline: none;
+}
+
+.text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.star {
+  color: var(--crimson);
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: color 0.25s;
+}
+
+.tab:hover .star,
+.tab:focus-visible .star {
+  /* On crimson ground the star flips to the cream so it stays read. */
+  color: var(--bg);
+}
+
+/* This tab is rendered inside `.helix3d-root`, whose scoped reset
+   `.helix3d-root a { background:none }` (specificity 0,1,1) would
+   otherwise blank the surface. Doubling the class (0,2,0) wins it
+   back without touching the global rule. */
+.tab.tab {
+  background: var(--ink);
+}
+.tab.tab:hover,
+.tab.tab:focus-visible {
+  background: var(--crimson);
+}
+
+@media (max-width: 720px) {
+  .tab {
+    gap: 0.65rem;
+    padding: 1.1rem 0.45rem;
+  }
+  .text {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+  }
+  .star {
+    font-size: 0.7rem;
+  }
+}
