@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
+import Helix3D from './components/Helix3D/Helix3D'
 import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
 import { STRANDS } from './data/strands'
@@ -27,11 +28,19 @@ export default function App() {
   const isMarginaliaRoute =
     hashPath === '#marginalia' || hashPath.startsWith('#marginalia/')
   const page =
+    hash === '#helix3d' ? 'helix3d'    :
     hash === '#who'     ? 'who'        :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
     isMarginaliaRoute   ? 'marginalia' :
     'home'
+
+  // The Helix3D concept is a full-viewport takeover with its own
+  // marquee/nav/footer chrome — render it standalone, without the
+  // shared site Header.
+  if (page === 'helix3d') {
+    return <Helix3D />
+  }
 
   // Pick the strand the route is asking for. If `#strand/<id>` matches a
   // known strand, use that; otherwise fall back to the first strand with
