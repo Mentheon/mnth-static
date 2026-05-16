@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import { HelixIntroMarkup, runLoader, runGate } from './HelixIntro'
+import { adjustTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
 import './helix3d.css'
 
@@ -1073,6 +1074,19 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     }
     themeBtn.addEventListener('click', onThemeClick)
 
+    /* ---- TEXT SIZE — global rem scale (whole site, persisted).
+       Lives next to the theme switch; see ../../lib/textScale. */
+    const onTextDec = () => adjustTextScale(-TEXT_STEP)
+    const onTextInc = () => adjustTextScale(TEXT_STEP)
+    const textDec = $('#text-dec')!
+    const textInc = $('#text-inc')!
+    textDec.addEventListener('click', onTextDec)
+    textInc.addEventListener('click', onTextInc)
+    cleanups.push(() => {
+      textDec.removeEventListener('click', onTextDec)
+      textInc.removeEventListener('click', onTextInc)
+    })
+
     /* ---- SKETCH TOGGLE — solid coil ↔ 3D line trace ----
        Swaps only the serpent body's visibility. Button label shows
        the action (says "sketch" while solid, "solid" while sketched)
@@ -1361,6 +1375,11 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           <button className="render-toggle" id="poly-toggle" type="button" aria-pressed="false" aria-label="Toggle polygon trace">poly</button>
           <button className="render-toggle" id="rod-toggle" type="button" aria-pressed="false" aria-label="Toggle rod trace">rod trace</button>
           <button className="render-toggle" id="node-toggle" type="button" aria-pressed="false" aria-label="Toggle solid nodes">solid nodes</button>
+          {/* Global text size — scales rem across the whole site */}
+          <div className="text-size" role="group" aria-label="Text size">
+            <button id="text-dec" type="button" aria-label="Decrease text size">A−</button>
+            <button id="text-inc" type="button" aria-label="Increase text size">A+</button>
+          </div>
           <button className="theme-switch" id="theme-switch" aria-label="Toggle theme">
             <svg className="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" /></svg>
             <svg className="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>

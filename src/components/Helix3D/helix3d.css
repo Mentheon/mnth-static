@@ -32,6 +32,8 @@
        (#render-toggle, #poly-toggle, #rod-toggle, #node-toggle
         all share this class)
    • THEME switch button ...... same banner → .theme-switch
+   • TEXT SIZE A−/A+ .......... same banner → .text-size
+       (logic in src/lib/textScale.ts — scales site-wide rem)
    • MENU button (hamburger) .. same banner → .menu-btn
    • STAGE + readout strip .... banner "STAGE" → .stage,
        .stage-readout
@@ -299,6 +301,25 @@
 .helix3d-root .render-toggle.is-active {
   color: var(--bg); background: var(--ink); border-color: var(--ink);
 }
+
+/* Text-size control — minimal segmented A− / A+ pair. The two
+   glyph sizes hint smaller/larger; sits next to the theme switch. */
+.helix3d-root .text-size {
+  display: inline-flex; align-items: stretch;
+  background: var(--bg); border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+}
+.helix3d-root .text-size button {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  line-height: 1; color: var(--ink-quiet);
+  background: none; padding: 0.35rem 0.6rem;
+  transition: color 0.2s, background 0.2s;
+}
+.helix3d-root .text-size button:first-child {
+  font-size: 0.65rem; border-right: 1px solid var(--ink-soft);
+}
+.helix3d-root .text-size button:last-child { font-size: 0.85rem; }
+.helix3d-root .text-size button:hover { color: var(--bg); background: var(--ink); }
 
 .helix3d-root .theme-switch {
   width: 36px; height: 36px;
