@@ -258,16 +258,18 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     /* Second sketch style: the tube's triangulated edges
        (WireframeGeometry) — a faceted "polygon trace". */
     let serpentPoly: THREE.Line
-    let sketchMode = false
+    /* Render style is FIXED (the nav debug toggles were removed):
+       the site always shows a poly-sketch. */
+    let sketchMode = true
     /* Sketch style while sketchMode: false = longitudinal line
        trace (serpentLine), true = polygon wireframe (serpentPoly).
-       Driven by its own nav button. */
-    let polyMode = false
-    /* Render the central rod as a --bg-coloured wireframe trace
-       (own nav button) so it reads as a faint outline. */
-    let rodTrace = false
-    /* Independent override: when true the node orbs render solid &
-       opaque even in sketch mode (own nav toggle). */
+       Default true → faceted polygon trace. */
+    let polyMode = true
+    /* Render the central rod as a --bg-coloured wireframe trace so
+       it reads as a faint outline. Default true → sketched rod. */
+    let rodTrace = true
+    /* When true the node orbs render solid & opaque even in sketch
+       mode. Default false → non-solid (wireframe) nodes. */
     let nodeSolid = false
     let serpentCurve: HelixCurve
     interface NodeRec {
@@ -419,13 +421,17 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     function buildRod() {
       const C = themeColours()
       const group = new THREE.Group()
+      // Rod is built in wireframe-trace mode by default (rodTrace).
+      // rodColour() returns the theme-correct trace colour when
+      // rodTrace is on; refreshSceneColours() reuses it on theme flip.
+      const rodCol = rodColour()
       const shaft = new THREE.Mesh(
         new THREE.CylinderGeometry(ROD.radius, ROD.radius, ROD.height, 24),
-        new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.55, metalness: 0.25 }),
+        new THREE.MeshStandardMaterial({ color: rodCol, roughness: 0.55, metalness: 0.25, wireframe: rodTrace }),
       )
       const bandTop = new THREE.Mesh(
         new THREE.CylinderGeometry(ROD.radius * 1.25, ROD.radius * 1.25, 0.04, 24),
-        new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.55, metalness: 0.3 }),
+        new THREE.MeshStandardMaterial({ color: rodCol, roughness: 0.55, metalness: 0.3, wireframe: rodTrace }),
       )
       bandTop.position.y = ROD.height / 2 - 0.15
       const bandBot = bandTop.clone()
@@ -1226,91 +1232,24 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       textInc.removeEventListener('click', onTextInc)
     })
 
-    /* ---- SKETCH TOGGLE — solid coil ↔ 3D line trace ----
-       Swaps only the serpent body's visibility. Button label shows
-       the action (says "sketch" while solid, "solid" while sketched)
-       and carries .is-active + aria-pressed for styling/a11y. */
-    const renderToggle = $('#render-toggle')!
-    const nodeToggle = $('#node-toggle')!
-    const polyToggle = $('#poly-toggle')!
-    const rodToggle = $('#rod-toggle')!
+    /* ---- RENDER STYLE (fixed: poly-sketch) ----
+       The coil renders as a faceted polygon wireframe, the rod as a
+       wireframe trace, and the orbs as wireframe nodes. These used
+       to be debug toggles in the nav (#render/#poly/#rod/#node);
+       the buttons were removed and the modes are now the baked-in
+       default — see the sketchMode/polyMode/rodTrace declarations
+       (all default true) and buildRod (rod built in trace mode).
+       Node wireframe is set at build via `sketchMode && !nodeSolid`
+       (see buildSerpent), so no runtime node toggle is needed. */
 
     /* Exactly one strand representation visible: solid mesh (not
-       sketch), else line trace or polygon wireframe per polyMode. */
+       sketch), else line trace or polygon wireframe per polyMode.
+       Called once from buildSerpent(). */
     function applyStrandRender() {
       serpentMesh.visible = !sketchMode
       serpentLine.visible = sketchMode && !polyMode
       serpentPoly.visible = sketchMode && polyMode
     }
-    /* Orb wireframe = sketch mode AND not overridden solid. Shared
-       by both toggles so they compose correctly. */
-    function setNodeWire() {
-      const wire = sketchMode && !nodeSolid
-      nodes.forEach((n) => {
-        ;(n.orb.material as THREE.MeshStandardMaterial).wireframe = wire
-      })
-    }
-    function applySketchMode(on: boolean) {
-      sketchMode = on
-      applyStrandRender()
-      setNodeWire()
-      renderToggle.classList.toggle('is-active', on)
-      renderToggle.setAttribute('aria-pressed', String(on))
-      renderToggle.textContent = on ? 'solid' : 'sketch'
-    }
-    const onRenderToggle = () => applySketchMode(!sketchMode)
-    renderToggle.addEventListener('click', onRenderToggle)
-    cleanups.push(() => renderToggle.removeEventListener('click', onRenderToggle))
-
-    /* ---- POLY TOGGLE — sketch style: longitudinal line trace vs
-       faceted polygon wireframe. Only visible while in sketch mode,
-       but the state is independent so it composes either way. */
-    function applyPolyMode(on: boolean) {
-      polyMode = on
-      applyStrandRender()
-      polyToggle.classList.toggle('is-active', on)
-      polyToggle.setAttribute('aria-pressed', String(on))
-      polyToggle.textContent = on ? 'lines' : 'poly'
-    }
-    const onPolyToggle = () => applyPolyMode(!polyMode)
-    polyToggle.addEventListener('click', onPolyToggle)
-    cleanups.push(() => polyToggle.removeEventListener('click', onPolyToggle))
-
-    /* ---- ROD TOGGLE — trace the central rod as a --bg-coloured
-       wireframe (shaft + bands) so it reads as a faint outline.
-       Knob keeps its crimson accent. */
-    function applyRodTrace(on: boolean) {
-      rodTrace = on
-      const col = rodColour()
-      const shaft = rod.userData.shaft.material as THREE.MeshStandardMaterial
-      shaft.wireframe = on
-      shaft.color.copy(col)
-      ;(rod.userData.bands as THREE.Mesh[]).forEach((b) => {
-        const m = b.material as THREE.MeshStandardMaterial
-        m.wireframe = on
-        m.color.copy(col)
-      })
-      rodToggle.classList.toggle('is-active', on)
-      rodToggle.setAttribute('aria-pressed', String(on))
-      rodToggle.textContent = on ? 'rod solid' : 'rod trace'
-    }
-    const onRodToggle = () => applyRodTrace(!rodTrace)
-    rodToggle.addEventListener('click', onRodToggle)
-    cleanups.push(() => rodToggle.removeEventListener('click', onRodToggle))
-
-    /* ---- NODE TOGGLE — keep the orbs solid/opaque in sketch mode.
-       Independent of the coil toggle; when active the grape orbs
-       stay filled even while the strand is wireframed. */
-    function applyNodeSolid(on: boolean) {
-      nodeSolid = on
-      setNodeWire()
-      nodeToggle.classList.toggle('is-active', on)
-      nodeToggle.setAttribute('aria-pressed', String(on))
-      nodeToggle.textContent = on ? 'wire nodes' : 'solid nodes'
-    }
-    const onNodeToggle = () => applyNodeSolid(!nodeSolid)
-    nodeToggle.addEventListener('click', onNodeToggle)
-    cleanups.push(() => nodeToggle.removeEventListener('click', onNodeToggle))
 
     /* ---- MARQUEE — the scrolling top strip ----
        The strip text is NOT in the JSX — edit this `phrases` array.
@@ -1517,10 +1456,6 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
             <button className="is-active" data-view="helix" role="tab" aria-selected="true">staff</button>
             <button data-view="list" role="tab" aria-selected="false">list</button>
           </div>
-          <button className="render-toggle" id="render-toggle" type="button" aria-pressed="false" aria-label="Toggle sketch render">sketch</button>
-          <button className="render-toggle" id="poly-toggle" type="button" aria-pressed="false" aria-label="Toggle polygon trace">poly</button>
-          <button className="render-toggle" id="rod-toggle" type="button" aria-pressed="false" aria-label="Toggle rod trace">rod trace</button>
-          <button className="render-toggle" id="node-toggle" type="button" aria-pressed="false" aria-label="Toggle solid nodes">solid nodes</button>
           {/* Global text size — scales rem across the whole site */}
           <div className="text-size" role="group" aria-label="Text size">
             <button id="text-dec" type="button" aria-label="Decrease text size">A−</button>
