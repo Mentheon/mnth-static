@@ -1436,12 +1436,19 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           (#theme-switch) + menu button (#menu-open). All wired in the
           effect by id. */}
       <nav className="nav">
-        {/* Nav brand mark — swap public/helix-logo.svg for your own
-            (keep the filename, or change the src below). */}
+        {/* Nav brand mark — light/dark variants in public/. Both
+            are rendered; helix3d.css shows the right one for the
+            current data-theme (no JS needed). Swap those files to
+            change the logo. */}
         <a href="#" className="nav-mark" aria-label="Mentheon">
           <img
-            className="nav-mark-logo"
-            src={`${import.meta.env.BASE_URL}favvectorprint.svg`}
+            className="nav-mark-logo nav-mark-logo--light"
+            src={`${import.meta.env.BASE_URL}favvectorprintlight.svg`}
+            alt="Mentheon"
+          />
+          <img
+            className="nav-mark-logo nav-mark-logo--dark"
+            src={`${import.meta.env.BASE_URL}favvectorprintdark.svg`}
             alt="Mentheon"
           />
         </a>

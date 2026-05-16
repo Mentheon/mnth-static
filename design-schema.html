@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mentheon — Component Design Schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+<style>
+/* =================================================================
+   Mentheon — COMPONENT DESIGN SCHEMA
+   A live gallery of the individual UI components as they exist in
+   the codebase (real CSS, faithful markup). Static — no React/JS
+   behaviour; interaction states are shown by hard-coded state
+   classes and noted in captions.
+
+   Layered styles:
+     1. GALLERY CHROME      — this sheet's own page/layout/cards
+     2. GLOBAL TOKENS       — src/index.css :root (main-site palette)
+     3. MODULE COMPONENTS   — *.module.css, namespaced under the
+                              section id (#sp StrandPanel, #mt
+                              MarginaliaTab, #hd Header/GridNav) so
+                              the modules' generic class names
+                              (.tab/.active/.cornerCrop/.text) can't
+                              collide in one document.
+     4. HELIX3D COMPONENTS  — src/components/Helix3D/helix3d.css
+                              verbatim (already self-scoped under
+                              .helix3d-root), plus a gallery override
+                              that contains its fixed/absolute
+                              overlays inside demo frames.
+
+   Companion: design-reference.html holds the token/pattern
+   reference; THIS file is the per-component gallery.
+   ================================================================= */
+
+/* ---------- 1. GALLERY CHROME ---------- */
+* , *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Lato', sans-serif;
+  background: #14111a;
+  color: #e9e2ee;
+  -webkit-font-smoothing: antialiased;
+}
+.schema-head {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 1rem 2rem;
+  background: rgba(15,12,21,0.92); backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.schema-head h1 {
+  font-size: 0.95rem; font-weight: 900; letter-spacing: 0.04em; margin: 0;
+}
+.schema-head .sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.22em; text-transform: uppercase; color: #9b8fae;
+}
+.theme-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;
+  background: #A30B37; color: #fff; border: none; border-radius: 3px;
+  padding: 0.55rem 0.9rem; cursor: pointer;
+}
+main { max-width: 1180px; margin: 0 auto; padding: 2.5rem 2rem 6rem; }
+.lead {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  line-height: 1.7; letter-spacing: 0.04em; color: #b9aecb;
+  max-width: 72ch; margin: 0 0 3rem;
+}
+.lead code { color: #f0c98b; }
+.group-title {
+  font-size: 1.3rem; font-weight: 900; letter-spacing: -0.01em;
+  margin: 3.5rem 0 0.4rem; padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.group-sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.22em; text-transform: uppercase; color: #8d81a3;
+  margin: 0 0 2rem;
+}
+.card {
+  background: #1d1926; border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 6px; margin: 0 0 1.5rem; overflow: hidden;
+}
+.card > .cap {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1rem;
+  padding: 0.85rem 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: #211c2c;
+}
+.card > .cap b { font-size: 0.85rem; font-weight: 700; }
+.card > .cap .src {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.06em; color: #8d81a3;
+}
+.card > .cap .note {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.04em; color: #c98b6b; flex-basis: 100%;
+}
+.demo { padding: 1.75rem; }
+.demo.tight { padding: 1.1rem 1.75rem; }
+/* Frame for full-bleed overlay components so their inset:0 is
+   contained instead of taking the viewport. */
+.frame {
+  position: relative; overflow: hidden; border-radius: 4px;
+  height: 440px;
+}
+.frame.short { height: 300px; }
+.frame.tallish { height: 360px; }
+.swatchRow { display: flex; flex-wrap: wrap; gap: 0; border-radius: 4px; overflow: hidden; }
+.swatch { flex: 1 1 120px; padding: 1.25rem 0.9rem; min-height: 92px; display: flex; flex-direction: column; justify-content: flex-end; }
+.swatch b { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; }
+.swatch span { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; opacity: 0.7; }
+.typeRow { display: flex; flex-direction: column; gap: 1rem; }
+.typeRow > div { border-bottom: 1px dashed rgba(255,255,255,0.12); padding-bottom: 0.75rem; }
+.typeRow .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8d81a3; }
+
+/* ---------- 2. GLOBAL TOKENS (src/index.css :root) ---------- */
+:root {
+  --bg:             #FFECE1;
+  --ink:            #2F0147;
+  --plum:           #3F0247;
+  --crimson:        #A30B37;
+  --grape:          #9C528B;
+  --white:          #FFECE1;
+  --strand-default:  #9C528B;
+  --strand-selected: #A30B37;
+  --strand-hover-scale: 1.12;
+}
+
+/* ---------- 3a. StrandPanel (namespaced #sp) ---------- */
+#sp .panel { width: 100%; max-width: 1100px; margin: 0 auto; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.5s ease, opacity 0.4s ease 0.1s, margin-top 0.4s ease; pointer-events: none; }
+#sp .panel.open { max-height: 1500px; opacity: 1; pointer-events: auto; }
+#sp .panelInner { position: relative; background-color: #FFECE1; border: 2px solid #2F0147; border-radius: 2px; padding: 3rem 3rem 2.5rem; font-family: 'Lato', sans-serif; text-align: left; }
+#sp .cornerCrop { position: absolute; top: -12px; left: -12px; width: 24px; height: 24px; border-top: 3px solid #A30B37; border-left: 3px solid #A30B37; }
+#sp .closeButton { position: absolute; top: 12px; right: 16px; background: transparent; border: none; font-size: 2rem; line-height: 1; color: #2F0147; cursor: pointer; padding: 4px 10px; transition: color 0.2s, transform 0.2s; }
+#sp .closeButton:hover { color: #A30B37; transform: scale(1.1); }
+#sp .panelHeader { display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid rgba(47,1,71,0.15); padding-bottom: 2rem; }
+#sp .headerIconCircle { flex-shrink: 0; width: 125px; height: 125px; border-radius: 50%; overflow: hidden; box-shadow: 0 4px 12px rgba(47,1,71,0.25); animation: spIconPulse 0.6s ease-out; }
+@keyframes spIconPulse { 0% { transform: scale(0.85); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
+#sp .headerText { flex: 1; min-width: 0; }
+#sp .strandName { font-size: 2.5rem; font-weight: 700; color: #2F0147; margin: 0 0 0.4rem; letter-spacing: -0.01em; }
+#sp .tagline { font-size: 1.2rem; font-style: italic; color: #2F0147; opacity: 0.75; margin: 0; }
+#sp .themeGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+#sp .themeCard { position: relative; padding: 1.5rem 1.25rem 1.25rem; background-color: rgba(47,1,71,0.04); border-left: 3px solid #9C528B; transition: background-color 0.25s, border-left-color 0.25s, transform 0.25s; animation: spCardRise 0.5s ease-out backwards; }
+#sp .themeCard:nth-child(1) { animation-delay: 0.15s; }
+#sp .themeCard:nth-child(2) { animation-delay: 0.25s; }
+#sp .themeCard:nth-child(3) { animation-delay: 0.35s; }
+#sp .themeCard:nth-child(4) { animation-delay: 0.45s; }
+@keyframes spCardRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+#sp .themeCard:hover { background-color: rgba(163,11,55,0.06); border-left-color: #A30B37; transform: translateX(2px); }
+#sp .themeNumber { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; color: #9C528B; margin-bottom: 0.5rem; }
+#sp .themeCard:hover .themeNumber { color: #A30B37; }
+#sp .themeTitle { font-size: 1.15rem; font-weight: 700; color: #2F0147; margin: 0 0 0.5rem; line-height: 1.3; }
+#sp .themeDescription { font-size: 0.95rem; line-height: 1.5; color: #2F0147; opacity: 0.8; margin: 0; }
+#sp .ctaRow { display: flex; justify-content: flex-end; }
+#sp .ctaLink { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; font-weight: 700; color: #FFECE1; background-color: #A30B37; padding: 0.85rem 1.75rem; text-decoration: none; border-radius: 2px; transition: background-color 0.2s, gap 0.2s; }
+#sp .ctaLink:hover { background-color: #2F0147; gap: 1rem; }
+#sp .ctaArrow { display: inline-block; transition: transform 0.2s; }
+#sp .ctaLink:hover .ctaArrow { transform: translateX(3px); }
+
+/* ---------- 3b. MarginaliaTab (namespaced #mt) ---------- */
+#mt .wrap { position: relative; height: 100%; pointer-events: none; --pull: 0px; --reveal: 22px; }
+#mt .band { position: absolute; top: 0; bottom: 0; right: 0; width: var(--reveal); pointer-events: none; z-index: 0; }
+#mt .tab { position: absolute; right: 0; top: 50%; z-index: 1; pointer-events: auto; transform: translate(calc(-1 * var(--pull)), -50%); display: flex; flex-direction: column; align-items: center; gap: 0.9rem; padding: 1.5rem 0.55rem; background: var(--ink); color: var(--bg); text-decoration: none; border-radius: 4px 0 0 4px; box-shadow: -4px 0 16px rgba(47,1,71,0.18); transition: background 0.25s cubic-bezier(0.22,1,0.36,1), color 0.25s cubic-bezier(0.22,1,0.36,1); }
+#mt .tab:hover, #mt .tab:focus-visible { background: var(--crimson); outline: none; }
+#mt .text { writing-mode: vertical-rl; text-orientation: mixed; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; }
+#mt .star { color: var(--crimson); font-size: 0.8rem; line-height: 1; transition: color 0.25s; }
+#mt .tab:hover .star, #mt .tab:focus-visible .star { color: var(--bg); }
+#mt .tab.tab { background: var(--ink); }
+#mt .tab.tab:hover, #mt .tab.tab:focus-visible { background: var(--crimson); }
+
+/* ---------- 3c. Header + GridNav (namespaced #hd) ---------- */
+#hd .site { position: relative; width: 100%; height: 186px; background-color: var(--bg); max-width: 1100px; margin: 0 auto; transition: height 0.3s ease; }
+#hd .siteCompact { height: 70px; }
+#hd .siteOverlay { position: absolute; top: 0; left: 0; right: 0; height: 186px; background-color: var(--bg); transition: height 0.3s ease; --header-scale: 1; --nav-opacity: 1; --nav-pointer: auto; }
+#hd .siteCompact .siteOverlay { height: 70px; overflow: hidden; --header-scale: 0.32; --nav-opacity: 0; --nav-pointer: none; }
+#hd .siteCompact .siteOverlay:hover { height: 186px; overflow: visible; --header-scale: 1; --nav-opacity: 1; --nav-pointer: auto; box-shadow: 0 6px 18px rgba(47,1,71,0.12); }
+#hd .logoWrap { position: absolute; top: 6px; left: 0; width: 518px; height: 170px; display: flex; align-items: center; justify-content: center; transform: scale(var(--header-scale,1)); transform-origin: 0 0; transition: transform 0.3s ease; }
+#hd .logoWrap img { width: 518px; height: 170px; display: block; }
+#hd .gridContainer { position: absolute; top: 16px; right: 0; width: 518px; height: 170px; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(2,1fr); gap: 4px; font-size: 1.9rem; transform: scale(var(--header-scale,1)); transform-origin: 100% 0; opacity: var(--nav-opacity,1); pointer-events: var(--nav-pointer,auto); transition: transform 0.3s ease, opacity 0.25s ease; }
+#hd .navItem { display: flex; align-items: center; justify-content: center; text-decoration: none; color: #FFECE1; font-weight: bold; width: 75%; height: 75%; position: relative; background-color: var(--plum); justify-self: center; align-self: center; transition: background-color 160ms ease; }
+#hd .navItem:hover { background-color: #520359; }
+#hd .navItem.active { background-color: var(--crimson); }
+#hd .cornerCrop { position: absolute; top: -10px; left: -10px; width: 20px; height: 20px; border-top: 3px solid #2F0147; border-left: 3px solid #2F0147; }
+
+/* ---------- 4. HELIX3D COMPONENTS (verbatim helix3d.css) ----------
+   The block below is src/components/Helix3D/helix3d.css as-is —
+   already scoped under .helix3d-root, so no collisions. Gallery
+   neutralisation of its fixed/absolute overlays follows it. */
+
+.helix3d-root,
+.helix3d-root[data-theme="light"] {
+  --bg: #FFECE1; --ink: #2F0147; --plum: #3F0247; --crimson: #A30B37; --grape: #9C528B;
+  --bg-soft: rgba(47,1,71,0.04); --ink-soft: rgba(47,1,71,0.15); --ink-quiet: rgba(47,1,71,0.55); --crimson-soft: rgba(163,11,55,0.05);
+  --gate-bg: var(--ink); --gate-fg: var(--bg); --gate-fg-quiet: rgba(255,236,225,0.55); --gate-fg-soft: rgba(255,236,225,0.4); --gate-fg-faint: rgba(255,236,225,0.2);
+  --menu-bg: var(--ink); --menu-fg: var(--bg);
+  --shadow-md: 0 4px 12px rgba(47,1,71,0.18); --shadow-lg: 0 8px 24px rgba(47,1,71,0.22);
+  --disc-bg: var(--ink); --disc-fg: var(--bg);
+  --fog-color: 255, 236, 225;
+  --ease-out: cubic-bezier(0.22,1,0.36,1); --ease-in-out: cubic-bezier(0.65,0,0.35,1);
+}
+.helix3d-root[data-theme="dark"] {
+  --bg: #1A0226; --ink: #FFECE1; --plum: #2A0B3A; --crimson: #D63158; --grape: #C589B5;
+  --bg-soft: rgba(255,236,225,0.04); --ink-soft: rgba(255,236,225,0.15); --ink-quiet: rgba(255,236,225,0.55); --crimson-soft: rgba(214,49,88,0.08);
+  --gate-bg: #0F0118; --gate-fg: #FFECE1; --gate-fg-quiet: rgba(255,236,225,0.55); --gate-fg-soft: rgba(255,236,225,0.4); --gate-fg-faint: rgba(255,236,225,0.2);
+  --menu-bg: #0F0118; --menu-fg: #FFECE1;
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5); --shadow-lg: 0 8px 24px rgba(0,0,0,0.6), 0 0 24px rgba(214,49,88,0.15);
+  --disc-bg: var(--ink); --disc-fg: #1A0226;
+  --fog-color: 26, 2, 38;
+}
+.helix3d-root *, .helix3d-root *::before, .helix3d-root *::after { box-sizing: border-box; }
+.helix3d-root { font-family: 'Lato', sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.helix3d-root a, .helix3d-root button { background: none; border: none; }
+
+.helix3d-root .loader { position: fixed; inset: 0; z-index: 2000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s var(--ease-out), visibility 0.6s var(--ease-out); }
+.helix3d-root .loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.helix3d-root .loader-corner { position: absolute; width: 22px; height: 22px; pointer-events: none; }
+.helix3d-root .loader-corner--tl { top: 16px; left: 16px; border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson); }
+.helix3d-root .loader-corner--tr { top: 16px; right: 16px; border-top: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+.helix3d-root .loader-corner--bl { bottom: 16px; left: 16px; border-bottom: 3px solid var(--crimson); border-left: 3px solid var(--crimson); }
+.helix3d-root .loader-corner--br { bottom: 16px; right: 16px; border-bottom: 3px solid var(--crimson); border-right: 3px solid var(--crimson); }
+.helix3d-root .loader-welcome { position: absolute; top: 12%; left: 0; right: 0; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--ink); font-weight: 700; opacity: 0; }
+.helix3d-root .loader-stage { width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+.helix3d-root .loader-stage svg { overflow: visible; }
+.helix3d-root .loader-caption { position: absolute; bottom: 14%; left: 0; right: 0; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-quiet); opacity: 0; }
+.helix3d-root .loader-skip { position: absolute; bottom: 32px; right: 64px; font-family: 'Lato', sans-serif; font-size: 11px; padding: 6px 12px; background: transparent; border: 1px solid var(--ink-soft); color: var(--ink); letter-spacing: 0.06em; font-weight: 700; border-radius: 2px; opacity: 0; transition: opacity 0.3s, background 0.2s, color 0.2s; }
+.helix3d-root .loader-skip.is-visible { opacity: 0.7; }
+.helix3d-root .loader-skip:hover { opacity: 1; background: var(--ink); color: var(--bg); }
+
+.helix3d-root .gate { position: fixed; inset: 0; background: var(--gate-bg); color: var(--gate-fg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3rem; opacity: 0; visibility: hidden; transition: opacity 0.6s var(--ease-out), visibility 0.6s var(--ease-out); }
+.helix3d-root .gate.is-visible { opacity: 1; visibility: visible; }
+.helix3d-root .gate-mark { font-family: 'Lato', sans-serif; font-weight: 900; font-size: clamp(2rem,6vw,4.5rem); letter-spacing: -0.015em; display: flex; align-items: baseline; gap: 0.4em; }
+.helix3d-root .gate-mark .star { color: var(--crimson); font-size: 0.7em; }
+.helix3d-root .gate-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gate-fg-quiet); max-width: 36ch; text-align: center; line-height: 1.6; }
+.helix3d-root .gate-choices { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+.helix3d-root .gate-btn { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.04em; padding: 0.9rem 1.6rem; background: transparent; color: var(--gate-fg); border: 1px solid var(--gate-fg-soft); border-radius: 2px; transition: background 0.2s, color 0.2s, border-color 0.2s; display: inline-flex; align-items: center; gap: 0.6rem; }
+.helix3d-root .gate-btn:hover { background: var(--gate-fg); color: var(--gate-bg); border-color: var(--gate-fg); }
+.helix3d-root .gate-btn-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+.helix3d-root .marquee { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--ink-soft); overflow: hidden; height: 36px; display: flex; align-items: center; }
+.helix3d-root .marquee-track { display: flex; white-space: nowrap; animation: helix3dMarquee 40s linear infinite; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink); }
+.helix3d-root .marquee-track span { padding: 0 1.5rem; display: inline-flex; align-items: center; gap: 1.5rem; }
+.helix3d-root .marquee-track .star { color: var(--crimson); }
+@keyframes helix3dMarquee { to { transform: translateX(-50%); } }
+
+.helix3d-root .nav { position: fixed; top: 36px; left: 0; right: 0; z-index: 40; padding: 1.4rem 2rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; pointer-events: none; }
+.helix3d-root .nav > * { pointer-events: auto; }
+.helix3d-root .nav-mark { font-family: 'Lato', sans-serif; font-weight: 900; font-size: 1.1rem; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; display: flex; align-items: baseline; gap: 0.3em; }
+.helix3d-root .nav-mark .star { color: var(--crimson); font-size: 0.7em; }
+.helix3d-root .nav-mark-logo { display: block; height: 12.8rem; width: auto; }
+.helix3d-root .nav-controls { display: flex; align-items: center; gap: 0.75rem; }
+
+.helix3d-root .view-toggle { display: flex; align-items: center; gap: 0.35rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 2px; padding: 0.25rem; }
+.helix3d-root .view-toggle button { background: transparent; border: none; padding: 0.45rem 0.9rem; color: var(--ink-quiet); font: inherit; letter-spacing: inherit; text-transform: inherit; transition: color 0.2s, background 0.2s; border-radius: 1px; }
+.helix3d-root .view-toggle button.is-active { color: var(--bg); background: var(--ink); }
+.helix3d-root .view-toggle button:hover:not(.is-active) { color: var(--ink); }
+
+.helix3d-root .render-toggle { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 2px; padding: 0.45rem 0.9rem; color: var(--ink-quiet); transition: color 0.2s, background 0.2s, border-color 0.2s; }
+.helix3d-root .render-toggle:hover { color: var(--ink); border-color: var(--crimson); }
+.helix3d-root .render-toggle.is-active { color: var(--bg); background: var(--ink); border-color: var(--ink); }
+
+.helix3d-root .text-size { display: inline-flex; align-items: stretch; background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 2px; }
+.helix3d-root .text-size button { font-family: 'JetBrains Mono', monospace; font-weight: 700; line-height: 1; color: var(--ink-quiet); background: none; padding: 0.35rem 0.6rem; transition: color 0.2s, background 0.2s; }
+.helix3d-root .text-size button:first-child { font-size: 0.65rem; border-right: 1px solid var(--ink-soft); }
+.helix3d-root .text-size button:last-child { font-size: 0.85rem; }
+.helix3d-root .text-size button:hover { color: var(--bg); background: var(--ink); }
+
+.helix3d-root .theme-switch { width: 36px; height: 36px; background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); transition: background 0.2s, border-color 0.2s, transform 0.4s var(--ease-out); }
+.helix3d-root .theme-switch:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
+.helix3d-root .theme-switch svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.helix3d-root .theme-switch .icon-sun { display: none; }
+.helix3d-root .theme-switch .icon-moon { display: block; }
+.helix3d-root[data-theme="dark"] .theme-switch .icon-sun { display: block; }
+.helix3d-root[data-theme="dark"] .theme-switch .icon-moon { display: none; }
+
+.helix3d-root .menu-btn { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; background: transparent; border: none; color: var(--ink); padding: 0.5rem 0.8rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+.helix3d-root .menu-btn-lines { display: inline-flex; flex-direction: column; gap: 4px; }
+.helix3d-root .menu-btn-lines span { display: block; width: 16px; height: 1.5px; background: var(--ink); }
+
+.helix3d-root .stage-readout { position: absolute; top: calc(36px + 5rem); left: 50%; transform: translateX(-50%); display: flex; gap: 2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet); z-index: 5; text-align: center; }
+.helix3d-root .stage-readout strong { display: block; font-weight: 700; color: var(--ink); margin-top: 0.2rem; letter-spacing: 0.08em; }
+
+.helix3d-root .node-label { position: absolute; left: 0; top: 0; pointer-events: auto; will-change: transform, opacity; max-width: 200px; transform: translate(-9999px, -9999px); }
+.helix3d-root .node-label-pip { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--bg); transition: background 0.2s, transform 0.2s; margin-bottom: 0.2rem; }
+.helix3d-root .node-label-name { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: -0.005em; color: var(--ink); line-height: 1.15; transition: color 0.2s; padding: 0.18rem 0.45rem; background: rgba(var(--fog-color), 0.85); backdrop-filter: blur(2px); border: 1px solid var(--white); border-radius: 2px; display: inline-block; }
+.helix3d-root .node-label-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-quiet); padding: 0 0.45rem; margin-top: 0.12rem; display: block; }
+.helix3d-root[data-theme="light"] .node-label-name { border-color: var(--plum); }
+.helix3d-root .node-label.is-active .node-label-pip { background: var(--crimson); transform: scale(1.4); }
+.helix3d-root .node-label.is-active .node-label-name { color: var(--crimson); }
+
+.helix3d-root .node-bubble { position: absolute; left: 0; top: 0; z-index: 8; pointer-events: none; display: inline-flex; align-items: center; gap: 0.4em; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bg); background: var(--crimson); padding: 0.45rem 0.7rem; border-radius: 999px; box-shadow: var(--shadow-md); opacity: 0; transform: translate(-9999px, -9999px); transition: opacity 0.2s var(--ease-out); }
+.helix3d-root .node-bubble span { font-size: 1.1em; line-height: 1; }
+.helix3d-root .node-bubble.is-visible { opacity: 1; pointer-events: auto; }
+.helix3d-root .node-bubble.is-visible:hover { filter: brightness(1.08); }
+
+.helix3d-root .helix-center-label { position: absolute; top: 50%; left: 2rem; transform: translateY(-50%); max-width: 18ch; pointer-events: none; z-index: 3; }
+.helix3d-root .helix-center-label .kicker { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--crimson); font-weight: 700; margin: 0 0 0.4rem; }
+.helix3d-root .helix-center-label .title { font-family: 'Lato', sans-serif; font-weight: 900; font-size: clamp(1.4rem,2.4vw,2.2rem); letter-spacing: -0.01em; line-height: 1.1; margin: 0; color: var(--ink); }
+.helix3d-root .helix-center-label .title .accent { color: var(--crimson); }
+
+.helix3d-root .list-item { display: grid; grid-template-columns: 80px 80px 1fr auto; align-items: center; gap: 1.5rem; padding: 1.6rem 0; border-bottom: 1px solid var(--ink-soft); text-decoration: none; color: inherit; transition: padding 0.3s var(--ease-out), background 0.4s var(--ease-out); }
+.helix3d-root .list-item:hover { padding-left: 1.5rem; }
+.helix3d-root .list-item:hover .list-disc { background: var(--crimson); }
+.helix3d-root .list-item:hover .list-title { color: var(--crimson); }
+.helix3d-root .list-item:hover .list-arrow { transform: translateX(8px); color: var(--crimson); }
+.helix3d-root .list-num { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; letter-spacing: 0.16em; color: var(--ink-quiet); font-weight: 500; }
+.helix3d-root .list-disc { width: 56px; height: 56px; border-radius: 50%; background: var(--disc-bg); display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.helix3d-root .list-disc svg { width: 50%; height: 50%; stroke: var(--disc-fg); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.helix3d-root .list-meta { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.helix3d-root .list-title { font-family: 'Lato', sans-serif; font-weight: 700; font-size: clamp(1.1rem,2vw,1.5rem); letter-spacing: -0.005em; transition: color 0.2s; }
+.helix3d-root .list-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
+.helix3d-root .list-arrow { font-family: 'Lato', sans-serif; font-size: 1.4rem; color: var(--ink); transition: transform 0.3s var(--ease-out), color 0.2s; }
+
+.helix3d-root .corner-crop { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 30; }
+.helix3d-root .corner-crop--tl { top: 48px; left: 16px; border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tr { top: 48px; right: 16px; border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--bl { bottom: 56px; left: 16px; border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--br { bottom: 56px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+
+.helix3d-root .footer-strip { position: fixed; bottom: 0; left: 0; right: 0; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet); z-index: 20; pointer-events: none; }
+.helix3d-root .footer-strip span strong { color: var(--ink); font-weight: 700; }
+
+.helix3d-root .menu-overlay { position: fixed; inset: 0; z-index: 200; background: var(--menu-bg); color: var(--menu-fg); opacity: 0; visibility: hidden; transition: opacity 0.5s var(--ease-out), visibility 0.5s var(--ease-out); display: flex; flex-direction: column; padding: 3rem; }
+.helix3d-root .menu-overlay.is-open { opacity: 1; visibility: visible; }
+.helix3d-root .menu-top { display: flex; justify-content: space-between; align-items: center; }
+.helix3d-root .menu-close { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--menu-fg); background: transparent; border: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+.helix3d-root .menu-close-x { width: 18px; height: 18px; position: relative; }
+.helix3d-root .menu-close-x::before, .helix3d-root .menu-close-x::after { content: ''; position: absolute; top: 50%; left: 0; width: 18px; height: 1.5px; background: var(--menu-fg); }
+.helix3d-root .menu-close-x::before { transform: rotate(45deg); }
+.helix3d-root .menu-close-x::after { transform: rotate(-45deg); }
+.helix3d-root .menu-items { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.6rem; padding-left: 2rem; }
+.helix3d-root .menu-item { font-family: 'Lato', sans-serif; font-weight: 900; font-size: clamp(2.8rem,8vw,6rem); letter-spacing: -0.015em; color: var(--menu-fg); text-decoration: none; line-height: 1; transition: color 0.2s, transform 0.3s var(--ease-out); display: inline-flex; align-items: center; gap: 0.4em; width: fit-content; }
+.helix3d-root .menu-item-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.22em; color: var(--gate-fg-soft); margin-right: 0.4em; }
+.helix3d-root .menu-item:hover { color: var(--crimson); transform: translateX(20px); }
+.helix3d-root .menu-bottom { display: flex; justify-content: space-between; align-items: flex-end; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gate-fg-quiet); }
+.helix3d-root .menu-bottom a { color: var(--menu-fg); opacity: 0.7; text-decoration: none; margin-left: 1.5rem; transition: opacity 0.2s; }
+.helix3d-root .menu-bottom a:hover { opacity: 1; }
+
+.helix3d-root .strand-modal { position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center; padding: 2rem; background: rgba(var(--fog-color), 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); overflow-y: auto; }
+.helix3d-root .strand-modal-inner { width: 100%; max-width: 1100px; margin: auto; }
+
+/* ---- GALLERY NEUTRALISATION for helix3d demos ----
+   Turn the full-bleed fixed overlays into absolute fills of their
+   demo .frame, and un-hide elements the runtime would otherwise
+   reveal via JS (off-screen transforms / opacity:0). */
+.frame .helix3d-root { position: absolute; inset: 0; overflow: hidden; }
+.demo .helix3d-root { background: var(--bg); }
+.helix3d-root .loader,
+.helix3d-root .gate,
+.helix3d-root .marquee,
+.helix3d-root .nav,
+.helix3d-root .footer-strip,
+.helix3d-root .corner-crop,
+.helix3d-root .menu-overlay,
+.helix3d-root .strand-modal { position: absolute; }
+/* node-label / node-bubble carry an off-screen transform in base
+   rule (JS billboards them) — bring them on-screen for the gallery. */
+.demo .node-label,
+.demo .node-bubble { position: relative; transform: none; }
+.demo .loader-welcome,
+.demo .loader-caption { opacity: 1; }
+.demo .gate { background: var(--gate-bg); }
+.row { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; align-items: flex-start; }
+.row.center { align-items: center; }
+.stateLbl { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8d81a3; display: block; margin: 0 0 0.5rem; }
+.cell { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+
+<header class="schema-head">
+  <div>
+    <h1>Mentheon · Component Design Schema</h1>
+    <div class="sub">individual components — live, real CSS</div>
+  </div>
+  <button class="theme-btn" id="themeBtn" type="button">Helix theme: light</button>
+</header>
+
+<main>
+  <p class="lead">
+    Every component below is rendered with its <b>actual stylesheet</b> and a faithful
+    static markup sample. Interaction states (<code>:hover</code>, <code>.is-active</code>,
+    <code>.is-visible</code>, <code>.open</code>) are shown by hard-coding the state class —
+    hover the live samples for the rest. The <b>Helix theme</b> button toggles every Helix3D
+    demo between <code>data-theme="light"</code> and <code>"dark"</code>. For the token /
+    pattern reference (palette scales, type ramp, generic CTAs) see <code>design-reference.html</code>;
+    this file is the per-component gallery. Full-screen overlays (loader, gate, menu, modal)
+    are shown contained inside a frame.
+  </p>
+
+  <!-- ===================== TOKENS ===================== -->
+  <h2 class="group-title">Tokens</h2>
+  <p class="group-sub">src/index.css :root · helix3d.css theme blocks</p>
+
+  <div class="card">
+    <div class="cap"><b>Core palette</b><span class="src">src/index.css · helix3d.css</span></div>
+    <div class="demo">
+      <div class="swatchRow">
+        <div class="swatch" style="background:#FFECE1;color:#2F0147"><b>--bg</b><span>#FFECE1</span></div>
+        <div class="swatch" style="background:#2F0147;color:#FFECE1"><b>--ink</b><span>#2F0147</span></div>
+        <div class="swatch" style="background:#3F0247;color:#FFECE1"><b>--plum</b><span>#3F0247</span></div>
+        <div class="swatch" style="background:#A30B37;color:#FFECE1"><b>--crimson</b><span>#A30B37</span></div>
+        <div class="swatch" style="background:#9C528B;color:#FFECE1"><b>--grape</b><span>#9C528B</span></div>
+      </div>
+      <div class="swatchRow" style="margin-top:2px">
+        <div class="swatch" style="background:#1A0226;color:#FFECE1"><b>dark --bg</b><span>#1A0226</span></div>
+        <div class="swatch" style="background:#0F0118;color:#FFECE1"><b>dark gate/menu</b><span>#0F0118</span></div>
+        <div class="swatch" style="background:#D63158;color:#FFECE1"><b>dark --crimson</b><span>#D63158</span></div>
+        <div class="swatch" style="background:#C589B5;color:#1A0226"><b>dark --grape</b><span>#C589B5</span></div>
+        <div class="swatch" style="background:#2A0B3A;color:#FFECE1"><b>dark --plum</b><span>#2A0B3A</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Type</b><span class="src">Lato · JetBrains Mono</span></div>
+    <div class="demo" style="background:#FFECE1;color:#2F0147">
+      <div class="typeRow">
+        <div><div class="meta">Lato 900 · display</div><div style="font-family:Lato;font-weight:900;font-size:2.4rem;letter-spacing:-0.015em">Six strands around one arc.</div></div>
+        <div><div class="meta">Lato 700 · title</div><div style="font-family:Lato;font-weight:700;font-size:1.3rem">VR Reminiscence Therapy</div></div>
+        <div><div class="meta">Lato 400 · body</div><div style="font-family:Lato;font-size:0.95rem;line-height:1.5">Personalised, low-stimulation virtual environments as a digital therapeutic.</div></div>
+        <div style="border-bottom:none"><div class="meta">JetBrains Mono 700 · label</div><div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase">research programme · 2024–26</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HELIX3D — CHROME ===================== -->
+  <h2 class="group-title">Helix3D · chrome</h2>
+  <p class="group-sub">src/components/Helix3D/Helix3D.tsx + helix3d.css — toggles theme with the header button</p>
+
+  <div class="card">
+    <div class="cap"><b>Marquee</b><span class="src">.marquee / .marquee-track</span><span class="note">runtime fills the track via buildMarquee(); fixed→absolute here</span></div>
+    <div class="demo" style="padding:0"><div class="frame short hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="marquee"><div class="marquee-track">
+        <span>research programme · 2024–26</span><span class="star">✲</span>
+        <span>mentheon · kindreon · aevorix · vitrix · acumentra</span><span class="star">✲</span>
+        <span>six strands · one staff</span><span class="star">✲</span>
+        <span>rendered with three.js · r184</span><span class="star">✲</span>
+      </div></div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Nav bar</b><span class="src">.nav / .nav-mark / .nav-controls</span><span class="note">logo = placeholder box; controls shown below individually too</span></div>
+    <div class="demo" style="padding:0"><div class="frame short hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <nav class="nav">
+        <a href="#" class="nav-mark" aria-label="Mentheon"><span class="nav-mark-logo" style="height:3.4rem;width:8rem;background:var(--ink);border-radius:2px"></span></a>
+        <div class="nav-controls">
+          <div class="view-toggle"><button class="is-active">staff</button><button>list</button></div>
+          <button class="render-toggle">sketch</button>
+          <div class="text-size"><button>A−</button><button>A+</button></div>
+          <button class="theme-switch"><svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+          <button class="menu-btn">menu <span class="menu-btn-lines"><span></span><span></span></span></button>
+        </div>
+      </nav>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Nav controls</b><span class="src">.view-toggle / .render-toggle / .text-size / .theme-switch / .menu-btn</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light"><div class="row center">
+      <div class="cell"><span class="stateLbl">view-toggle</span><div class="view-toggle"><button class="is-active">staff</button><button>list</button></div></div>
+      <div class="cell"><span class="stateLbl">render-toggle · default / .is-active</span><div class="row center"><button class="render-toggle">sketch</button><button class="render-toggle is-active">poly</button><button class="render-toggle">rod trace</button><button class="render-toggle">solid nodes</button></div></div>
+      <div class="cell"><span class="stateLbl">text-size</span><div class="text-size"><button>A−</button><button>A+</button></div></div>
+      <div class="cell"><span class="stateLbl">theme-switch</span><button class="theme-switch"><svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button></div>
+      <div class="cell"><span class="stateLbl">menu-btn</span><button class="menu-btn">menu <span class="menu-btn-lines"><span></span><span></span></span></button></div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Footer strip</b><span class="src">.footer-strip</span></div>
+    <div class="demo" style="padding:0"><div class="frame short hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="footer-strip">
+        <span>mentheon ltd · <strong>15974246</strong></span>
+        <span>london · est <strong>09.2024</strong></span>
+        <span><strong>mnth ✲</strong></span>
+      </div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Corner crops</b><span class="src">.corner-crop--tl/tr/bl/br</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light"><div style="position:relative;width:340px;height:200px;background:var(--bg-soft)">
+      <span class="corner-crop corner-crop--tl" style="position:absolute;top:8px;left:8px"></span>
+      <span class="corner-crop corner-crop--tr" style="position:absolute;top:8px;right:8px"></span>
+      <span class="corner-crop corner-crop--bl" style="position:absolute;bottom:8px;left:8px"></span>
+      <span class="corner-crop corner-crop--br" style="position:absolute;bottom:8px;right:8px"></span>
+    </div></div></div>
+  </div>
+
+  <!-- ===================== HELIX3D — SCENE OVERLAYS ===================== -->
+  <h2 class="group-title">Helix3D · scene overlays</h2>
+  <p class="group-sub">labels, bubble, headline, list rows, readout</p>
+
+  <div class="card">
+    <div class="cap"><b>Node tag label</b><span class="src">.node-label (+ .is-active)</span><span class="note">cream border in dark mode → plum in light mode</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light"><div class="row">
+      <div class="cell"><span class="stateLbl">default</span><div class="node-label"><div class="node-label-pip"></div><span class="node-label-name">VR Reminiscence Therapy</span><span class="node-label-sub">Aevorix · ageing</span></div></div>
+      <div class="cell"><span class="stateLbl">.is-active (pointer hover)</span><div class="node-label is-active"><div class="node-label-pip"></div><span class="node-label-name">Subjective Attraction</span><span class="node-label-sub">Kindreon · caregiving</span></div></div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>"View more" bubble</b><span class="src">.node-bubble.is-visible</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light">
+      <button class="node-bubble is-visible">view more <span aria-hidden="true">→</span></button>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Centre headline</b><span class="src">.helix-center-label .kicker/.title/.accent</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light">
+      <div class="helix-center-label" style="position:relative;top:auto;left:auto;transform:none;max-width:24ch">
+        <p class="kicker">research programme · 2024–26</p>
+        <h1 class="title">Six strands<br/>around one <span class="accent">arc</span>.</h1>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Stage readout</b><span class="src">.stage-readout</span></div>
+    <div class="demo"><div class="helix3d-root" data-theme="light">
+      <div class="stage-readout" style="position:relative;top:auto;left:auto;transform:none">
+        <div>programme<strong>research · 2024–26</strong></div>
+        <div>strands<strong>06</strong></div>
+        <div>geometry<strong>rod · coil · nodes</strong></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>List view rows</b><span class="src">.list-item / .list-disc / .list-meta / .list-arrow</span></div>
+    <div class="demo" style="background:#FFECE1"><div class="helix3d-root" data-theme="light" style="width:100%">
+      <a class="list-item" href="#"><span class="list-num">01</span><div class="list-disc"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="28"/><circle cx="35" cy="50" r="14"/><circle cx="65" cy="50" r="14"/></svg></div><div class="list-meta"><div class="list-title">VR Reminiscence Therapy</div><div class="list-tag">Aevorix · ageing technology</div></div><span class="list-arrow">→</span></a>
+      <a class="list-item" href="#"><span class="list-num">02</span><div class="list-disc"><svg viewBox="0 0 100 100"><path d="M50 20 L55 45 L80 50 L55 55 L50 80 L45 55 L20 50 L45 45 Z"/></svg></div><div class="list-meta"><div class="list-title">Subjective Attraction</div><div class="list-tag">Kindreon · caregiving research</div></div><span class="list-arrow">→</span></a>
+    </div></div>
+  </div>
+
+  <!-- ===================== HELIX3D — FULL-BLEED ===================== -->
+  <h2 class="group-title">Helix3D · full-bleed overlays</h2>
+  <p class="group-sub">loader, gate, menu, strand modal — contained in a frame for the gallery</p>
+
+  <div class="card">
+    <div class="cap"><b>Loader splash</b><span class="src">HelixIntro.tsx · .loader*</span><span class="note">logo SVG trimmed for brevity (full set in LOADER_LOGO_SVG); fill clip set fully revealed</span></div>
+    <div class="demo" style="padding:0"><div class="frame hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="loader">
+        <span class="loader-corner loader-corner--tl"></span><span class="loader-corner loader-corner--tr"></span>
+        <span class="loader-corner loader-corner--bl"></span><span class="loader-corner loader-corner--br"></span>
+        <div class="loader-welcome">Welcome to Mentheon</div>
+        <div class="loader-stage">
+          <svg viewBox="0 0 195 195" width="200" height="200">
+            <rect x="0" y="0" width="195" height="195" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink)"/>
+            <g style="fill:var(--ink)"><rect width="195" height="195"/></g>
+            <g style="fill:var(--bg)">
+              <path d="M42.85 62.64V92.95H36.65V75.52L28.75 88.35C28.5 88.84 28.16 89.21 27.73 89.46H25.34L14.84 72.73V92.95H8.78V62.64H14.15L24.28 79.1L35.16 63.73H42.85ZM67.98 89.66V92.95H49.59V63.14H67.96V66.43H53.63V76.33H65.23V79.49H53.63V89.66H67.98ZM97.75 63.14V92.95H95.73L77.05 69.76V92.95H73.6V63.14H75.68L94.32 86.27V63.14H97.75Z"/>
+              <path d="M68.56 108.42H59.49V133.9H53.89V108.42H44.82V103.82H68.56V108.42ZM97.1 104.09V133.9H93.06V120.34H76.99V133.9H72.95V104.09H76.99V117.39H93.06V104.09H97.1ZM123.11 130.61V133.9H104.72V104.09H123.09V107.38H108.75V117.28H120.36V120.44H108.75V130.61H123.11Z"/>
+              <circle cx="123.173" cy="68.62" r="2.15"/><circle cx="157.702" cy="68.62" r="2.15"/>
+            </g>
+          </svg>
+        </div>
+        <div class="loader-caption">filling · 100%</div>
+        <button class="loader-skip is-visible">skip ↦</button>
+      </div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Sound/silent gate</b><span class="src">.gate.is-visible · .gate-btn</span></div>
+    <div class="demo" style="padding:0"><div class="frame hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="gate is-visible">
+        <div class="gate-mark">mentheon<span class="star">✲</span></div>
+        <p class="gate-tag">Research and technology group · London · est. September 2024 · six strands across ageing, attraction, health and cognition</p>
+        <div class="gate-choices">
+          <button class="gate-btn"><svg class="gate-btn-icon" viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 8a5 5 0 0 1 0 8"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>enter with sound</button>
+          <button class="gate-btn"><svg class="gate-btn-icon" viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M18 9l4 6M22 9l-4 6"/></svg>enter without sound</button>
+        </div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Full-screen menu</b><span class="src">.menu-overlay.is-open</span></div>
+    <div class="demo" style="padding:0"><div class="frame hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="menu-overlay is-open">
+        <div class="menu-top"><span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gate-fg-quiet)">index ✲ mentheon</span><button class="menu-close">close <span class="menu-close-x"></span></button></div>
+        <div class="menu-items">
+          <a class="menu-item" href="#"><span class="menu-item-num">01</span>research</a>
+          <a class="menu-item" href="#"><span class="menu-item-num">02</span>subsidiaries</a>
+          <a class="menu-item" href="#"><span class="menu-item-num">03</span>publications</a>
+          <a class="menu-item" href="#"><span class="menu-item-num">04</span>about</a>
+        </div>
+        <div class="menu-bottom"><span>mentheon ltd · companies house 15974246</span><span><a href="#">linkedin</a><a href="#">github</a></span></div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Strand modal wrapper</b><span class="src">.strand-modal / .strand-modal-inner</span><span class="note">the StrandPanel inside it is the separate component below</span></div>
+    <div class="demo" style="padding:0"><div class="frame tallish hx" data-theme="light"><div class="helix3d-root" data-theme="light">
+      <div class="strand-modal"><div class="strand-modal-inner">
+        <div style="background:var(--bg);border:1px solid var(--ink-soft);padding:2.5rem;border-radius:2px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-quiet)">StrandPanel renders here →<br/><br/>see "Details panel" below</div>
+      </div></div>
+    </div></div></div>
+  </div>
+
+  <!-- ===================== MAIN-SITE COMPONENTS ===================== -->
+  <h2 class="group-title">Main site components</h2>
+  <p class="group-sub">CSS-module components (namespaced per section to dodge collisions)</p>
+
+  <div class="card">
+    <div class="cap"><b>Details panel (StrandPanel)</b><span class="src">src/components/StrandPanel.tsx + .module.css</span><span class="note">shown in .open state · sample = "kindred" strand</span></div>
+    <div class="demo" id="sp" style="background:#e6dccf">
+      <div class="panel open">
+        <div class="panelInner">
+          <div class="cornerCrop"></div>
+          <button class="closeButton" aria-label="Close">×</button>
+          <div class="panelHeader">
+            <div class="headerIconCircle">
+              <svg viewBox="0 0 200 200" style="width:100%;height:100%;display:block">
+                <circle cx="100" cy="100" r="95" fill="#A30B37"/>
+                <g fill="none" stroke="#FCE8D5" stroke-width="4" stroke-linecap="round">
+                  <circle cx="80" cy="100" r="32"/><circle cx="120" cy="100" r="32"/>
+                  <path d="M 100 108 C 100 108, 92 100, 92 94 C 92 89, 96 86, 100 90 C 104 86, 108 89, 108 94 C 108 100, 100 108, 100 108 Z" fill="#FCE8D5" stroke="none"/>
+                  <circle cx="100" cy="55" r="3" fill="#FCE8D5" stroke="none"/>
+                </g>
+              </svg>
+            </div>
+            <div class="headerText">
+              <h2 class="strandName">Kindreon</h2>
+              <p class="tagline">Understanding subjective attraction.</p>
+            </div>
+          </div>
+          <div class="themeGrid">
+            <div class="themeCard"><div class="themeNumber">01</div><h3 class="themeTitle">Perception of attractiveness</h3><p class="themeDescription">Psychological and social factors that influence how individuals perceive attractiveness.</p></div>
+            <div class="themeCard"><div class="themeNumber">02</div><h3 class="themeTitle">Interpersonal dynamics</h3><p class="themeDescription">Equality, power and social context in shaping attraction and relationship formation.</p></div>
+            <div class="themeCard"><div class="themeNumber">03</div><h3 class="themeTitle">Clinical implications</h3><p class="themeDescription">Maxillofacial aesthetics, reconstructive surgery and their impact on patient satisfaction.</p></div>
+          </div>
+          <div class="ctaRow"><a href="#" class="ctaLink">See full work strand <span class="ctaArrow">→</span></a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Marginalia tab</b><span class="src">src/components/MarginaliaTab.tsx + .module.css</span><span class="note">helix3d-only · resting state (--pull:0, band shown statically)</span></div>
+    <div class="demo" id="mt" style="padding:0">
+      <div style="position:relative;height:300px;background:#FFECE1">
+        <div class="wrap" style="--pull:0px;--reveal:24px">
+          <span class="band" style="background:#1A0226"></span>
+          <a class="tab" href="#"><span class="star">✲</span><span class="text">Marginalia</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cap"><b>Header + GridNav</b><span class="src">Header.tsx/GridNav.tsx + .module.css</span><span class="note">logo = placeholder; "Home" shown .active</span></div>
+    <div class="demo" id="hd" style="background:#FFECE1">
+      <header class="site">
+        <div class="siteOverlay">
+          <div class="logoWrap"><div style="width:518px;height:170px;display:flex;align-items:center;justify-content:center;background:#3F0247;color:#FFECE1;font-family:Lato;font-weight:900;font-size:2.2rem;letter-spacing:-0.01em">MENTHEON</div></div>
+          <nav class="gridContainer">
+            <a href="#" class="navItem active">Home<span class="cornerCrop"></span></a>
+            <a href="#" class="navItem">News</a>
+            <a href="#" class="navItem">About</a>
+            <a href="#" class="navItem">Who?</a>
+            <a href="#" class="navItem">What?</a>
+            <a href="#" class="navItem">Why?</a>
+          </nav>
+        </div>
+      </header>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* Only behaviour in this sheet: flip every Helix3D demo + its frame
+   between the light/dark token sets so both palettes are reviewable. */
+(function () {
+  var btn = document.getElementById('themeBtn');
+  var dark = false;
+  btn.addEventListener('click', function () {
+    dark = !dark;
+    var t = dark ? 'dark' : 'light';
+    document.querySelectorAll('.helix3d-root, .hx').forEach(function (el) {
+      el.setAttribute('data-theme', t);
+    });
+    btn.textContent = 'Helix theme: ' + t;
+  });
+})();
+</script>
+
+</body>
+</html>

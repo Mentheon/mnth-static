@@ -269,7 +269,13 @@
 .helix3d-root .nav-mark .star { color: var(--crimson); font-size: 0.7em; }
 /* Image brand mark in the nav (replaces the text wordmark). Sized
    to sit in the ~36px nav band; tweak `height` to taste. */
-.helix3d-root .nav-mark-logo { display: block; height: 12.8rem; width: auto; }
+.helix3d-root .nav-mark-logo { height: 12.8rem; width: auto; }
+/* Light/dark logo swap, keyed off the root data-theme (same
+   mechanism as .theme-switch's sun/moon). Default = light. */
+.helix3d-root .nav-mark-logo--light { display: block; }
+.helix3d-root .nav-mark-logo--dark  { display: none; }
+.helix3d-root[data-theme="dark"] .nav-mark-logo--light { display: none; }
+.helix3d-root[data-theme="dark"] .nav-mark-logo--dark  { display: block; }
 .helix3d-root .nav-controls { display: flex; align-items: center; gap: 0.75rem; }
 
 .helix3d-root .view-toggle {
