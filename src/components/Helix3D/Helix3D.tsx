@@ -374,7 +374,7 @@ export default function Helix3D() {
 
       window.addEventListener('resize', onResize)
       const dom = renderer.domElement
-      const onLeave = () => { pointer.x = -9999; pointer.y = -9999 }
+      const onLeave = () => { pointer.x = -9999; pointer.y = -9999; setLabelHover(null) }
       dom.addEventListener('pointermove', onPointerMove)
       dom.addEventListener('pointerleave', onLeave)
       dom.addEventListener('click', onClick)
@@ -563,8 +563,8 @@ export default function Helix3D() {
           <span class="node-label-name">${n.strand.name}</span>
           <span class="node-label-sub">${n.strand.subsidiary}</span>
         `
-        label.addEventListener('mouseenter', () => activate(n.strand.id))
-        label.addEventListener('mouseleave', () => deactivate())
+        label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
+        label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
         label.addEventListener('click', (e) => {
           e.preventDefault()
           const idx = nodes.indexOf(n)
@@ -719,9 +719,10 @@ export default function Helix3D() {
       })
     }
 
-    /* Light up a strand: orb crimson + emissive, flag its HTML
-       label. Hover affordance + click target (the StrandPanel,
-       opened on click, carries the detail — there's no peek now). */
+    /* Light up a strand's ORB (crimson + emissive) + drive the
+       bubble. Called by both pointer hover and scroll-focus. NOTE:
+       the HTML label highlight is deliberately NOT done here — see
+       setLabelHover (pointer-hover only). */
     function activate(id: string) {
       if (hoveredId === id) return
       hoveredId = id
@@ -733,13 +734,9 @@ export default function Helix3D() {
         m.emissive.copy(isActive ? C.crimson : new THREE.Color(0x000000))
         m.emissiveIntensity = isActive ? 0.55 : 0
       })
-      $$('.node-label').forEach((l) => {
-        l.classList.toggle('is-active', l.dataset.id === id)
-      })
     }
-    /* Hover-off: if a node is scroll-focused, keep it lit (fall
-       back to it so its bubble stays). Otherwise (default view)
-       clear every orb + label flag. */
+    /* Hover-off: if a node is scroll-focused, keep its orb lit (fall
+       back to it so its bubble stays). Otherwise reset every orb. */
     function deactivate() {
       const fid = isFocused() ? nodes[focusIndex]?.strand.id : undefined
       if (fid) {
@@ -754,7 +751,16 @@ export default function Helix3D() {
         m.emissive.set(0x000000)
         m.emissiveIntensity = 0
       })
-      $$('.node-label').forEach((l) => l.classList.remove('is-active'))
+    }
+
+    /* HTML-label highlight = genuine pointer hover ONLY (never
+       scroll-focus). Pass the hovered node id, or null to clear.
+       Every tag stays visible + neutral; only the node the cursor
+       is actually over gets the red pip/name. */
+    function setLabelHover(id: string | null) {
+      $$('.node-label').forEach((l) => {
+        l.classList.toggle('is-active', id !== null && l.dataset.id === id)
+      })
     }
 
     /* The per-frame heartbeat. dt = seconds since last frame (for
@@ -826,8 +832,10 @@ export default function Helix3D() {
         if (hits.length) {
           const id = hits[0].object.userData.strandId as string
           if (id !== hoveredId) activate(id)
-        } else if (hoveredId !== null) {
-          deactivate()
+          setLabelHover(id)
+        } else {
+          if (hoveredId !== null) deactivate()
+          setLabelHover(null)
         }
       }
 
@@ -837,11 +845,10 @@ export default function Helix3D() {
     }
 
     /* Project each orb's 3D world position to screen pixels and
-       place its HTML label there. The label is flipped to the
-       outward side of the orb (left orbs get a right-anchored
-       label and vice-versa). Opacity fades with depth, and dims
-       further when the node is behind the rod (z < -0.3); the
-       active label is always fully opaque. */
+       place its HTML label there, flipped to the orb's outward
+       side. Tags are CONSTANTLY visible — no depth/behind fade,
+       opacity is always 1 — so every strand is readable at all
+       times; only positioning tracks the 3D motion. */
     function updateLabels() {
       const labelsEl = $('#node-labels')!
       const w = labelsEl.clientWidth
@@ -853,19 +860,13 @@ export default function Helix3D() {
         const projP = worldP.clone().project(camera)
         const px = (projP.x * 0.5 + 0.5) * w
         const py = (-projP.y * 0.5 + 0.5) * h
-        const ndcZ = projP.z
         const label = $(`.node-label[data-id="${n.strand.id}"]`)
         if (!label) return
         const isLeft = px <= w / 2
         const nudge = isLeft ? -18 : 18
         label.style.transform =
           `translate(${px + nudge}px, ${py}px) translate(${isLeft ? '-100%' : '0'}, -50%)`
-        const depthOpacity = THREE.MathUtils.clamp(1 - (ndcZ + 1) * 0.55, 0.12, 1)
-        const isBehind = worldP.z < -0.3
-        const final = label.classList.contains('is-active')
-          ? 1
-          : (isBehind ? depthOpacity * 0.35 : depthOpacity)
-        label.style.opacity = String(final)
+        label.style.opacity = '1'
       })
 
       // "view more" bubble — pinned just below the active (focused
