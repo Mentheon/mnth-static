@@ -603,8 +603,10 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         label.dataset.id = n.strand.id
         label.innerHTML = `
           <div class="node-label-pip"></div>
-          <span class="node-label-name">${n.strand.name}</span>
-          <span class="node-label-sub">${n.strand.subsidiary}</span>
+          <div class="node-label-text">
+            <span class="node-label-name">${n.strand.name}</span>
+            <span class="node-label-sub">${n.strand.subsidiary}</span>
+          </div>
         `
         label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
         label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
@@ -1016,10 +1018,20 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         const py = (-projP.y * 0.5 + 0.5) * h
         const label = $(`.node-label[data-id="${n.strand.id}"]`)
         if (!label) return
-        const isLeft = px <= w / 2
-        const nudge = isLeft ? -18 : 18
-        label.style.transform =
-          `translate(${px + nudge}px, ${py}px) translate(${isLeft ? '-100%' : '0'}, -50%)`
+        // Anchor the label exactly on the orb so the pip stays
+        // centred inside it at all times; only the text block flips
+        // to the inboard side via .is-left, so the text never
+        // crosses the rod as the orb passes screen centre.
+        //
+        // While zoomed/focused on a node, FREEZE each label's side:
+        // the camera dolly would otherwise drag orbs across screen
+        // centre and flip the text mid-zoom. Position still tracks
+        // the orb every frame; only the L/R latch is held until the
+        // view returns to the default (un-focused) state.
+        if (!isFocused()) {
+          label.classList.toggle('is-left', px <= w / 2)
+        }
+        label.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`
         label.style.opacity = '1'
       })
 

@@ -410,18 +410,42 @@
 }
 .helix3d-root .node-label {
   position: absolute; left: 0; top: 0;
+  /* The box IS the pip and is centred on the orb (JS sets the
+     transform), so the pip never leaves the orb. The text block
+     is positioned beside it and flips side via .is-left. */
+  width: 8px; height: 8px;
   pointer-events: auto;
   will-change: transform, opacity;
-  max-width: 200px;
   transform: translate(-9999px, -9999px);
 }
 .helix3d-root .node-label-pip {
-  width: 8px; height: 8px;
+  position: absolute; inset: 0;          /* fills the 8px box = on the orb */
   border-radius: 50%;
   background: var(--ink);
   box-shadow: 0 0 0 3px var(--bg);
   transition: background 0.2s, transform 0.2s;
-  margin-bottom: 0.2rem;
+}
+/* Name + sub sit beside the pip, vertically centred on it. Default
+   = to the RIGHT of the orb; .is-left flips them to the LEFT so the
+   text never crosses the rod when the orb passes centre — the pip
+   itself stays put on the orb either way. */
+.helix3d-root .node-label-text {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  /* Alignment gap so the text sits slightly off the pip (clears the
+     pip's 3px box-shadow ring) rather than butting against it. */
+  margin-left: 18px;
+  max-width: 200px;
+  text-align: left;
+}
+.helix3d-root .node-label.is-left .node-label-text {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 18px;
+  text-align: right;
 }
 .helix3d-root .node-label-name {
   font-family: 'Lato', sans-serif; font-weight: 700;
