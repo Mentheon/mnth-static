@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react'
 import styles from './MarginaliaTab.module.css'
 
 /* A fixed tab pinned to the right margin (helix3d view only) — the
-   "notes in the margin" placement is the point. As the cursor nears,
-   the tab magnetically slides inboard and a solid band in the
-   OPPOSITE theme grows behind it from the screen edge, as if the
-   margin is being peeled back to show the other mode. Purely
-   decorative — it eases back when the cursor leaves; clicking still
-   navigates to Marginalia. */
+   "notes in the margin" placement is the point. Proximity is driven
+   by the cursor's horizontal distance to the RIGHT EDGE at any
+   height, so approaching anywhere up the edge pulls the tab inboard
+   and grows a full-screen-height inverse-theme band, as if the whole
+   margin is being peeled back to show the other mode. Decorative —
+   eases back when the cursor leaves; click still opens Marginalia. */
 
 // helix3d theme --bg tokens — keep in sync with the
 // `.helix3d-root[data-theme=...]` blocks in helix3d.css.
@@ -21,7 +21,6 @@ const EASE = 0.2       // per-frame approach factor (exp smoothing)
 
 export default function MarginaliaTab() {
   const wrapRef = useRef<HTMLDivElement>(null)
-  const tabRef = useRef<HTMLAnchorElement>(null)
   const bandRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -31,21 +30,18 @@ export default function MarginaliaTab() {
 
     const root = wrap.closest('.helix3d-root')
     let mx = -9999
-    let my = -9999
     let pull = 0
     let reveal = 0
     let raf = 0
 
-    const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY }
+    const onMove = (e: MouseEvent) => { mx = e.clientX }
     window.addEventListener('mousemove', onMove)
 
     const tick = () => {
-      // Measure against the wrap (never transformed) so the pulled
-      // tab can't feed back into its own proximity reading.
-      const r = wrap.getBoundingClientRect()
-      const dx = mx < r.left ? r.left - mx : mx > r.right ? mx - r.right : 0
-      const dy = my < r.top ? r.top - my : my > r.bottom ? my - r.bottom : 0
-      const prox = Math.max(0, 1 - Math.hypot(dx, dy) / RANGE) // 0..1
+      // Horizontal distance to the right edge, full height — any
+      // vertical position counts, so the whole edge is "magnetic".
+      const edgeDist = window.innerWidth - mx
+      const prox = Math.min(1, Math.max(0, 1 - edgeDist / RANGE)) // 0..1
 
       pull += (prox * MAX_PULL - pull) * EASE
       reveal += (prox * MAX_REVEAL - reveal) * EASE
@@ -74,7 +70,6 @@ export default function MarginaliaTab() {
         className={styles.tab}
         href="#marginalia"
         aria-label="Open Marginalia"
-        ref={tabRef}
       >
         <span className={styles.star} aria-hidden="true">✲</span>
         <span className={styles.text}>Marginalia</span>

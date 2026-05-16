@@ -1,19 +1,18 @@
 /* Right-margin Marginalia tab + "magnetic margin" peek.
 
-   .wrap is the fixed, vertically-centred anchor (NOT transformed —
-   it's the stable rect the proximity maths measures against).
-   .band is the inverse-theme strip flush to the screen edge; its
-   width is driven by `--reveal` (px, set per-frame in the component)
-   and its colour is set inline to the opposite theme's --bg.
-   .tab slides inboard by `--pull` (px) toward the cursor, lifting
-   off the edge to expose the band. Decorative: it snaps back when
-   the cursor leaves; click still navigates to Marginalia. */
+   .wrap is a fixed FULL-HEIGHT column on the right edge (not
+   transformed). .band is the inverse-theme strip flush to the edge,
+   now spanning the entire screen height; its width is driven by
+   `--reveal` (px, set per-frame) and its colour set inline to the
+   opposite theme's --bg. .tab stays vertically centred and slides
+   inboard by `--pull` toward the cursor. Decorative: eases back when
+   the cursor leaves the right edge; click still opens Marginalia. */
 
 .wrap {
   position: fixed;
+  top: 0;
+  bottom: 0;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   z-index: 90;
   pointer-events: none;          /* only the tab itself is interactive */
   --pull: 0px;
@@ -25,7 +24,7 @@
   top: 0;
   bottom: 0;
   right: 0;
-  width: var(--reveal);
+  width: var(--reveal);          /* full screen height (wrap is full height) */
   /* background (opposite theme --bg) is set inline by the component
      so it tracks runtime theme toggles. */
   pointer-events: none;
@@ -33,11 +32,13 @@
 }
 
 .tab {
-  position: relative;
+  position: absolute;
+  right: 0;
+  top: 50%;
   z-index: 1;
   pointer-events: auto;
-  /* Magnetic pull toward the cursor (proximity-driven). */
-  transform: translateX(calc(-1 * var(--pull)));
+  /* Vertical centring + magnetic pull toward the cursor. */
+  transform: translate(calc(-1 * var(--pull)), -50%);
 
   display: flex;
   flex-direction: column;
