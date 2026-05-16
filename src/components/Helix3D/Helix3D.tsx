@@ -60,6 +60,9 @@ interface Strand {
   tag: string
   synopsis: string
   icon: string
+  /* Replaces "Digital Health" in the centre headline when this
+     strand is focused. Placeholder guesses from the titles — tune. */
+  accent: string
 }
 
 /* The canonical content. The 3D scene reads STRANDS[i] for i in
@@ -68,12 +71,12 @@ interface Strand {
    will misalign. This is intentionally self-contained concept data,
    separate from src/data/strands.ts. */
 const STRANDS: Strand[] = [
-  { id: 'vr-rt',       name: 'VR Reminiscence Therapy',     subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.', icon: 'rings' },
-  { id: 'attraction',  name: 'Subjective Attraction',       subsidiary: 'Kindreon',  tag: 'caregiving research', synopsis: 'How attractiveness perception forms and shifts in informal caregiving contexts — moving beyond dating-app framings.', icon: 'spark' },
-  { id: 'analytics',   name: 'Health Analytics',            subsidiary: 'Vitrix',    tag: 'measurement',         synopsis: 'Multimodal signal analysis (ECG, motion, sleep) for real-world health states. Instrumenting what people actually do, not what they self-report.', icon: 'wave' },
-  { id: 'cognition',   name: 'Cognitive Decline Modelling', subsidiary: 'Acumentra', tag: 'cognitive research',  synopsis: 'Longitudinal cognition modelling — trajectories, not snapshots. Building tools that respect heterogeneity in ageing minds.', icon: 'brain' },
-  { id: 'biomarkers',  name: 'Behavioural Biomarkers',      subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Subtle interaction signatures (gait, typing cadence, voice prosody) as early indicators of change — non-invasive and continuous.', icon: 'pulse' },
-  { id: 'platform',    name: 'Research Platform',           subsidiary: 'Mentheon',  tag: 'infrastructure',      synopsis: 'The shared backbone — recruitment, instrumentation, data pipelines and SaMD-compliant deployment that every strand draws on.', icon: 'grid' },
+  { id: 'vr-rt',       name: 'VR Reminiscence Therapy',     subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.', icon: 'rings', accent: 'Reminiscence Therapy' },
+  { id: 'attraction',  name: 'Subjective Attraction',       subsidiary: 'Kindreon',  tag: 'caregiving research', synopsis: 'How attractiveness perception forms and shifts in informal caregiving contexts — moving beyond dating-app framings.', icon: 'spark', accent: 'Human Attraction' },
+  { id: 'analytics',   name: 'Health Analytics',            subsidiary: 'Vitrix',    tag: 'measurement',         synopsis: 'Multimodal signal analysis (ECG, motion, sleep) for real-world health states. Instrumenting what people actually do, not what they self-report.', icon: 'wave', accent: 'Health Analytics' },
+  { id: 'cognition',   name: 'Cognitive Decline Modelling', subsidiary: 'Acumentra', tag: 'cognitive research',  synopsis: 'Longitudinal cognition modelling — trajectories, not snapshots. Building tools that respect heterogeneity in ageing minds.', icon: 'brain', accent: 'Cognition Care' },
+  { id: 'biomarkers',  name: 'Behavioural Biomarkers',      subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Subtle interaction signatures (gait, typing cadence, voice prosody) as early indicators of change — non-invasive and continuous.', icon: 'pulse', accent: 'Behavioural Biomarkers' },
+  { id: 'platform',    name: 'Research Platform',           subsidiary: 'Mentheon',  tag: 'infrastructure',      synopsis: 'The shared backbone — recruitment, instrumentation, data pipelines and SaMD-compliant deployment that every strand draws on.', icon: 'grid', accent: 'Research Infrastructure' },
 ]
 
 /* Raw inner-SVG markup for each list-view glyph, keyed by the
@@ -705,11 +708,38 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        there and pull back CAM_DOLLY units. `instant` jumps with no
        animation (unused now, kept for flexibility). Also lights the
        node. Called by traverse() (scroll) and openPanel() (click). */
+    /* Centre-headline accent: console typewriter. Cancels any
+       in-flight type, then types `text` char-by-char; the CSS caret
+       blinks forever right after it. No-ops if already showing
+       `text` (so repeated focus/scroll on the same strand doesn't
+       re-animate). DEFAULT shows when nothing is selected. */
+    const DEFAULT_ACCENT = 'Digital Health'
+    let accentTarget = ''
+    let accentTimer = 0
+    function typeAccent(text: string) {
+      if (text === accentTarget) return
+      accentTarget = text
+      const el = $('#helix-accent')
+      if (!el) return
+      window.clearTimeout(accentTimer)
+      el.textContent = ''
+      let i = 0
+      const step = () => {
+        if (destroyed || accentTarget !== text) return
+        i++
+        el.textContent = text.slice(0, i)
+        if (i < text.length) accentTimer = window.setTimeout(step, 48)
+      }
+      step()
+    }
+    cleanups.push(() => window.clearTimeout(accentTimer))
+
     function focusByIndex(i: number, instant = false) {
       focusIndex = THREE.MathUtils.clamp(i, 0, NODE.count - 1)
       const n = nodes[focusIndex]
       if (!n) return
       spinVel = 0                                    // cancel any fling so the snap wins
+      typeAccent(n.strand.accent)                    // retype the headline accent
       snapRotorTo(n.strand.id)                       // sets rotorTarget
       const rHoriz = Math.hypot(n.orbPos.x, n.orbPos.z)
       camLookTarget.set(0, n.orbPos.y, rHoriz)
@@ -747,7 +777,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     function closePanel() {
       panelOpen = false
       if (isFocused()) focusByIndex(focusIndex)
-      else resetCamera()
+      else { resetCamera(); typeAccent(DEFAULT_ACCENT) }
     }
     closePanelRef.current = closePanel
 
@@ -762,6 +792,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       resetCamera()
       setLabelHover(null)
       deactivate()        // focusIndex is -1 → clears the lit orb
+      typeAccent(DEFAULT_ACCENT)
     }
     const onEscKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') exitToDefault()
@@ -786,6 +817,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         focusIndex = -1            // off either end → default
         resetCamera()
         deactivate()
+        typeAccent(DEFAULT_ACCENT)
         return
       }
       focusByIndex(next)           // snap + dolly + light + bubble
@@ -1045,6 +1077,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       lastT = performance.now()
       startT = lastT
       rafId = requestAnimationFrame(loop)
+      typeAccent(DEFAULT_ACCENT)   // type out the headline on entry
     }
 
     /* Re-apply the current palette to every material. Called after
@@ -1516,7 +1549,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         {/* The big editorial headline. `.accent` is the crimson word. */}
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
-          <h1 className="title">A new <br />era of <span className="accent">Digital Health</span>.</h1>
+          <h1 className="title">A new era of <br/><span className="accent" id="helix-accent">Digital Health</span><span className="helix-caret" id="helix-caret" aria-hidden="true" /></h1>
         </div>
 
         <div className="node-labels" id="node-labels" />
