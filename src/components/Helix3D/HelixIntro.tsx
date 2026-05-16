@@ -143,10 +143,13 @@ export function runLoader(
     function finish() {
       if ((finish as { _done?: boolean })._done || isDestroyed()) return
       ;(finish as { _done?: boolean })._done = true
-      const loader = q('#loader')!
-      loader.classList.add('is-hidden')
-      const t = setTimeout(resolve, 600)
-      registerCleanup(() => clearTimeout(t))
+      // Start the loader's 0.6s fade-out but resolve NOW rather than
+      // waiting it out. BOOT immediately runs runGate, so the gate
+      // (z1000) becomes visible *beneath* the still-opaque loader
+      // (z2000) and is revealed by the fade — instead of the bare
+      // Helix3D chrome flashing in the gap between loader and gate.
+      q('#loader')!.classList.add('is-hidden')
+      resolve()
     }
   })
 }
@@ -161,11 +164,15 @@ export function runGate(q: IntroQuery, registerCleanup: RegisterCleanup) {
     const onChoice = (e: Event) => {
       const btn = (e.target as HTMLElement).closest('button[data-enter]')
       if (!btn) return
+      // Fade the gate out but resolve NOW, so startScene() begins
+      // rendering behind the still-covering gate (z1000). The fade
+      // then reveals the live scene with no bare-chrome flash —
+      // same trick as runLoader.finish().
       gate.classList.remove('is-visible')
       gate.classList.add('is-hidden')
-      const t = setTimeout(resolve, 600)
-      registerCleanup(() => clearTimeout(t))
+      resolve()
     }
     choices.addEventListener('click', onChoice)
+    registerCleanup(() => choices.removeEventListener('click', onChoice))
   })
 }

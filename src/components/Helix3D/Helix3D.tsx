@@ -1193,16 +1193,22 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
 
     /* ---- THEME (scoped to root element) ----
        data-theme is set on THIS root, never document, so the rest of
-       the site is unaffected. Default follows the OS; the button
-       flips it and triggers a one-shot scene recolour. To force a
-       theme, drop the matchMedia line and set data-theme in the JSX. */
+       the site is unaffected. The Helix3D view defaults to DARK; if
+       the user has toggled the theme earlier this browser session,
+       that choice (light or dark) is restored from sessionStorage.
+       The button flips it, persists the new value for the session,
+       and triggers a one-shot scene recolour. Set before initThree()
+       runs in BOOT, so the scene is built in the right palette. */
+    const THEME_KEY = 'mnth:helixTheme'
     const themeBtn = $('#theme-switch')!
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      root.setAttribute('data-theme', 'dark')
-    }
+    let savedTheme: string | null = null
+    try { savedTheme = sessionStorage.getItem(THEME_KEY) } catch { /* storage unavailable (private mode) */ }
+    const initialTheme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark'
+    root.setAttribute('data-theme', initialTheme)
     const onThemeClick = () => {
       const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
       root.setAttribute('data-theme', next)
+      try { sessionStorage.setItem(THEME_KEY, next) } catch { /* storage unavailable */ }
       requestAnimationFrame(() => refreshSceneColours())
     }
     themeBtn.addEventListener('click', onThemeClick)
@@ -1464,7 +1470,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
      The id="…" hooks are a contract with the effect's $('#…')
      queries; rename in both places or neither. */
   return (
-    <div className="helix3d-root" data-theme="light" ref={rootRef}>
+    <div className="helix3d-root" data-theme="dark" ref={rootRef}>
       {/* INTRO — loader splash (z 2000) + sound/silent gate (z 1000).
           Markup + sequence live in ./HelixIntro. */}
       <HelixIntroMarkup />
