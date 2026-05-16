@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
-import { HelixIntroMarkup, runLoader, runGate } from './HelixIntro'
+import { HelixIntroMarkup, runLoader } from './HelixIntro'
 import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
@@ -1378,16 +1378,16 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     ;(async function entry() {
       if (skipIntro) {
         // Dev re-render: jump straight to the scene — hide the
-        // loader (the gate stays hidden by default since runGate
-        // never runs) and start rendering immediately.
+        // loader and start rendering immediately.
         $('#loader')?.classList.add('is-hidden')
         startScene()
         return
       }
       const reg = (fn: () => void) => { cleanups.push(fn) }
+      // Loader loops until the user clicks "enter"; no sound/silent
+      // gate any more (deferred). runLoader resolves → straight to
+      // the scene.
       await runLoader($, reg, () => destroyed)
-      if (destroyed) return
-      await runGate($, reg)
       if (destroyed) return
       startScene()
     })()
@@ -1441,10 +1441,10 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
      queries; rename in both places or neither. */
   return (
     <div className="helix3d-root" data-theme={introMode} ref={rootRef}>
-      {/* INTRO — loader splash (z 2000) + sound/silent gate (z 1000).
-          Markup + sequence live in ./HelixIntro. */}
+      {/* INTRO — random looping loader splash (z 2000). The "enter"
+          button bridges to a #loader event runLoader awaits. Markup
+          + sequence live in ./HelixIntro. */}
       <HelixIntroMarkup
-        loaderMode={introMode}
         onLoaderDone={() =>
           rootRef.current
             ?.querySelector('#loader')

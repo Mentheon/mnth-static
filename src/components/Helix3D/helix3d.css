@@ -81,6 +81,10 @@
   --bp-line:        rgba(47, 1, 71, 0.06);   /* minor 28px grid */
   --bp-line-strong: rgba(47, 1, 71, 0.10);   /* major 140px grid */
 
+  /* intro-loader logo tile (the favicon's own colour-pair) */
+  --logo-bg:  #FFECE1;
+  --logo-ink: #2F0147;
+
   --gate-bg:      var(--ink);
   --gate-fg:      var(--bg);
   --gate-fg-quiet: rgba(255, 236, 225, 0.55);
@@ -117,6 +121,10 @@
   /* blueprint backdrop grid — faint light lines on dark ground */
   --bp-line:        rgba(255, 236, 225, 0.05);   /* minor 28px grid */
   --bp-line-strong: rgba(255, 236, 225, 0.09);   /* major 140px grid */
+
+  /* intro-loader logo tile (the favicon's own colour-pair) */
+  --logo-bg:  #2F0147;
+  --logo-ink: #FFECE1;
 
   --gate-bg:      #0F0118;
   --gate-fg:      #FFECE1;
@@ -185,31 +193,187 @@
 .helix3d-root .loader-welcome {
   position: absolute; top: 12%; left: 0; right: 0; text-align: center;
   font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.32em;
-  text-transform: uppercase; color: var(--ink); font-weight: 700; opacity: 0;
+  text-transform: uppercase; color: var(--ink); font-weight: 700;
 }
-/* Holds the shared <LoaderWave> Stage card, centred on the cover.
-   Stage is width:100% with a 16/10 aspect-ratio, so width here sets
-   the card size; height follows. */
-.helix3d-root .loader-stage { width: min(560px, 86vw); display: flex; align-items: center; justify-content: center; }
-.helix3d-root .loader-stage svg { overflow: visible; }
-/* The shared Stage always renders a "↻ replay" button; it's a gallery
-   affordance, unwanted in the boot splash. Hide just that button (the
-   skip button lives outside .mentheon-stage so it's unaffected). */
-.helix3d-root .loader .mentheon-stage button { display: none; }
+.helix3d-root .loader-welcome .star { color: var(--crimson); margin-right: 0.5em; }
+
+/* Centred animation column; corners/welcome/caption sit absolute over it. */
+.helix3d-root .loader-art {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.helix3d-root .loader-stage {
+  width: 220px; height: 220px;
+  display: flex; align-items: center; justify-content: center;
+}
+.helix3d-root .loader-stage svg { display: block; }
+
 .helix3d-root .loader-caption {
   position: absolute; bottom: 14%; left: 0; right: 0; text-align: center;
   font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em;
-  text-transform: uppercase; color: var(--ink-quiet); opacity: 0;
+  text-transform: uppercase; color: var(--ink-quiet);
 }
-.helix3d-root .loader-skip {
-  position: absolute; bottom: 32px; right: 64px;
-  font-family: 'Lato', sans-serif; font-size: 11px; padding: 6px 12px;
-  background: transparent; border: 1px solid var(--ink-soft); color: var(--ink);
-  letter-spacing: 0.06em; font-weight: 700; border-radius: 2px;
-  opacity: 0; transition: opacity 0.3s, background 0.2s, color 0.2s;
+.helix3d-root .loader-caption .pct { color: var(--ink); font-weight: 700; }
+
+/* Temporary explicit-advance button under the animation (replaces the
+   old skip + the sound/silent gate handoff — deferred follow-up). */
+.helix3d-root .loader-enter {
+  margin-top: 2.2rem;
+  font-family: 'Lato', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.7rem 1.6rem;
+  background: var(--ink); color: var(--bg);
+  border: 1px solid var(--ink); border-radius: 2px;
+  transition: opacity 0.2s var(--ease-out);
 }
-.helix3d-root .loader-skip.is-visible { opacity: 0.7; }
-.helix3d-root .loader-skip:hover { opacity: 1; background: var(--ink); color: var(--bg); }
+.helix3d-root .loader-enter:hover { opacity: 0.82; }
+
+/* ---- shared logo tile: one artwork source for all five concepts ---- */
+.helix3d-root .logo-tile { position: relative; width: 195px; height: 195px; }
+.helix3d-root .logo-tile .tile-bg { position: absolute; inset: 0; background: var(--logo-bg); }
+.helix3d-root .logo-tile svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.helix3d-root .logo-tile .ink path,
+.helix3d-root .logo-tile .ink circle { fill: var(--logo-ink); }
+
+/* ===== CONCEPT 1 — INK RISE ===== */
+.helix3d-root .loader-art.l1 .logo-tile .ink { clip-path: inset(0 0 100% 0); animation: l1Rise 3.4s var(--ease-in-out) infinite; }
+.helix3d-root .loader-art.l1 .logo-tile .tide-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--crimson); box-shadow: 0 0 12px var(--crimson);
+  bottom: 100%; opacity: 0;
+  animation: l1Tide 3.4s var(--ease-in-out) infinite;
+}
+@keyframes l1Rise {
+  0%   { clip-path: inset(0 0 100% 0); }
+  85%  { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+@keyframes l1Tide {
+  0%   { bottom: 100%; opacity: 0; }
+  6%   { opacity: 1; }
+  85%  { bottom: 0%; opacity: 1; }
+  92%  { opacity: 0; }
+  100% { bottom: 0%; opacity: 0; }
+}
+
+/* ===== CONCEPT 2 — STROKE TRACE ===== */
+.helix3d-root .loader-art.l2 .logo-tile .trace path,
+.helix3d-root .loader-art.l2 .logo-tile .trace circle {
+  fill: none; stroke: var(--crimson); stroke-width: 0.6;
+  stroke-dasharray: 1200; stroke-dashoffset: 1200;
+  animation: l2Trace 3.6s var(--ease-in-out) infinite;
+}
+.helix3d-root .loader-art.l2 .logo-tile .ink path,
+.helix3d-root .loader-art.l2 .logo-tile .ink circle {
+  opacity: 0;
+  animation: l2Fill 3.6s var(--ease-in-out) infinite;
+}
+@keyframes l2Trace {
+  0%   { stroke-dashoffset: 1200; opacity: 1; }
+  55%  { stroke-dashoffset: 0;    opacity: 1; }
+  78%  { opacity: 0.25; }
+  100% { stroke-dashoffset: 0;    opacity: 0; }
+}
+@keyframes l2Fill {
+  0%, 50% { opacity: 0; }
+  78%     { opacity: 1; }
+  100%    { opacity: 1; }
+}
+
+/* ===== CONCEPT 3 — SCATTER ASSEMBLY ===== */
+.helix3d-root .loader-art.l3 .logo-tile .ink path,
+.helix3d-root .loader-art.l3 .logo-tile .ink circle {
+  transform-origin: center;
+  animation: l3Settle 3.6s var(--ease-out) infinite;
+}
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+1) { animation-delay: 0.00s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+2) { animation-delay: 0.08s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+3) { animation-delay: 0.16s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+4) { animation-delay: 0.24s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+5) { animation-delay: 0.32s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+6) { animation-delay: 0.40s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n+7) { animation-delay: 0.48s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(8n)   { animation-delay: 0.56s; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(odd)  { --from-y: -40px; --from-rot:  6deg; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .serpent > *:nth-child(even) { --from-y:  40px; --from-rot: -6deg; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .word-men   > path { animation-delay: 0.72s; --from-y: 20px; --from-rot: 0; }
+.helix3d-root .loader-art.l3 .logo-tile .ink .word-theon > path { animation-delay: 0.88s; --from-y: 20px; --from-rot: 0; }
+@keyframes l3Settle {
+  0%   { opacity: 0; transform: translate(0, var(--from-y, 30px)) rotate(var(--from-rot, 0)); }
+  22%  { opacity: 1; }
+  55%  { opacity: 1; transform: translate(0,0) rotate(0); }
+  85%  { opacity: 1; transform: translate(0,0) rotate(0); }
+  100% { opacity: 0; transform: translate(0,0) rotate(0); }
+}
+
+/* ===== CONCEPT 4 — CASCADE + READOUT ===== */
+.helix3d-root .loader-art.l4 .logo-tile .serpent,
+.helix3d-root .loader-art.l4 .logo-tile .word-men,
+.helix3d-root .loader-art.l4 .logo-tile .word-theon {
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: l4Reveal 4.2s var(--ease-out) infinite;
+}
+.helix3d-root .loader-art.l4 .logo-tile .serpent    { animation-delay: 0.15s; }
+.helix3d-root .loader-art.l4 .logo-tile .word-men   { animation-delay: 0.95s; }
+.helix3d-root .loader-art.l4 .logo-tile .word-theon { animation-delay: 1.75s; }
+@keyframes l4Reveal {
+  0%   { opacity: 0; clip-path: inset(0 100% 0 0); }
+  5%   { opacity: 1; }
+  18%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  80%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  92%  { opacity: 0; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 100% 0 0); }
+}
+.helix3d-root .loader-art.l4 .readout {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet);
+  display: flex; gap: 1.4rem; margin-top: 1.4rem;
+  width: 220px; justify-content: space-between;
+}
+.helix3d-root .loader-art.l4 .readout-row { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+.helix3d-root .loader-art.l4 .readout-row b { color: var(--ink); font-weight: 700; letter-spacing: 0.16em; }
+.helix3d-root .loader-art.l4 .readout-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-soft); margin-right: 0.45em; vertical-align: middle;
+}
+.helix3d-root .loader-art.l4 .dot-1,
+.helix3d-root .loader-art.l4 .dot-2,
+.helix3d-root .loader-art.l4 .dot-3 { animation: l4Dot 4.2s steps(1,end) infinite; }
+.helix3d-root .loader-art.l4 .dot-1 { animation-delay: 0.15s; }
+.helix3d-root .loader-art.l4 .dot-2 { animation-delay: 0.95s; }
+.helix3d-root .loader-art.l4 .dot-3 { animation-delay: 1.75s; }
+@keyframes l4Dot {
+  0%, 1%    { background: var(--ink-soft); box-shadow: none; }
+  2%, 87%   { background: var(--crimson); box-shadow: 0 0 6px var(--crimson); }
+  88%, 100% { background: var(--ink-soft); box-shadow: none; }
+}
+
+/* ===== CONCEPT 5 — IRIS REVEAL ===== */
+.helix3d-root .loader-art.l5 .logo-tile {
+  clip-path: circle(0 at 50% 50%);
+  animation: l5Iris 3.4s var(--ease-in-out) infinite;
+}
+.helix3d-root .loader-art.l5 .iris-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0; border-radius: 50%;
+  border: 1.5px solid var(--crimson);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 18px rgba(163,11,55,0.4);
+  animation: l5Ring 3.4s var(--ease-in-out) infinite;
+  pointer-events: none;
+}
+@keyframes l5Iris {
+  0%   { clip-path: circle(0 at 50% 50%); }
+  78%  { clip-path: circle(160px at 50% 50%); }
+  92%  { clip-path: circle(160px at 50% 50%); }
+  100% { clip-path: circle(0 at 50% 50%); }
+}
+@keyframes l5Ring {
+  0%   { width: 0; height: 0; opacity: 1; }
+  78%  { width: 320px; height: 320px; opacity: 1; }
+  92%  { width: 360px; height: 360px; opacity: 0; }
+  100% { width: 0; height: 0; opacity: 0; }
+}
 
 /* ====== CURSOR ====== */
 .helix3d-root .cursor-dot,
