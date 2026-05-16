@@ -382,6 +382,9 @@
   padding: 0.18rem 0.45rem;
   background: rgba(var(--fog-color), 0.85);
   backdrop-filter: blur(2px);
+  /* Cream (--white) border in both themes for clearer separation
+     of the chip from the scene behind it. */
+  border: 1px solid var(--white);
   border-radius: 2px;
   display: inline-block;
 }
@@ -392,11 +395,11 @@
   margin-top: 0.12rem;
   display: block;
 }
-/* Light mode: the cream label chip blends into the bright scene, so
-   give it a plum rectangular border for legibility — matching how
-   the dark-mode chip already reads against its dark fill. */
+/* Light mode: the cream border vanishes against the bright scene,
+   so switch it to plum there for legibility. Dark mode keeps the
+   cream border from the base rule above. */
 .helix3d-root[data-theme="light"] .node-label-name {
-  border: 1px solid var(--plum);
+  border-color: var(--plum);
 }
 
 .helix3d-root .node-label.is-active .node-label-pip { background: var(--crimson); transform: scale(1.4); }
