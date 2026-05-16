@@ -6,6 +6,7 @@ import Helix3D from './components/Helix3D/Helix3D'
 import ScrollLockView from './components/Helix3D/ScrollLockView'
 import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
+import LoaderGallery from './components/LoaderGallery'
 import { STRANDS } from './data/strands'
 
 function useHash() {
@@ -37,6 +38,7 @@ export default function App() {
     hash === '#helix3d?skipIntro=true' ? 'helix3d'    : // explicit skipIntro param also routes to helix3d
     hash === '#scrolllock' ? 'scrolllock' :
     hash === '#who'     ? 'who'        :
+    hash === '#loaders' ? 'loaders'    :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
     isMarginaliaRoute   ? 'marginalia' :
@@ -81,6 +83,9 @@ export default function App() {
         <Header currentHash={hash} />
         {page === 'who' ? (
           <WhoPage />
+        ) : page === 'loaders' ? (
+          // #loaders — preview/cycle the loader variants (◀ ▶).
+          <LoaderGallery />
         ) : page === 'strand' && detailStrand.progress ? (
           <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
         ) : page === 'marginalia' ? (

@@ -1,4 +1,5 @@
-import { animate } from 'animejs'
+import { LoaderWave } from '../Loaders/LoaderWave'
+import type { LoaderMode } from '../Loaders/LoaderShared'
 
 /* =================================================================
    Mentheon — Helix3D intro (loader splash + sound/silent gate)
@@ -51,20 +52,26 @@ export const LOADER_LOGO_SVG = `
    Helix3D so the scoped styles + run* id lookups resolve. Loader
    (z 2000) and gate (z 1000) are both fixed + z-indexed, so their
    DOM order relative to the rest of the scene doesn't matter. */
-export function HelixIntroMarkup() {
+export function HelixIntroMarkup({
+  loaderMode,
+  onLoaderDone,
+}: {
+  /** Palette for the wave splash; matches the resolved Helix3D theme. */
+  loaderMode: LoaderMode
+  /** Called by <LoaderWave> when its fill finishes; runLoader listens
+   *  for the resulting #loader event to resolve the boot sequence. */
+  onLoaderDone: () => void
+}) {
   return (
     <>
-      {/* LOADER — splash (z 2000). Fills via the SVG clip; #wave-rect
-          is animated, #loader-caption shows the %. Topmost so it
-          covers the booting scene. */}
+      {/* LOADER — fullscreen splash (z 2000). The wave-fill mark is the
+          shared <LoaderWave> in its framed Stage card, centred on a
+          themed cover. #loader-skip and the .is-hidden fade are driven
+          by runLoader(); completion comes from LoaderWave's onDone. */}
       <div className="loader" id="loader">
-        <span className="loader-corner loader-corner--tl" />
-        <span className="loader-corner loader-corner--tr" />
-        <span className="loader-corner loader-corner--bl" />
-        <span className="loader-corner loader-corner--br" />
-        <div className="loader-welcome" id="loader-welcome">Welcome to Mentheon</div>
-        <div className="loader-stage" dangerouslySetInnerHTML={{ __html: LOADER_LOGO_SVG }} />
-        <div className="loader-caption" id="loader-caption">filling · 0%</div>
+        <div className="loader-stage">
+          <LoaderWave mode={loaderMode} onDone={onLoaderDone} />
+        </div>
         <button className="loader-skip" id="loader-skip">skip ↦</button>
       </div>
 
@@ -88,69 +95,41 @@ export function HelixIntroMarkup() {
   )
 }
 
-/* runLoader: anime.js drives `state.y` 195 → -5 over 2.4s; each tick
-   reshapes the SVG clip rect so the wordmark "fills" and updates the
-   % caption. "skip" or completion calls finish() once (idempotent),
-   fades the loader, and resolves. */
+/* runLoader: shows the fullscreen <LoaderWave> splash (rendered by
+   HelixIntroMarkup). Resolves when EITHER the loader reports it has
+   finished — a 'helix:loaderdone' event Helix3D dispatches on #loader
+   from LoaderWave's onDone — OR the user clicks "skip". finish() is
+   idempotent + destroyed-guarded; it adds .is-hidden (the 0.6s fade)
+   and resolves NOW so the gate (z1000) is revealed beneath the still-
+   fading loader (z2000) rather than the bare scene flashing. */
 export function runLoader(
   q: IntroQuery,
   registerCleanup: RegisterCleanup,
   isDestroyed: () => boolean,
 ) {
   return new Promise<void>((resolve) => {
-    const waveRect = q('#wave-rect') as unknown as SVGRectElement
-    const welcome  = q('#loader-welcome')!
-    const caption  = q('#loader-caption')!
-    const skipBtn  = q('#loader-skip')!
-    const logo     = q('#loader-logo')!
+    const loader  = q('#loader')!
+    const skipBtn = q('#loader-skip')!
 
-    welcome.style.opacity = '0'
-    caption.style.opacity = '0'
-    waveRect.setAttribute('y', '195')
-    waveRect.setAttribute('height', '0')
-
-    let skipped = false
-    skipBtn.addEventListener('click', () => { skipped = true; finish() })
-    const skipTimer = setTimeout(() => skipBtn.classList.add('is-visible'), 600)
-    registerCleanup(() => clearTimeout(skipTimer))
-
-    animate(welcome, { opacity: [0, 1], translateY: [-8, 0], duration: 500, ease: 'outQuad' })
-    animate(caption, { opacity: [0, 0.7], duration: 400, delay: 200 })
-
-    const state = { y: 195 }
-    animate(state, {
-      y: -5,
-      duration: 2400,
-      ease: 'inOutQuad',
-      delay: 250,
-      onUpdate: () => {
-        if (skipped) return
-        const hh = 195 - state.y
-        waveRect.setAttribute('y', String(state.y))
-        waveRect.setAttribute('height', String(hh + 10))
-        const pct = Math.round(Math.min(100, (hh / 195) * 100))
-        caption.textContent = `filling · ${pct}%`
-      },
-      onComplete: () => {
-        if (skipped) return
-        animate(logo, { scale: [1, 1.04, 1], duration: 600, ease: 'inOutQuad' })
-        animate(caption, { opacity: [0.7, 0], duration: 400, delay: 400 })
-        const t = setTimeout(finish, 1100)
-        registerCleanup(() => clearTimeout(t))
-      },
-    })
-
+    let done = false
     function finish() {
-      if ((finish as { _done?: boolean })._done || isDestroyed()) return
-      ;(finish as { _done?: boolean })._done = true
-      // Start the loader's 0.6s fade-out but resolve NOW rather than
-      // waiting it out. BOOT immediately runs runGate, so the gate
-      // (z1000) becomes visible *beneath* the still-opaque loader
-      // (z2000) and is revealed by the fade — instead of the bare
-      // Helix3D chrome flashing in the gap between loader and gate.
-      q('#loader')!.classList.add('is-hidden')
+      if (done || isDestroyed()) return
+      done = true
+      loader.classList.add('is-hidden')
       resolve()
     }
+
+    // LoaderWave finished its fill (Helix3D bridges onDone → event).
+    const onDoneEvt = () => finish()
+    loader.addEventListener('helix:loaderdone', onDoneEvt)
+    registerCleanup(() => loader.removeEventListener('helix:loaderdone', onDoneEvt))
+
+    // Manual skip — revealed ~600ms in, like the old loader.
+    const onSkip = () => finish()
+    skipBtn.addEventListener('click', onSkip)
+    registerCleanup(() => skipBtn.removeEventListener('click', onSkip))
+    const skipTimer = setTimeout(() => skipBtn.classList.add('is-visible'), 600)
+    registerCleanup(() => clearTimeout(skipTimer))
   })
 }
 

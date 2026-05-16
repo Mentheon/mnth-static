@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import { HelixIntroMarkup, runLoader, runGate } from './HelixIntro'
+import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
 import './helix3d.css'
@@ -115,6 +116,19 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
   /* The single React-managed DOM node. All imperative DOM access
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
+
+  /* Boot-splash palette. Resolved from the same per-session theme
+     key the effect uses (default dark), so <LoaderWave> and the
+     initial data-theme match on first paint — no light→dark flash
+     under the loader. */
+  const [introMode] = useState<LoaderMode>(() => {
+    try {
+      const s = sessionStorage.getItem('mnth:helixTheme')
+      return s === 'light' || s === 'dark' ? s : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
 
   /* StrandPanel modal lives in React state (the imperative scene
      can't render JSX). The effect opens it via setPanelStrand;
@@ -652,6 +666,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       rotorTarget = null              // cancel any snap/ease
       focusIndex = -1                 // grabbing = exploratory default
       resetCamera()
+      typeAccent(DEFAULT_ACCENT)      // wide view → headline back to default
       try { renderer.domElement.setPointerCapture(e.pointerId) } catch { /* noop */ }
     }
     function onDragMove(e: PointerEvent) {
@@ -784,8 +799,12 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        default. The React side clears panelStrand itself. */
     function closePanel() {
       panelOpen = false
-      if (isFocused()) focusByIndex(focusIndex)
-      else { resetCamera(); typeAccent(DEFAULT_ACCENT) }
+      if (isFocused()) focusByIndex(focusIndex)   // keep the camera framed on the focused orb
+      else resetCamera()
+      // ...but always reset the headline to the default (B): focusByIndex
+      // re-types the strand's accent at line ~764, so this must run AFTER
+      // it to win. typeAccent() cancels that in-flight type same-tick.
+      typeAccent(DEFAULT_ACCENT)
     }
     closePanelRef.current = closePanel
 
@@ -1421,10 +1440,17 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
      The id="…" hooks are a contract with the effect's $('#…')
      queries; rename in both places or neither. */
   return (
-    <div className="helix3d-root" data-theme="dark" ref={rootRef}>
+    <div className="helix3d-root" data-theme={introMode} ref={rootRef}>
       {/* INTRO — loader splash (z 2000) + sound/silent gate (z 1000).
           Markup + sequence live in ./HelixIntro. */}
-      <HelixIntroMarkup />
+      <HelixIntroMarkup
+        loaderMode={introMode}
+        onLoaderDone={() =>
+          rootRef.current
+            ?.querySelector('#loader')
+            ?.dispatchEvent(new Event('helix:loaderdone'))
+        }
+      />
 
       {/* CURSOR — custom pointer (hidden ≤720px); driven by initCursor */}
       <div className="cursor-ring" id="cursor-ring" />

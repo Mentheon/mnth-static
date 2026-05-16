@@ -187,8 +187,15 @@
   font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.32em;
   text-transform: uppercase; color: var(--ink); font-weight: 700; opacity: 0;
 }
-.helix3d-root .loader-stage { width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+/* Holds the shared <LoaderWave> Stage card, centred on the cover.
+   Stage is width:100% with a 16/10 aspect-ratio, so width here sets
+   the card size; height follows. */
+.helix3d-root .loader-stage { width: min(560px, 86vw); display: flex; align-items: center; justify-content: center; }
 .helix3d-root .loader-stage svg { overflow: visible; }
+/* The shared Stage always renders a "↻ replay" button; it's a gallery
+   affordance, unwanted in the boot splash. Hide just that button (the
+   skip button lives outside .mentheon-stage so it's unaffected). */
+.helix3d-root .loader .mentheon-stage button { display: none; }
 .helix3d-root .loader-caption {
   position: absolute; bottom: 14%; left: 0; right: 0; text-align: center;
   font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em;
