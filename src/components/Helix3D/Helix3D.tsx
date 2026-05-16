@@ -262,6 +262,12 @@ export default function Helix3D() {
     let rotor: THREE.Group
     let rod: THREE.Group
     let serpentMesh: THREE.Mesh & { userData: { head?: THREE.Group } }
+    /* Sketch-mode alternative for the coil: a 3D polyline sampled
+       along the helix curve, theme --ink. Built next to serpentMesh;
+       exactly one of the two is visible — see applySketchMode. Only
+       the coil strand swaps; rod / head / node orbs stay solid. */
+    let serpentLine: THREE.Line
+    let sketchMode = false
     let serpentCurve: HelixCurve
     interface NodeRec {
       strand: Strand
@@ -426,6 +432,17 @@ export default function Helix3D() {
       const mat = new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.42, metalness: 0.32 })
       serpentMesh = new THREE.Mesh(geo, mat) as typeof serpentMesh
       rotor.add(serpentMesh)
+
+      // Sketch alternative: a polyline along the same curve. It
+      // winds through real depth, so it reads as a 3D line drawing
+      // of the strand rather than a flat outline.
+      const linePts = serpentCurve.getPoints(SERPENT.tubeSegs)
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts)
+      const lineMat = new THREE.LineBasicMaterial({ color: C.ink })
+      serpentLine = new THREE.Line(lineGeo, lineMat)
+      serpentLine.visible = sketchMode
+      serpentMesh.visible = !sketchMode
+      rotor.add(serpentLine)
 
       const head = buildSerpentHead(C)
       const headPos = serpentCurve.getPoint(0)
@@ -879,6 +896,7 @@ export default function Helix3D() {
       ;(rod.userData.knob.material as THREE.MeshStandardMaterial).color.copy(C.crimson)
       ;(rod.userData.knob.material as THREE.MeshStandardMaterial).emissive.copy(C.crimson)
       ;(serpentMesh.material as THREE.MeshStandardMaterial).color.copy(C.ink)
+      ;(serpentLine.material as THREE.LineBasicMaterial).color.copy(C.ink)
       serpentMesh.userData.head!.children.forEach((child, idx) => {
         const mesh = child as THREE.Mesh
         const m = mesh.material as THREE.MeshStandardMaterial
@@ -990,6 +1008,23 @@ export default function Helix3D() {
       requestAnimationFrame(() => refreshSceneColours())
     }
     themeBtn.addEventListener('click', onThemeClick)
+
+    /* ---- SKETCH TOGGLE — solid coil ↔ 3D line trace ----
+       Swaps only the serpent body's visibility. Button label shows
+       the action (says "sketch" while solid, "solid" while sketched)
+       and carries .is-active + aria-pressed for styling/a11y. */
+    const renderToggle = $('#render-toggle')!
+    function applySketchMode(on: boolean) {
+      sketchMode = on
+      serpentLine.visible = on
+      serpentMesh.visible = !on
+      renderToggle.classList.toggle('is-active', on)
+      renderToggle.setAttribute('aria-pressed', String(on))
+      renderToggle.textContent = on ? 'solid' : 'sketch'
+    }
+    const onRenderToggle = () => applySketchMode(!sketchMode)
+    renderToggle.addEventListener('click', onRenderToggle)
+    cleanups.push(() => renderToggle.removeEventListener('click', onRenderToggle))
 
     /* ---- MARQUEE — the scrolling top strip ----
        The strip text is NOT in the JSX — edit this `phrases` array.
@@ -1279,6 +1314,7 @@ export default function Helix3D() {
             <button className="is-active" data-view="helix" role="tab" aria-selected="true">staff</button>
             <button data-view="list" role="tab" aria-selected="false">list</button>
           </div>
+          <button className="render-toggle" id="render-toggle" type="button" aria-pressed="false" aria-label="Toggle sketch render">sketch</button>
           <button className="theme-switch" id="theme-switch" aria-label="Toggle theme">
             <svg className="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" /></svg>
             <svg className="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>

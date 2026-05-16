@@ -228,6 +228,20 @@
 .helix3d-root .view-toggle button.is-active { color: var(--bg); background: var(--ink); }
 .helix3d-root .view-toggle button:hover:not(.is-active) { color: var(--ink); }
 
+/* Sketch-render toggle — sized/typed like the view-toggle pills. */
+.helix3d-root .render-toggle {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  background: var(--bg); border: 1px solid var(--ink-soft);
+  border-radius: 2px; padding: 0.45rem 0.9rem;
+  color: var(--ink-quiet);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.helix3d-root .render-toggle:hover { color: var(--ink); border-color: var(--crimson); }
+.helix3d-root .render-toggle.is-active {
+  color: var(--bg); background: var(--ink); border-color: var(--ink);
+}
+
 .helix3d-root .theme-switch {
   width: 36px; height: 36px;
   background: var(--bg); border: 1px solid var(--ink-soft);
