@@ -77,6 +77,10 @@
   --ink-quiet:    rgba(47, 1, 71, 0.55);
   --crimson-soft: rgba(163, 11, 55, 0.05);
 
+  /* blueprint backdrop grid — faint ink lines on warm paper */
+  --bp-line:        rgba(47, 1, 71, 0.06);   /* minor 28px grid */
+  --bp-line-strong: rgba(47, 1, 71, 0.10);   /* major 140px grid */
+
   --gate-bg:      var(--ink);
   --gate-fg:      var(--bg);
   --gate-fg-quiet: rgba(255, 236, 225, 0.55);
@@ -110,6 +114,10 @@
   --ink-quiet:    rgba(255, 236, 225, 0.55);
   --crimson-soft: rgba(214, 49, 88, 0.08);
 
+  /* blueprint backdrop grid — faint light lines on dark ground */
+  --bp-line:        rgba(255, 236, 225, 0.05);   /* minor 28px grid */
+  --bp-line-strong: rgba(255, 236, 225, 0.09);   /* major 140px grid */
+
   --gate-bg:      #0F0118;
   --gate-fg:      #FFECE1;
   --gate-fg-quiet: rgba(255, 236, 225, 0.55);
@@ -138,12 +146,25 @@
   inset: 0;
   z-index: 1;
   font-family: 'Lato', sans-serif;
-  background: var(--bg);
+  /* Solid themed ground + a low-opacity blueprint grid layered on
+     top of it. Painted as the root's own background, so it sits
+     behind every child (incl. the transparent WebGL canvas) with
+     no z-index work. Grid colour flips with data-theme via the
+     --bp-line tokens; the colour crossfade rides the existing
+     0.4s background-color transition. */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--bp-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-line) 1px, transparent 1px),
+    linear-gradient(var(--bp-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-line-strong) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
+  background-position: -1px -1px;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   cursor: none;
-  transition: background 0.4s var(--ease-out), color 0.4s var(--ease-out);
+  transition: background-color 0.4s var(--ease-out), color 0.4s var(--ease-out);
 }
 .helix3d-root a,
 .helix3d-root button { cursor: none; background: none; border: none; }
@@ -270,7 +291,7 @@
 .helix3d-root .nav-mark .star { color: var(--crimson); font-size: 0.7em; }
 /* Image brand mark in the nav (replaces the text wordmark). Sized
    to sit in the ~36px nav band; tweak `height` to taste. */
-.helix3d-root .nav-mark-logo { height: 12.8rem; width: auto; }
+.helix3d-root .nav-mark-logo { height: 10rem; width: auto; }
 /* Light/dark logo swap, keyed off the root data-theme (same
    mechanism as .theme-switch's sun/moon). Default = light. */
 .helix3d-root .nav-mark-logo--light { display: block; }
