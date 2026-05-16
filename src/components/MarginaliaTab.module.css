@@ -1,14 +1,43 @@
-/* Right-margin Marginalia tab. Follows the site schema: JetBrains
-   Mono uppercase + wide letter-spacing for the label, --ink surface
-   with --bg text, crimson ✲ accent, crimson hover, 4px radius on the
-   inboard corners only (it's flush to the right edge). */
+/* Right-margin Marginalia tab + "magnetic margin" peek.
 
-.tab {
+   .wrap is the fixed, vertically-centred anchor (NOT transformed —
+   it's the stable rect the proximity maths measures against).
+   .band is the inverse-theme strip flush to the screen edge; its
+   width is driven by `--reveal` (px, set per-frame in the component)
+   and its colour is set inline to the opposite theme's --bg.
+   .tab slides inboard by `--pull` (px) toward the cursor, lifting
+   off the edge to expose the band. Decorative: it snaps back when
+   the cursor leaves; click still navigates to Marginalia. */
+
+.wrap {
   position: fixed;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 90;
+  pointer-events: none;          /* only the tab itself is interactive */
+  --pull: 0px;
+  --reveal: 0px;
+}
+
+.band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--reveal);
+  /* background (opposite theme --bg) is set inline by the component
+     so it tracks runtime theme toggles. */
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  /* Magnetic pull toward the cursor (proximity-driven). */
+  transform: translateX(calc(-1 * var(--pull)));
 
   display: flex;
   flex-direction: column;
@@ -24,15 +53,12 @@
 
   transition:
     background 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tab:hover,
 .tab:focus-visible {
   background: var(--crimson);
-  /* Keep the vertical centring while nudging outboard on hover. */
-  transform: translateY(-50%) translateX(-5px);
   outline: none;
 }
 
