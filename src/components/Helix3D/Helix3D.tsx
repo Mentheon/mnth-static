@@ -513,14 +513,20 @@ export default function Helix3D() {
         const radialDir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
         const orbPos = pos.clone().add(radialDir.clone().multiplyScalar(SERPENT.bodyR * 1.1))
 
+        // Nodes: grape (the lighter purple accent). `wireframe`
+        // tracks sketch mode (set here + in applySketchMode), so
+        // solid mode = solid grape orbs, sketch mode = grape wire
+        // spheres. Opaque either way (no transparency). Hover/focus
+        // still flips them crimson via activate/deactivate.
         const orbMat = new THREE.MeshStandardMaterial({
-          color: C.ink, roughness: 0.35, metalness: 0.45,
+          color: C.grape, roughness: 0.35, metalness: 0.45,
           emissive: new THREE.Color(0x000000), emissiveIntensity: 0,
+          wireframe: sketchMode,
         })
         const orb = new THREE.Mesh(new THREE.SphereGeometry(NODE.orbR, 24, 18), orbMat)
         orb.position.copy(orbPos)
         orb.userData.strandId = STRANDS[i].id
-        orb.userData.baseColor = C.ink.clone()
+        orb.userData.baseColor = C.grape.clone()
         orb.userData.t = t
 
         const ringMat1 = new THREE.MeshBasicMaterial({
@@ -925,10 +931,10 @@ export default function Helix3D() {
         else { m.color.copy(C.crimson); m.emissive.copy(C.crimson) }
       })
       nodes.forEach((n) => {
-        n.orb.userData.baseColor = C.ink.clone()
+        n.orb.userData.baseColor = C.grape.clone()
         const m = n.orb.material as THREE.MeshStandardMaterial
         if (n.strand.id !== hoveredId) {
-          m.color.copy(C.ink)
+          m.color.copy(C.grape)
         } else {
           m.color.copy(C.crimson)
           m.emissive.copy(C.crimson)
@@ -1039,6 +1045,10 @@ export default function Helix3D() {
       sketchMode = on
       serpentLine.visible = on
       serpentMesh.visible = !on
+      // Nodes track the toggle too: solid grape orbs ↔ grape wire.
+      nodes.forEach((n) => {
+        ;(n.orb.material as THREE.MeshStandardMaterial).wireframe = on
+      })
       renderToggle.classList.toggle('is-active', on)
       renderToggle.setAttribute('aria-pressed', String(on))
       renderToggle.textContent = on ? 'solid' : 'sketch'
