@@ -14,11 +14,13 @@ A reverse-engineered requirements register for the **live Vite + React 18 + Type
 | `Built, not routed` | Component is fully built but never imported/reached by any live route. |
 | `Convention only` | Achieved by discipline/config, not enforced by tooling. |
 | `Absent (gap)` | Recognised quality the codebase does **not** provide; recorded so the gap is tracked. |
+| `Planned (TODO)` | Agreed future requirement, not yet implemented (carried in the normal tables; lifecycle is in the Status column, not the ID). |
 
 ## Summary
 
-- **Functional:** 53 requirements — 45 `Implemented`, 4 `Built, not routed` (HeroSection/typewriter, MobileStrandList, useIsMobile consumers), 2 `Stub (not wired)` (sound gate, roadmap node clicks), 2 `Partial`.
-- **Non-functional:** 47 requirements — strong on performance hygiene, maintainability and build/deploy; honest gaps in **automated testing**, **error boundaries**, and **build-time content-link validation**; accessibility is real but uneven.
+- **Functional:** 55 requirements — 45 `Implemented`, 4 `Built, not routed` (HeroSection/typewriter, MobileStrandList, useIsMobile consumers), 2 `Stub (not wired)` (sound gate, roadmap node clicks), 2 `Partial`, 2 `Planned (TODO)` (FR-054, FR-055).
+- **Non-functional:** 48 requirements — 1 `Planned (TODO)` (NFR-048); strong on performance hygiene, maintainability and build/deploy; honest gaps in **automated testing**, **error boundaries**, and **build-time content-link validation**; accessibility is real but uneven.
+- **Planned (TODO) items:** FR-054 (theme-aware logos), FR-055 (mobile → list view + lightweight logo), NFR-048 (consistent top bar under text scaling). Filter the Status column for `Planned (TODO)` to see all open work.
 
 ### Accuracy flags (read these)
 - `HomeMashup` **is** live (ConceptView section A). The in-code "legacy home" comment refers to an older, removed home composition, not this usage.
@@ -43,6 +45,7 @@ A reverse-engineered requirements register for the **live Vite + React 18 + Type
 | FR-007 | Nav links to unrouted destinations | `About`/`What?`/`Why?` links point to hashes with no route branch and silently fall back to ConceptView. | Partial | src/components/GridNav.tsx:3-10, src/App.tsx:35-43 |
 | FR-008 | Compacting / scroll-aware header | Header collapses to compact after the first segment (ConceptView `mentheon:section` event) or a viewport-scroll threshold elsewhere, with hysteresis; publishes height to `--header-h`. | Implemented | src/components/Header.tsx:21-92 |
 | FR-009 | Dev-only force-remount control | In dev builds a "⟳ re-render" button bumps a key to remount the view; stripped from production via `import.meta.env.DEV`. | Implemented | src/App.tsx:26,104-127 |
+| FR-054 | Theme-aware logos (dark / light) | The site has a light/dark theme (`data-theme` on `<html>`, read at `Helix3D.tsx:178`; scene re-tints from CSS tokens) but the header logo is a single static asset that does not swap with the theme. Provide distinct dark/light logo variants selected by the active theme. Extends FR-012. | Planned (TODO) | src/components/Header.tsx:110-113 (`web-svg.svg`); assets public/web-svg.svg, public/rod-only.svg, public/helix-logo.svg; theme src/components/Helix3D/Helix3D.tsx:153-178 |
 
 ### 3D Helix Experience
 
@@ -120,6 +123,7 @@ A reverse-engineered requirements register for the **live Vite + React 18 + Type
 | FR-049 | Reactive mobile breakpoint hook | `useIsMobile` (default 720 px) is reactive and SSR-safe, but not imported by ConceptView or any component — currently unused. | Built, not routed | src/lib/useIsMobile.ts:15-35 |
 | FR-050 | Mobile strand list substitute | `MobileStrandList` is a built phone-friendly stacked list sharing ConceptView's `openId/onSelect` contract, but ConceptView never imports it. | Built, not routed | src/components/MobileStrandList.tsx, src/components/ConceptView.tsx:746-749 |
 | FR-051 | Mobile-responsive layouts (CSS) | Responsive behaviour that ships is CSS-driven: Helix.css clamps shrink the spiral; module CSS adapts framed pages; per-segment mobile scroll. | Implemented | src/components/Helix.css, src/components/ConceptView.css, src/components/ConceptView.tsx:738-751 |
+| FR-055 | Mobile viewport → confined list view + lightweight logo | On mobile, confine the experience to the **list view** instead of the 3D rod+strands helix, plus a lightweight logo. Rationale: porting the full rod+strands WebGL to mobile is unlikely/not worth it; list view + light logo is the lowest-cost path. Mostly a wiring job — connects the already-built but unrouted FR-049/FR-050. | Planned (TODO) | Wires FR-049 (src/lib/useIsMobile.ts), FR-050 (src/components/MobileStrandList.tsx) into src/components/ConceptView.tsx:746-749; lightweight logo via src/components/Header.tsx + public/rod-only.svg |
 
 ### Data & Content
 
@@ -168,6 +172,7 @@ A reverse-engineered requirements register for the **live Vite + React 18 + Type
 | NFR-020 | Responsive | Intrinsic responsive grids | Card/objective/theme grids use `repeat(auto-fit, minmax())` so they reflow without breakpoints. | Implemented | src/components/StrandDetail/Sections/ResearchQuestionsSection.module.css:8, src/components/Marginalia/List/MarginaliaList.module.css:65 |
 | NFR-021 | Responsive | Breakpoint media queries | Width/height queries (1080/880/720/640/480 px + `max-height:560px` hatch) across many modules. | Implemented | src/components/ConceptView.css:35,581,600, src/components/Header.module.css:98, src/components/StrandDetail/StrandDetail.module.css:63,70 |
 | NFR-022 | Responsive | Viewport meta | `width=device-width, initial-scale=1.0` declared. | Implemented | index.html:5 |
+| NFR-048 | Responsive | Consistent top bar under text scaling | Text enlarge/decrease is in progress (NFR-016). Ensure the top bar keeps a consistent format/layout across the full text-scale range (0.85–1.4): no overflow, wrap, or `--header-h` jump as the user scales text. Hardens NFR-016 against FR-005/FR-008. | Planned (TODO) | src/lib/textScale.ts, src/main.tsx:5,8, src/components/Header.tsx:35, src/components/Header.module.css, src/components/GridNav.tsx |
 
 ### Maintainability
 
