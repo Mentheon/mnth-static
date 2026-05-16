@@ -1,19 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { animate } from 'animejs'
-import StrandPanel from '../StrandPanel'
-import type { Strand as DataStrand } from '../../data/strands'
 import './helix3d.css'
 
 /* =================================================================
-   Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
+   Mentheon — ScrollLockView (Rod of Asclepius + coiled serpent)
 
-   IN-BETWEEN VARIANT. Click a glow-node → the coil snaps it to
-   front, the camera dollies in, and the real StrandPanel opens as
-   a centre modal (concept data adapted via toDataStrand). Idle =
-   gentle auto-spin. The scroll-locked traversal of the same scene
-   is the frozen sibling ScrollLockView.tsx — change behaviour
-   here, not there.
+   FROZEN VARIANT. This is the scroll-locked traversal of the coil:
+   wheel/swipe steps one glow-node at a time, the rotor snaps and
+   the camera dollies in. Kept deliberately unchanged as a reference
+   variant — iterate on Helix3D.tsx (the click-to-panel in-between)
+   instead, not here.
+
 
    Faithful React port of the standalone v5 WebGL prototype. The
    imperative scene/loader logic lives in a single mount effect and
@@ -85,23 +83,6 @@ const ICONS: Record<string, string> = {
    for an unknown key. Used by buildList(). */
 function iconSVG(key: string) { return `<svg viewBox="0 0 100 100">${ICONS[key] || ICONS.grid}</svg>` }
 
-/* Adapt a concept Strand into the shape the pre-existing
-   StrandPanel expects (src/data/strands `Strand`). StrandPanel only
-   renders id/label/tagline/themes, so we map: name→label,
-   subsidiary·tag→tagline, and surface the synopsis as a single
-   theme card. Concept nodes deliberately don't carry the real
-   strands' progress/objectives — this keeps all six nodes with
-   their concept copy rather than collapsing to the 3 real strands. */
-function toDataStrand(s: Strand): DataStrand {
-  return {
-    id: s.id,
-    label: s.name,
-    tagline: `${s.subsidiary} · ${s.tag}`,
-    href: '#',
-    themes: [{ title: s.tag, description: s.synopsis }],
-  }
-}
-
 // The loader logo SVG is verbatim from the prototype; injected as
 // markup so we don't hand-transcribe ~30 path nodes into JSX.
 const LOADER_LOGO_SVG = `
@@ -130,21 +111,10 @@ const LOADER_LOGO_SVG = `
   </svg>
 `
 
-export default function Helix3D() {
+export default function ScrollLockView() {
   /* The single React-managed DOM node. All imperative DOM access
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
-
-  /* StrandPanel modal lives in React state (the imperative scene
-     can't render JSX). The effect opens it via setPanelStrand;
-     `closePanelRef` lets the React close handler call back into the
-     effect (resume spin, pull the camera out). */
-  const [panelStrand, setPanelStrand] = useState<DataStrand | null>(null)
-  const closePanelRef = useRef<() => void>(() => {})
-  const handlePanelClose = () => {
-    setPanelStrand(null)
-    closePanelRef.current()
-  }
 
   /* One mount effect owns the entire lifecycle. Empty dep array =>
      runs once after first paint (twice in StrictMode dev, but the
@@ -292,12 +262,6 @@ export default function Helix3D() {
        toward camLookTarget); a focused node is framed CAM_DOLLY
        units away (vs the ~8.5 resting distance). */
     let focusIndex = 0
-    /* Gentle idle auto-spin (rad/sec) — runs whenever no panel is
-       open and nothing is easing to a target. */
-    const ROTOR_FREE_SPEED = 0.05
-    /* True while the StrandPanel modal is open: freezes the spin so
-       the focused node holds still behind/under the card. */
-    let panelOpen = false
     const CAM_DOLLY = 3.2
     const camPosTarget   = new THREE.Vector3(0, 0, 8.5)
     const camLookTarget  = new THREE.Vector3(0, 0, 0)
@@ -515,11 +479,7 @@ export default function Helix3D() {
         `
         label.addEventListener('mouseenter', () => activate(n.strand.id))
         label.addEventListener('mouseleave', () => deactivate())
-        label.addEventListener('click', (e) => {
-          e.preventDefault()
-          const idx = nodes.indexOf(n)
-          if (idx >= 0) openPanel(idx)
-        })
+        label.addEventListener('click', (e) => { e.preventDefault(); triggerPageTransition() })
         labelsEl.appendChild(label)
       })
     }
@@ -543,12 +503,14 @@ export default function Helix3D() {
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
     }
 
-    /* Clicking a hovered node opens its StrandPanel (which also
-       zooms the camera in on it — see openPanel). */
+    /* Clicking a hovered node snaps it to face the camera, then
+       (after the snap settles) plays the page-transition sweep.
+       This is the seam to wire real navigation onto later. */
     function onClick() {
-      if (!hoveredId) return
-      const idx = nodes.findIndex((x) => x.strand.id === hoveredId)
-      if (idx >= 0) openPanel(idx)
+      if (hoveredId) {
+        snapRotorTo(hoveredId)
+        setTimeout(triggerPageTransition, 350)
+      }
     }
 
     /* Compute the rotor Y-rotation that brings node `id` to front.
@@ -564,12 +526,13 @@ export default function Helix3D() {
       while (rotorTarget - rotorAngle < -Math.PI) rotorTarget += Math.PI * 2
     }
 
-    /* Park the coil on node `i` (clamped). Eases the rotor so the
-       node faces the camera AND dollies the camera in: after the
-       snap the node sits at world ≈ (0, y, rHoriz), so we look
-       there and pull back CAM_DOLLY units. `instant` jumps with no
-       animation (unused now, kept for flexibility). Also lights the
-       node. Called by openPanel() on click. */
+    /* Park the coil on node `i` (clamped to range). Eases the rotor
+       so the node faces the camera AND sets the camera to dolly in
+       on it: after the snap the node sits at world ≈ (0, y, rHoriz),
+       so we look there and pull back CAM_DOLLY units. `instant`
+       jumps there with no animation (used for the initial frame so
+       the scene opens already focused on node 0). Also lights the
+       node + shows its peek. */
     function focusByIndex(i: number, instant = false) {
       focusIndex = THREE.MathUtils.clamp(i, 0, NODE.count - 1)
       const n = nodes[focusIndex]
@@ -587,35 +550,49 @@ export default function Helix3D() {
       activate(n.strand.id)
     }
 
-    /* Reset the camera framing to the wide resting view (used when
-       the panel closes). The render loop eases back to it. */
-    function resetCamera() {
-      camPosTarget.set(0, 0, 8.5)
-      camLookTarget.set(0, 0, 0)
+    /* Scroll / swipe → step exactly one node, with a cooldown so a
+       single trackpad flick or swipe can't skip several. Clamps at
+       the ends (extra scroll is a no-op). Ignored while the list
+       view is up so its own scroll works. Lays the initial focus on
+       node 0 (instant). */
+    function initScrollNav() {
+      let locked = false
+      const step = (dir: number) => {
+        const next = focusIndex + dir
+        if (locked || next < 0 || next > NODE.count - 1) return
+        locked = true
+        focusByIndex(next)
+        const tm = setTimeout(() => { locked = false }, 700)
+        cleanups.push(() => clearTimeout(tm))
+      }
+      const onWheel = (e: WheelEvent) => {
+        if (listview.classList.contains('is-visible')) return
+        e.preventDefault()
+        if (Math.abs(e.deltaY) < 6) return
+        step(e.deltaY > 0 ? 1 : -1)
+      }
+      let touchY = 0
+      const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
+      const onTouchEnd = (e: TouchEvent) => {
+        if (listview.classList.contains('is-visible')) return
+        const dy = (e.changedTouches[0]?.clientY ?? touchY) - touchY
+        if (Math.abs(dy) < 40) return
+        step(dy < 0 ? 1 : -1)                          // swipe up → next
+      }
+      root!.addEventListener('wheel', onWheel, { passive: false })
+      root!.addEventListener('touchstart', onTouchStart, { passive: true })
+      root!.addEventListener('touchend', onTouchEnd, { passive: true })
+      cleanups.push(() => {
+        root!.removeEventListener('wheel', onWheel)
+        root!.removeEventListener('touchstart', onTouchStart)
+        root!.removeEventListener('touchend', onTouchEnd)
+      })
+      focusByIndex(0, true)
     }
 
-    /* Open the StrandPanel for node `i`: zoom in (focusByIndex) and
-       hand the adapted strand to React state. `panelOpen` freezes
-       the idle spin while the card is up. */
-    function openPanel(i: number) {
-      focusByIndex(i)
-      panelOpen = true
-      const n = nodes[focusIndex]
-      if (n) setPanelStrand(toDataStrand(n.strand))
-    }
-
-    /* Invoked from the React close handler via closePanelRef (close
-       button / backdrop / Esc). Drops the zoom and lets the idle
-       spin resume. The React side clears panelStrand itself. */
-    function closePanel() {
-      panelOpen = false
-      resetCamera()
-    }
-    closePanelRef.current = closePanel
-
-    /* Light up a strand: orb crimson + emissive, flag its HTML
-       label. Hover affordance + click target (the StrandPanel,
-       opened on click, carries the detail — there's no peek now). */
+    /* Light up a strand: orb crimson + emissive, flag its label,
+       show its peek card. Driven by focusByIndex() (the resting
+       focused node) and by transient mouse hover. */
     function activate(id: string) {
       if (hoveredId === id) return
       hoveredId = id
@@ -630,18 +607,17 @@ export default function Helix3D() {
       $$('.node-label').forEach((l) => {
         l.classList.toggle('is-active', l.dataset.id === id)
       })
+      const s = STRANDS.find((x) => x.id === id)
+      if (s) showPeek(s)
     }
-    /* Hover-off: reset every orb to base, clear label flags. */
+    /* Hover-off: don't go blank — fall back to the scroll-focused
+       node so it stays lit and its peek stays shown. If the mouse
+       was already on the focused node, there's nothing to do. */
     function deactivate() {
-      if (hoveredId === null) return
+      const fid = nodes[focusIndex]?.strand.id
+      if (!fid || hoveredId === fid) return
       hoveredId = null
-      nodes.forEach((n) => {
-        const m = n.orb.material as THREE.MeshStandardMaterial
-        m.color.copy(n.orb.userData.baseColor as THREE.Color)
-        m.emissive.set(0x000000)
-        m.emissiveIntensity = 0
-      })
-      $$('.node-label').forEach((l) => l.classList.remove('is-active'))
+      activate(fid)
     }
 
     /* The per-frame heartbeat. dt = seconds since last frame (for
@@ -649,9 +625,9 @@ export default function Helix3D() {
        (for the pulse phase). Order: spin → pulse rings → glow light
        → raycast hover → reposition labels → draw. */
     function render(dt: number, elapsed: number) {
-      // 1. Rotor: ease toward the click target (set by focusByIndex
-      //    via openPanel); else gently auto-spin when idle, but
-      //    hold still while the panel is open.
+      // 1. Rotor: ease toward the focus/snap target (set by
+      //    focusByIndex on scroll); otherwise hold still. No
+      //    auto-spin — scroll fully owns rotation.
       if (rotorTarget !== null) {
         const diff = rotorTarget - rotorAngle
         if (Math.abs(diff) < 0.005) {
@@ -660,8 +636,6 @@ export default function Helix3D() {
         } else {
           rotorAngle += diff * Math.min(1, dt * 6)
         }
-      } else if (!panelOpen) {
-        rotorAngle += ROTOR_FREE_SPEED * dt
       }
       rotor.rotation.y = rotorAngle
 
@@ -814,9 +788,20 @@ export default function Helix3D() {
       activeNodePointLight.color.copy(C.crimson)
     }
 
-    /* ---- (PEEK removed) ----
-       The lightweight hover synopsis card is gone in this variant;
-       the full StrandPanel modal (opened on click) replaces it. */
+    /* ---- PEEK — the bottom synopsis card ----
+       Populated from the hovered strand; CSS `.is-visible` fades it
+       in/out. Its default placeholder text lives in the JSX. */
+    const peek       = $('#peek')!
+    const peekKicker = $('#peek-kicker')!
+    const peekTitle  = $('#peek-title')!
+    const peekText   = $('#peek-text')!
+    function showPeek(s: Strand) {
+      peekKicker.textContent = `${s.subsidiary} · ${s.tag}`
+      peekTitle.textContent  = s.name
+      peekText.textContent   = s.synopsis
+      peek.classList.add('is-visible')
+    }
+    function hidePeek() { peek.classList.remove('is-visible') }
 
     /* ---- LIST VIEW — the "list" toggle's alternate layout ----
        Built once from STRANDS as innerHTML. Clicks just play the
@@ -837,12 +822,7 @@ export default function Helix3D() {
         </a>
       `).join('')
       inner.querySelectorAll('.list-item').forEach((a) => {
-        a.addEventListener('click', (e) => {
-          e.preventDefault()
-          const id = (a as HTMLElement).dataset.id
-          const idx = nodes.findIndex((x) => x.strand.id === id)
-          if (idx >= 0) openPanel(idx)
-        })
+        a.addEventListener('click', (e) => { e.preventDefault(); triggerPageTransition() })
       })
     }
 
@@ -876,6 +856,7 @@ export default function Helix3D() {
         el.style.pointerEvents = isHelix ? '' : 'none'
       })
       listview.classList.toggle('is-visible', !isHelix)
+      if (!isHelix) hidePeek()
     }
 
     /* ---- THEME (scoped to root element) ----
@@ -953,10 +934,12 @@ export default function Helix3D() {
       })
     }
 
-    /* ---- MENU ----
-       Full-screen overlay toggled by .is-open. (The old page-sweep
-       transition was dropped in this variant — clicking a node
-       opens the StrandPanel modal instead.) */
+    /* ---- MENU + TRANSITION ----
+       Menu = full-screen overlay toggled by .is-open. The transition
+       overlay is a plum panel; triggerPageTransition() re-triggers
+       its CSS sweep keyframe (the offsetWidth read forces a reflow so
+       removing+adding the class restarts the animation). It's purely
+       a visual flourish today — no actual route change happens. */
     const menuOverlay = $('#menu-overlay')!
     const onMenuOpen = () => {
       menuOverlay.classList.add('is-open')
@@ -968,6 +951,12 @@ export default function Helix3D() {
     }
     $('#menu-open')!.addEventListener('click', onMenuOpen)
     $('#menu-close')!.addEventListener('click', onMenuClose)
+    const transitionOverlay = $('#transition-overlay')!
+    function triggerPageTransition() {
+      transitionOverlay.classList.remove('is-sweeping')
+      void transitionOverlay.offsetWidth
+      transitionOverlay.classList.add('is-sweeping')
+    }
 
     /* ---- LOADER + GATE — the intro sequence ----
        runLoader: anime.js drives `state.y` 195 → -5 over 2.4s; each
@@ -1059,8 +1048,7 @@ export default function Helix3D() {
     buildList()
     initThree()
     initCursor()
-    // No scroll-nav here (that's ScrollLockView). Idle spin until a
-    // node is clicked → openPanel zooms + opens StrandPanel.
+    initScrollNav()   // wheel/swipe stepping + frames node 0
 
     ;(async function entry() {
       await runLoader()
@@ -1099,26 +1087,16 @@ export default function Helix3D() {
     }
   }, [])
 
-  /* Esc closes the StrandPanel modal. Only bound while it's open;
-     re-runs when panelStrand changes so the closure stays fresh. */
-  useEffect(() => {
-    if (!panelStrand) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handlePanelClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [panelStrand])
-
   /* ---- MARKUP ----
      Full-viewport takeover (no shared site Header on this route).
      Every element is fixed/absolute and stacked by z-index in
      helix3d.css — back→front: canvas → fog → labels → headline →
-     readout → list → footer → corners → nav → marquee → menu →
-     gate → loader, with the StrandPanel modal (z 600) above all.
+     readout → peek → list → footer → corners → nav → marquee →
+     menu → transition → gate → loader.
 
      EDITING TEXT: all static copy is literal here, EXCEPT the
-     marquee (buildMarquee `phrases`) and the list view (buildList
-     from STRANDS). The clicked card is the real StrandPanel, fed
-     adapted concept data via toDataStrand.
+     marquee (buildMarquee `phrases`), the peek card (filled from
+     STRANDS on hover), and the list view (buildList from STRANDS).
      MOVING THINGS: change the element's rule in helix3d.css — don't
      reorder JSX (positioning is absolute, not flow).
      The id="…" hooks are a contract with the effect's $('#…')
@@ -1196,9 +1174,8 @@ export default function Helix3D() {
 
       {/* STAGE — the scene area. #helix3d is where the WebGL canvas
           is appended; the rest are HTML overlays on top of it.
-          #node-labels is populated by buildLabels(); #listview-inner
-          by buildList(). Clicking a node opens the StrandPanel
-          modal (rendered below, outside .stage). */}
+          #node-labels is populated by buildLabels(); #peek by
+          showPeek(); #listview-inner by buildList(). */}
       <main className="stage">
         <div className="stage-readout">
           <div>programme<strong>research · 2024–26</strong></div>
@@ -1217,8 +1194,13 @@ export default function Helix3D() {
 
         <div className="node-labels" id="node-labels" />
 
-        {/* (Peek card removed — the StrandPanel modal below replaces
-            it; opened on node/label/list click.) */}
+        {/* Peek card — these three strings are placeholders; they're
+            overwritten at runtime by showPeek() from the strand. */}
+        <div className="peek" id="peek">
+          <p className="peek-kicker" id="peek-kicker">strand</p>
+          <h3 className="peek-title" id="peek-title">—</h3>
+          <p className="peek-text" id="peek-text">Hover a node to see its synopsis.</p>
+        </div>
 
         {/* List view — inner is filled by buildList(); shown when the
             nav toggle switches to "list". */}
@@ -1254,23 +1236,9 @@ export default function Helix3D() {
         </div>
       </div>
 
-      {/* STRAND PANEL MODAL (z 600) — mounted only while a node is
-          selected. Backdrop click / Esc / the panel's own × all
-          route through handlePanelClose, which clears React state
-          AND calls back into the scene (closePanelRef) to drop the
-          zoom and resume the idle spin. */}
-      {panelStrand && (
-        <div
-          className="strand-modal"
-          role="dialog"
-          aria-modal="true"
-          onClick={handlePanelClose}
-        >
-          <div className="strand-modal-inner" onClick={(e) => e.stopPropagation()}>
-            <StrandPanel strand={panelStrand} isOpen onClose={handlePanelClose} />
-          </div>
-        </div>
-      )}
+      {/* TRANSITION — plum sweep panel (z 500). Re-triggered by
+          triggerPageTransition(); visual only, no navigation. */}
+      <div className="transition-overlay" id="transition-overlay" />
     </div>
   )
 }

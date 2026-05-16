@@ -3,6 +3,7 @@ import Header from './components/Header'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
 import Helix3D from './components/Helix3D/Helix3D'
+import ScrollLockView from './components/Helix3D/ScrollLockView'
 import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
 import { STRANDS } from './data/strands'
@@ -28,7 +29,8 @@ export default function App() {
   const isMarginaliaRoute =
     hashPath === '#marginalia' || hashPath.startsWith('#marginalia/')
   const page =
-    hash === '#helix3d' ? 'helix3d'    :
+    hash === '#helix3d'    ? 'helix3d'    :
+    hash === '#scrolllock' ? 'scrolllock' :
     hash === '#who'     ? 'who'        :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
@@ -40,6 +42,10 @@ export default function App() {
   // shared site Header.
   if (page === 'helix3d') {
     return <Helix3D />
+  }
+  // Frozen scroll-locked variant of the same 3D concept.
+  if (page === 'scrolllock') {
+    return <ScrollLockView />
   }
 
   // Pick the strand the route is asking for. If `#strand/<id>` matches a

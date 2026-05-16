@@ -503,6 +503,27 @@
   100%     { transform: translateY(-100%); }
 }
 
+/* ====== STRAND PANEL MODAL ======
+   Only used by the Helix3D click-to-panel variant (ScrollLockView
+   never renders .strand-modal). Centre overlay over a dimmed,
+   blurred scene; the inner box caps StrandPanel's ~1100px width
+   and lets it scroll if the viewport is short. */
+.helix3d-root .strand-modal {
+  position: fixed; inset: 0; z-index: 600;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+  background: rgba(var(--fog-color), 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  overflow-y: auto;
+  cursor: none;
+  animation: helix3dModalIn 0.3s var(--ease-out);
+}
+@keyframes helix3dModalIn { from { opacity: 0; } to { opacity: 1; } }
+.helix3d-root .strand-modal-inner {
+  width: 100%; max-width: 1100px; margin: auto;
+}
+
 @media (max-width: 720px) {
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
