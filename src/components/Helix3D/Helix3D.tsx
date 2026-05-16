@@ -568,7 +568,7 @@ export default function Helix3D() {
         label.addEventListener('click', (e) => {
           e.preventDefault()
           const idx = nodes.indexOf(n)
-          if (idx >= 0) openPanel(idx)
+          if (idx >= 0) onNodeClick(idx)
         })
         labelsEl.appendChild(label)
       })
@@ -593,12 +593,20 @@ export default function Helix3D() {
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
     }
 
-    /* Clicking a hovered node opens its StrandPanel (which also
-       zooms the camera in on it — see openPanel). */
+    /* Two-step: a first click only FOCUSES the node (zoom/snap +
+       bubble, like scrolling to it). Clicking the already-focused
+       node again opens the StrandPanel. (The "view more" bubble is
+       the explicit one-click shortcut to open.) */
+    function onNodeClick(idx: number) {
+      if (focusIndex === idx) openPanel(idx)
+      else focusByIndex(idx)
+    }
+
+    /* Canvas click → focus / open the hovered node (see onNodeClick). */
     function onClick() {
       if (!hoveredId) return
       const idx = nodes.findIndex((x) => x.strand.id === hoveredId)
-      if (idx >= 0) openPanel(idx)
+      if (idx >= 0) onNodeClick(idx)
     }
 
     /* Compute the rotor Y-rotation that brings node `id` to front.
@@ -665,20 +673,26 @@ export default function Helix3D() {
     }
     closePanelRef.current = closePanel
 
-    /* Step the traversal by `dir` (±1) across -1 .. NODE.count.
-       Landing on a real node frames + lights it (no panel). Landing
-       on either extreme returns to the default view. */
+    /* Step the traversal by `dir` (±1). focusIndex is either -1
+       (DEFAULT view) or 0..count-1 (a node).
+       • From default: scroll DOWN enters the spiral at the FIRST
+         node, scroll UP enters at the LAST node — symmetric, just
+         from opposite ends.
+       • On the spiral: step ±1; stepping off either end returns to
+         the default view. */
     function traverse(dir: number) {
-      const next = Math.max(-1, Math.min(NODE.count, focusIndex + dir))
-      if (next === focusIndex) return
-      focusIndex = next
+      if (!isFocused()) {
+        focusByIndex(dir > 0 ? 0 : NODE.count - 1)
+        return
+      }
+      const next = focusIndex + dir
       if (next < 0 || next >= NODE.count) {
-        // exited the spiral → default view
+        focusIndex = -1            // off either end → default
         resetCamera()
         deactivate()
-      } else {
-        focusByIndex(next)   // snap + dolly + light + bubble
+        return
       }
+      focusByIndex(next)           // snap + dolly + light + bubble
     }
 
     /* Wheel / swipe drives traverse(), one node per gesture, with a
@@ -690,7 +704,7 @@ export default function Helix3D() {
         if (locked || panelOpen) return
         const prev = focusIndex
         traverse(dir)
-        if (focusIndex === prev) return        // at an extreme — no-op
+        if (focusIndex === prev) return        // safety: no state change
         locked = true
         const tm = setTimeout(() => { locked = false }, 700)
         cleanups.push(() => clearTimeout(tm))
