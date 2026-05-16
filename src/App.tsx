@@ -8,12 +8,6 @@ import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
 import { STRANDS } from './data/strands'
 
-/* Module scope → survives SPA route changes but resets on a full
-   page load. Tracks whether the Helix3D loader/gate intro has
-   already played this visit, so it only runs on the initial load
-   and is skipped on subsequent internal navigation back to it. */
-let introPlayed = false
-
 function useHash() {
   const [hash, setHash] = useState(window.location.hash)
   useEffect(() => {
@@ -40,6 +34,7 @@ export default function App() {
     hashPath === '#marginalia' || hashPath.startsWith('#marginalia/')
   const page =
     hash === '#helix3d'    ? 'helix3d'    :
+    hash === '#helix3d?skipIntro=true' ? 'helix3d'    : // explicit skipIntro param also routes to helix3d
     hash === '#scrolllock' ? 'scrolllock' :
     hash === '#who'     ? 'who'        :
     hash === '#concept' ? 'concept'    :
@@ -47,21 +42,13 @@ export default function App() {
     isMarginaliaRoute   ? 'marginalia' :
     'home'
 
-  // Home (the default route) is now the Helix3D concept — it's the
-  // site's front door. `#concept` still reaches the old ConceptView.
-  const isHelix = page === 'helix3d' || page === 'home'
-  // Play the intro only on the first Helix3D mount of this visit;
-  // skip it on internal re-entry and on dev re-render.
-  const skipIntro = introPlayed || renderKey > 0
-  useEffect(() => {
-    if (isHelix && !skipIntro) introPlayed = true
-  }, [isHelix, skipIntro])
-
   let content: ReactNode
-  if (isHelix) {
+  if (page === 'helix3d') {
     // Full-viewport takeover with its own chrome (and its own
     // Marginalia tab) — rendered standalone, no shared Header.
-    content = <Helix3D skipIntro={skipIntro} />
+    // First load (renderKey 0) plays the loader/gate intro; any
+    // dev re-render (renderKey > 0) skips straight to the scene.
+    content = <Helix3D skipIntro={renderKey > 0} />
   } else if (page === 'scrolllock') {
     // Frozen scroll-locked variant of the same 3D concept.
     content = <ScrollLockView />
@@ -99,8 +86,10 @@ export default function App() {
         ) : page === 'marginalia' ? (
           <Marginalia slug={marginaliaSlug} strandFilter={strandFilter} />
         ) : (
-          // `#concept` only — home now routes to Helix3D above, so
-          // ConceptView is reachable just via the explicit hash.
+          // Default + #concept both render the ConceptView. The
+          // legacy home view (HomeMashup → RDStrands → Helix →
+          // StrandPanel) is intentionally unwired right now; recover
+          // it from git history if you want it back as a route.
           <ConceptView />
         )}
       </>
