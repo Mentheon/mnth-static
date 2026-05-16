@@ -262,10 +262,11 @@ export default function Helix3D() {
     let rotor: THREE.Group
     let rod: THREE.Group
     let serpentMesh: THREE.Mesh & { userData: { head?: THREE.Group } }
-    /* Sketch-mode alternative for the coil: a 3D polyline sampled
-       along the helix curve, theme --ink. Built next to serpentMesh;
-       exactly one of the two is visible — see applySketchMode. Only
-       the coil strand swaps; rod / head / node orbs stay solid. */
+    /* Sketch-mode alternative for the coil: a hollow cylindrical
+       wireframe (LineSegments) hugging the tube, theme --ink. Built
+       next to serpentMesh; exactly one of the two is visible — see
+       applySketchMode. Only the coil strand swaps; rod / head /
+       node orbs stay solid. */
     let serpentLine: THREE.Line
     let sketchMode = false
     let serpentCurve: HelixCurve
@@ -433,13 +434,33 @@ export default function Helix3D() {
       serpentMesh = new THREE.Mesh(geo, mat) as typeof serpentMesh
       rotor.add(serpentMesh)
 
-      // Sketch alternative: a polyline along the same curve. It
-      // winds through real depth, so it reads as a 3D line drawing
-      // of the strand rather than a flat outline.
-      const linePts = serpentCurve.getPoints(SERPENT.tubeSegs)
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts)
+      // Sketch alternative: a HOLLOW cylindrical wireframe of the
+      // same tube — longitudinal lines running along the helix plus
+      // periodic cross-section rings, no triangle diagonals. Built
+      // from a throwaway TubeGeometry's parametric grid so the wire
+      // hugs the strand's actual girth and reads as a see-through
+      // 3D tube. (TubeGeometry lays vertices out as
+      // index = i*(radial+1)+j, i = tubular ring, j = around.)
+      const WIRE_RADIAL = 8          // longitudinal lines around the tube
+      const WIRE_RING_EVERY = 5      // a cross ring every N tubular steps
+      const wireTube = new THREE.TubeGeometry(
+        serpentCurve, SERPENT.tubeSegs, SERPENT.bodyR, WIRE_RADIAL, false,
+      )
+      const wp = wireTube.attributes.position
+      const vIdx = (i: number, j: number) => i * (WIRE_RADIAL + 1) + j
+      const segPts: number[] = []
+      const pushV = (k: number) => segPts.push(wp.getX(k), wp.getY(k), wp.getZ(k))
+      for (let j = 0; j <= WIRE_RADIAL; j++) {
+        for (let i = 0; i < SERPENT.tubeSegs; i++) { pushV(vIdx(i, j)); pushV(vIdx(i + 1, j)) }
+      }
+      for (let i = 0; i <= SERPENT.tubeSegs; i += WIRE_RING_EVERY) {
+        for (let j = 0; j < WIRE_RADIAL; j++) { pushV(vIdx(i, j)); pushV(vIdx(i, j + 1)) }
+      }
+      wireTube.dispose()
+      const lineGeo = new THREE.BufferGeometry()
+      lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(segPts, 3))
       const lineMat = new THREE.LineBasicMaterial({ color: C.ink })
-      serpentLine = new THREE.Line(lineGeo, lineMat)
+      serpentLine = new THREE.LineSegments(lineGeo, lineMat)
       serpentLine.visible = sketchMode
       serpentMesh.visible = !sketchMode
       rotor.add(serpentLine)
