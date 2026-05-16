@@ -625,18 +625,33 @@
 .helix3d-root .corner-crop { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 30; }
 .helix3d-root .corner-crop--tl { top: 48px; left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--tr { top: 48px; right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
-.helix3d-root .corner-crop--bl { bottom: 56px; left: 16px;  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
-.helix3d-root .corner-crop--br { bottom: 56px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--bl { bottom: 16px; left: 16px;  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--br { bottom: 16px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 
 .helix3d-root .footer-strip {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  /* Lifted clear of the bottom corner crops (bottom:16px + 20px tall)
+     so the stamped text sits a bit above the crop marks. */
+  position: fixed; bottom: 16px; left: 0; right: 0;
   padding: 1rem 2rem;
   display: flex; justify-content: space-between; align-items: center;
   font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
   letter-spacing: 0.22em; text-transform: uppercase;
   color: var(--ink-quiet); z-index: 20; pointer-events: none;
 }
-.helix3d-root .footer-strip span strong { color: var(--ink); font-weight: 700; }
+/* Each footer text section sits in a block rectangle that INVERTS
+   the page palette: background = --ink, text = --bg. Both tokens
+   swap with data-theme, so it reads plum-on-cream in light mode and
+   cream-on-deep in dark mode automatically. (Only the text sections
+   get a block — the strip itself stays transparent.) */
+.helix3d-root .footer-strip span {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 2px;
+  transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out);
+}
+.helix3d-root .footer-strip span strong { color: var(--bg); font-weight: 700; }
 
 .helix3d-root .menu-overlay {
   position: fixed; inset: 0; z-index: 200;
@@ -728,9 +743,9 @@
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
   .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: 44px; }
-  .helix3d-root .corner-crop--bl, .helix3d-root .corner-crop--br { bottom: 44px; }
+  .helix3d-root .corner-crop--bl, .helix3d-root .corner-crop--br { bottom: 16px; }
   .helix3d-root .node-label-name { font-size: 0.7rem; }
   .helix3d-root .node-label-sub  { font-size: 0.5rem; }
-  .helix3d-root .footer-strip { padding: 0.8rem 1rem; font-size: 0.55rem; }
+  .helix3d-root .footer-strip { padding: 0.8rem 1rem; font-size: 0.55rem; bottom: 28px; }
   .helix3d-root .list-item { grid-template-columns: 50px 56px 1fr auto; gap: 1rem; }
 }
