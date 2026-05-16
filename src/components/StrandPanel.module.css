@@ -206,3 +206,40 @@
   .ctaRow { justify-content: stretch; }
   .ctaLink { justify-content: center; width: 100%; }
 }
+
+/* ===== Inside the Helix3D scene =====
+   The scene applies a scoped reset `.helix3d-root a { background:none }`
+   (specificity 0,1,1) that would blank the CTA fill. Re-assert it
+   via a :global ancestor selector (specificity 0,2,0 > 0,1,1).
+   :global keys off the un-hashed .helix3d-root so this never matches
+   on the single-theme main site. */
+:global(.helix3d-root) .ctaLink { background-color: #A30B37; }
+:global(.helix3d-root) .ctaLink:hover { background-color: #2F0147; }
+
+/* ===== Dark variant — Helix3D dark theme only =====
+   Mirrors the dark-mode mock: plum surface, cream outline + text,
+   accents kept (magenta rule, crimson corner/CTA). */
+:global(.helix3d-root[data-theme="dark"]) .panelInner {
+  background-color: #2F0147;
+  border-color: #FFECE1;
+}
+:global(.helix3d-root[data-theme="dark"]) .closeButton { color: #FFECE1; }
+:global(.helix3d-root[data-theme="dark"]) .closeButton:hover { color: #D63158; }
+:global(.helix3d-root[data-theme="dark"]) .panelHeader {
+  border-bottom-color: rgba(255, 236, 225, 0.18);
+}
+:global(.helix3d-root[data-theme="dark"]) .strandName,
+:global(.helix3d-root[data-theme="dark"]) .tagline,
+:global(.helix3d-root[data-theme="dark"]) .themeTitle,
+:global(.helix3d-root[data-theme="dark"]) .themeDescription { color: #FFECE1; }
+:global(.helix3d-root[data-theme="dark"]) .themeCard {
+  background-color: rgba(255, 236, 225, 0.05);
+}
+:global(.helix3d-root[data-theme="dark"]) .themeCard:hover {
+  background-color: rgba(214, 49, 88, 0.12);
+  border-left-color: #D63158;
+}
+:global(.helix3d-root[data-theme="dark"]) .themeCard:hover .themeNumber { color: #D63158; }
+:global(.helix3d-root[data-theme="dark"]) .ctaLink:hover {
+  background-color: #FFECE1; color: #2F0147;
+}

@@ -53,9 +53,10 @@
    • FOOTER strip ............. same banner → .footer-strip
    • FULL-SCREEN MENU ......... same banner → .menu-overlay,
        .menu-item, .menu-bottom
-   • STRAND DETAIL modal ...... banner "STRAND PANEL MODAL" →
-       .strand-modal (backdrop), .strand-modal-inner (the StrandPanel
-       component itself is styled in StrandPanel.module.css)
+   • STRAND DETAIL drawer ..... banner "STRAND PANEL" →
+       .strand-scrim (faint click-to-close dim), .strand-drawer
+       (tethered, JS-positioned under the node). The StrandPanel
+       itself + its dark variant are in StrandPanel.module.css.
    • MARGINALIA right tab ..... NOT here — MarginaliaTab.module.css
        (rendered as a sibling of .helix3d-root by App.tsx)
 
@@ -633,25 +634,30 @@
   100%     { transform: translateY(-100%); }
 }
 
-/* ====== STRAND PANEL MODAL ======
-   Only used by the Helix3D click-to-panel variant (ScrollLockView
-   never renders .strand-modal). Centre overlay over a dimmed,
-   blurred scene; the inner box caps StrandPanel's ~1100px width
-   and lets it scroll if the viewport is short. */
-.helix3d-root .strand-modal {
-  position: fixed; inset: 0; z-index: 600;
-  display: flex; align-items: center; justify-content: center;
-  padding: 2rem;
-  background: rgba(var(--fog-color), 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  overflow-y: auto;
-  cursor: none;
-  animation: helix3dModalIn 0.3s var(--ease-out);
+/* ====== STRAND PANEL — tethered draw-out drawer ======
+   Click "view more" → the panel unrolls downward from just below
+   the node's bubble. `.strand-drawer` is absolutely positioned and
+   its transform is set every frame by updateLabels() to the focused
+   node's projected screen point (clamped on-screen), so it stays
+   tethered to the node as the camera settles. The StrandPanel's own
+   max-height 0→open transition IS the "draw out". A faint scrim
+   (NO blur) sits behind for click-to-close; the scene stays
+   visible. Dark-theme recolour of the panel itself lives in
+   StrandPanel.module.css (keyed off .helix3d-root[data-theme=dark]). */
+.helix3d-root .strand-scrim {
+  position: fixed; inset: 0; z-index: 590;
+  background: rgba(0, 0, 0, 0.22);          /* faint dim, no blur */
+  animation: helix3dScrimIn 0.3s var(--ease-out);
 }
-@keyframes helix3dModalIn { from { opacity: 0; } to { opacity: 1; } }
-.helix3d-root .strand-modal-inner {
-  width: 100%; max-width: 1100px; margin: auto;
+@keyframes helix3dScrimIn { from { opacity: 0; } to { opacity: 1; } }
+.helix3d-root .strand-drawer {
+  position: absolute; left: 0; top: 0; z-index: 600;
+  width: min(560px, calc(100vw - 32px));
+  transform: translate(-9999px, -9999px);  /* parked until positioned */
+  will-change: transform, max-height;
+  overflow-y: auto; overscroll-behavior: contain;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
+  cursor: none;
 }
 
 @media (max-width: 720px) {

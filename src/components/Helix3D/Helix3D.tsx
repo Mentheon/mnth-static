@@ -999,6 +999,24 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       } else {
         bubbleEl.classList.remove('is-visible')
       }
+
+      // Strand drawer — tethered just under the focused node, so it
+      // reads as "drawn out" from there. Clamped to stay on-screen;
+      // max-height capped to the viewport (it scrolls internally).
+      if (panelOpen && isFocused()) {
+        const drawer = $('#strand-drawer') as HTMLDivElement | null
+        const n = nodes[focusIndex]
+        if (drawer && n) {
+          const dp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const dx = (dp.x * 0.5 + 0.5) * w
+          const dy = (-dp.y * 0.5 + 0.5) * h
+          const dw = drawer.offsetWidth || 560
+          const left = Math.max(16, Math.min(dx - dw / 2, w - dw - 16))
+          const top = Math.max(56, Math.min(dy + 36, h - 140))
+          drawer.style.transform = `translate(${left}px, ${top}px)`
+          drawer.style.maxHeight = `${Math.max(240, h - top - 16)}px`
+        }
+      }
     }
 
     /* RAF driver. dt is clamped to 50ms so a backgrounded tab that
@@ -1495,7 +1513,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         {/* The big editorial headline. `.accent` is the crimson word. */}
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
-          <h1 className="title">A new <br />era of <span className="accent">Digital <br/> Health</span>.</h1>
+          <h1 className="title">A new <br />era of <span className="accent">Digital Health</span>.</h1>
         </div>
 
         <div className="node-labels" id="node-labels" />
@@ -1544,22 +1562,26 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         </div>
       </div>
 
-      {/* STRAND PANEL MODAL (z 600) — mounted only while a node is
-          selected. Backdrop click / Esc / the panel's own × all
-          route through handlePanelClose, which clears React state
-          AND calls back into the scene (closePanelRef) to drop the
-          zoom and resume the idle spin. */}
+      {/* STRAND PANEL drawer (z 600) — tethered under the node and
+          drawn out (StrandPanel's own max-height open animation).
+          .strand-drawer is positioned every frame by updateLabels()
+          to the focused node's projected point. The faint .strand-
+          scrim (no blur) catches backdrop clicks to close; scene
+          stays visible. × / scrim / Esc → handlePanelClose, which
+          clears React state and calls closePanelRef into the scene. */}
       {panelStrand && (
-        <div
-          className="strand-modal"
-          role="dialog"
-          aria-modal="true"
-          onClick={handlePanelClose}
-        >
-          <div className="strand-modal-inner" onClick={(e) => e.stopPropagation()}>
+        <>
+          <div className="strand-scrim" onClick={handlePanelClose} />
+          <div
+            className="strand-drawer"
+            id="strand-drawer"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
             <StrandPanel strand={panelStrand} isOpen onClose={handlePanelClose} />
           </div>
-        </div>
+        </>
       )}
 
       {/* Marginalia right-margin tab — only on this view. Child of
