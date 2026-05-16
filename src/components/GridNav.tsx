@@ -1,7 +1,7 @@
 import styles from './GridNav.module.css'
 
 const NAV_ITEMS = [
-  { label: 'Home',  href: '#home'       },
+  { label: 'Home',  href: '#helix3d'       },
   { label: 'News',  href: '#marginalia' },
   { label: 'About', href: '#about'      },
   { label: 'Who?',  href: '#who'        },
