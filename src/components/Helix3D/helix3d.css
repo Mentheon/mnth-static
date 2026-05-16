@@ -28,8 +28,9 @@
        .marquee-track (+ @keyframes helix3dMarquee)
    • TOP NAV bar .............. same banner → .nav, .nav-mark
    • VIEW (staff/list) toggle . same banner → .view-toggle (+ button)
-   • SKETCH / NODE toggles .... same banner → .render-toggle
-       (both #render-toggle and #node-toggle use this class)
+   • SKETCH/POLY/ROD/NODE btns  same banner → .render-toggle
+       (#render-toggle, #poly-toggle, #rod-toggle, #node-toggle
+        all share this class)
    • THEME switch button ...... same banner → .theme-switch
    • MENU button (hamburger) .. same banner → .menu-btn
    • STAGE + readout strip .... banner "STAGE" → .stage,
@@ -249,7 +250,11 @@
 .helix3d-root .nav {
   position: fixed; top: 36px; left: 0; right: 0; z-index: 40;
   padding: 1.4rem 2rem;
-  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  /* flex-start (not center): a taller brand logo extends DOWNWARD
+     instead of growing the row and dragging the right-hand controls
+     down with it — the menu bar stays pinned near the top edge
+     regardless of logo height. */
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
   pointer-events: none;
 }
 .helix3d-root .nav > * { pointer-events: auto; }
@@ -260,6 +265,9 @@
   display: flex; align-items: baseline; gap: 0.3em;
 }
 .helix3d-root .nav-mark .star { color: var(--crimson); font-size: 0.7em; }
+/* Image brand mark in the nav (replaces the text wordmark). Sized
+   to sit in the ~36px nav band; tweak `height` to taste. */
+.helix3d-root .nav-mark-logo { display: block; height: 12.8rem; width: auto; }
 .helix3d-root .nav-controls { display: flex; align-items: center; gap: 0.75rem; }
 
 .helix3d-root .view-toggle {

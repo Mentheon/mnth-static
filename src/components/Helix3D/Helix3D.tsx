@@ -168,6 +168,16 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       }
     }
 
+    /* Rod material colour. Solid: --ink (its normal colour). Trace:
+       the INVERSE of the background so it stays visible — the cream
+       --white in dark mode, and dark (--ink, i.e. plum) only when
+       light mode is on. */
+    function rodColour() {
+      if (!rodTrace) return new THREE.Color(cssVar('--ink'))
+      const isLight = root!.getAttribute('data-theme') !== 'dark'
+      return new THREE.Color(isLight ? cssVar('--ink') : (cssVar('--white') || '#FFECE1'))
+    }
+
     /* ---- HELIX CURVE — single serpent winding around the rod ----
        The single source of truth for the spiral's shape. Both the
        TubeGeometry (the serpent body) and the node placement sample
@@ -241,7 +251,17 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        rings), LineSegments, theme --ink. Built next to serpentMesh;
        exactly one of the two is visible — see applySketchMode. */
     let serpentLine: THREE.Line
+    /* Second sketch style: the tube's triangulated edges
+       (WireframeGeometry) — a faceted "polygon trace". */
+    let serpentPoly: THREE.Line
     let sketchMode = false
+    /* Sketch style while sketchMode: false = longitudinal line
+       trace (serpentLine), true = polygon wireframe (serpentPoly).
+       Driven by its own nav button. */
+    let polyMode = false
+    /* Render the central rod as a --bg-coloured wireframe trace
+       (own nav button) so it reads as a faint outline. */
+    let rodTrace = false
     /* Independent override: when true the node orbs render solid &
        opaque even in sketch mode (own nav toggle). */
     let nodeSolid = false
@@ -433,9 +453,20 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(segPts, 3))
       const lineMat = new THREE.LineBasicMaterial({ color: C.ink })
       serpentLine = new THREE.LineSegments(lineGeo, lineMat)
-      serpentLine.visible = sketchMode
-      serpentMesh.visible = !sketchMode
       rotor.add(serpentLine)
+
+      // Polygon trace: the tube's full triangulated edges (incl.
+      // diagonals) from a coarser tube, so it reads as a faceted
+      // polygon wireframe rather than clean longitudinal lines.
+      // WireframeGeometry copies positions, so the source tube can
+      // be disposed straight away.
+      const polySrc = new THREE.TubeGeometry(serpentCurve, 160, SERPENT.bodyR, 8, false)
+      const polyMat = new THREE.LineBasicMaterial({ color: C.ink })
+      serpentPoly = new THREE.LineSegments(new THREE.WireframeGeometry(polySrc), polyMat)
+      polySrc.dispose()
+      rotor.add(serpentPoly)
+
+      applyStrandRender()   // sets which of mesh/line/poly is visible
 
       const head = buildSerpentHead(C)
       const headPos = serpentCurve.getPoint(0)
@@ -921,13 +952,15 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        by index — keep buildSerpentHead's add order (body, eye, eye). */
     function refreshSceneColours() {
       const C = themeColours()
-      ;(rod.userData.shaft.material as THREE.MeshStandardMaterial).color.copy(C.ink)
+      const rodCol = rodColour()
+      ;(rod.userData.shaft.material as THREE.MeshStandardMaterial).color.copy(rodCol)
       ;(rod.userData.bands as THREE.Mesh[]).forEach((b) =>
-        (b.material as THREE.MeshStandardMaterial).color.copy(C.ink))
+        (b.material as THREE.MeshStandardMaterial).color.copy(rodCol))
       ;(rod.userData.knob.material as THREE.MeshStandardMaterial).color.copy(C.crimson)
       ;(rod.userData.knob.material as THREE.MeshStandardMaterial).emissive.copy(C.crimson)
       ;(serpentMesh.material as THREE.MeshStandardMaterial).color.copy(C.ink)
       ;(serpentLine.material as THREE.LineBasicMaterial).color.copy(C.ink)
+      ;(serpentPoly.material as THREE.LineBasicMaterial).color.copy(C.ink)
       serpentMesh.userData.head!.children.forEach((child, idx) => {
         const mesh = child as THREE.Mesh
         const m = mesh.material as THREE.MeshStandardMaterial
@@ -1046,6 +1079,16 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
        and carries .is-active + aria-pressed for styling/a11y. */
     const renderToggle = $('#render-toggle')!
     const nodeToggle = $('#node-toggle')!
+    const polyToggle = $('#poly-toggle')!
+    const rodToggle = $('#rod-toggle')!
+
+    /* Exactly one strand representation visible: solid mesh (not
+       sketch), else line trace or polygon wireframe per polyMode. */
+    function applyStrandRender() {
+      serpentMesh.visible = !sketchMode
+      serpentLine.visible = sketchMode && !polyMode
+      serpentPoly.visible = sketchMode && polyMode
+    }
     /* Orb wireframe = sketch mode AND not overridden solid. Shared
        by both toggles so they compose correctly. */
     function setNodeWire() {
@@ -1056,8 +1099,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     }
     function applySketchMode(on: boolean) {
       sketchMode = on
-      serpentLine.visible = on
-      serpentMesh.visible = !on
+      applyStrandRender()
       setNodeWire()
       renderToggle.classList.toggle('is-active', on)
       renderToggle.setAttribute('aria-pressed', String(on))
@@ -1066,6 +1108,42 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     const onRenderToggle = () => applySketchMode(!sketchMode)
     renderToggle.addEventListener('click', onRenderToggle)
     cleanups.push(() => renderToggle.removeEventListener('click', onRenderToggle))
+
+    /* ---- POLY TOGGLE — sketch style: longitudinal line trace vs
+       faceted polygon wireframe. Only visible while in sketch mode,
+       but the state is independent so it composes either way. */
+    function applyPolyMode(on: boolean) {
+      polyMode = on
+      applyStrandRender()
+      polyToggle.classList.toggle('is-active', on)
+      polyToggle.setAttribute('aria-pressed', String(on))
+      polyToggle.textContent = on ? 'lines' : 'poly'
+    }
+    const onPolyToggle = () => applyPolyMode(!polyMode)
+    polyToggle.addEventListener('click', onPolyToggle)
+    cleanups.push(() => polyToggle.removeEventListener('click', onPolyToggle))
+
+    /* ---- ROD TOGGLE — trace the central rod as a --bg-coloured
+       wireframe (shaft + bands) so it reads as a faint outline.
+       Knob keeps its crimson accent. */
+    function applyRodTrace(on: boolean) {
+      rodTrace = on
+      const col = rodColour()
+      const shaft = rod.userData.shaft.material as THREE.MeshStandardMaterial
+      shaft.wireframe = on
+      shaft.color.copy(col)
+      ;(rod.userData.bands as THREE.Mesh[]).forEach((b) => {
+        const m = b.material as THREE.MeshStandardMaterial
+        m.wireframe = on
+        m.color.copy(col)
+      })
+      rodToggle.classList.toggle('is-active', on)
+      rodToggle.setAttribute('aria-pressed', String(on))
+      rodToggle.textContent = on ? 'rod solid' : 'rod trace'
+    }
+    const onRodToggle = () => applyRodTrace(!rodTrace)
+    rodToggle.addEventListener('click', onRodToggle)
+    cleanups.push(() => rodToggle.removeEventListener('click', onRodToggle))
 
     /* ---- NODE TOGGLE — keep the orbs solid/opaque in sketch mode.
        Independent of the coil toggle; when active the grape orbs
@@ -1265,13 +1343,23 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           (#theme-switch) + menu button (#menu-open). All wired in the
           effect by id. */}
       <nav className="nav">
-        <a href="#" className="nav-mark">mentheon<span className="star">✲</span></a>
+        {/* Nav brand mark — swap public/helix-logo.svg for your own
+            (keep the filename, or change the src below). */}
+        <a href="#" className="nav-mark" aria-label="Mentheon">
+          <img
+            className="nav-mark-logo"
+            src={`${import.meta.env.BASE_URL}favvectorprint.svg`}
+            alt="Mentheon"
+          />
+        </a>
         <div className="nav-controls">
           <div className="view-toggle" id="view-toggle" role="tablist" aria-label="View mode">
             <button className="is-active" data-view="helix" role="tab" aria-selected="true">staff</button>
             <button data-view="list" role="tab" aria-selected="false">list</button>
           </div>
           <button className="render-toggle" id="render-toggle" type="button" aria-pressed="false" aria-label="Toggle sketch render">sketch</button>
+          <button className="render-toggle" id="poly-toggle" type="button" aria-pressed="false" aria-label="Toggle polygon trace">poly</button>
+          <button className="render-toggle" id="rod-toggle" type="button" aria-pressed="false" aria-label="Toggle rod trace">rod trace</button>
           <button className="render-toggle" id="node-toggle" type="button" aria-pressed="false" aria-label="Toggle solid nodes">solid nodes</button>
           <button className="theme-switch" id="theme-switch" aria-label="Toggle theme">
             <svg className="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" /></svg>
@@ -1302,7 +1390,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
         {/* The big editorial headline. `.accent` is the crimson word. */}
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
-          <h1 className="title">Six strands<br />around one <span className="accent">arc</span>.</h1>
+          <h1 className="title">A new <br />era of <span className="accent">Digital <br/> Health</span>.</h1>
         </div>
 
         <div className="node-labels" id="node-labels" />
