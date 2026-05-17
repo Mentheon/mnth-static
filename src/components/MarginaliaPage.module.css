@@ -1,0 +1,257 @@
+/* MarginaliaPage — replaces the shared Header on the #marginalia
+   route with the Helix3D-style control bar: small corner logo,
+   text-size A−/A+, brightness (light/dark) toggle, and a hamburger
+   menu + full-screen overlay. Theme is scoped here (data-theme on
+   .root) so the rest of the site is untouched; the dark block just
+   re-points the global colour tokens the Marginalia subtree reads.
+   Note: submodules using hard-coded hex won't flip — token-driven
+   ones do. This is the "for now" port; menubar may be unified later. */
+
+.root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  /* line colour used by the control borders; flips with theme */
+  --line: rgba(47, 1, 71, 0.20);
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+/* Dark: re-point the global tokens for this subtree only. */
+.root[data-theme='dark'] {
+  --bg: #1A0226;
+  --ink: #FFECE1;
+  --plum: #2A0B3A;
+  --crimson: #D63158;
+  --grape: #C589B5;
+  --white: #FFECE1;
+  --strand-default: #C589B5;
+  --strand-selected: #D63158;
+  --line: rgba(255, 236, 225, 0.22);
+}
+
+/* ---- top bar ---- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.35s ease;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.markLogo {
+  height: 30px;
+  width: auto;
+  display: block;
+}
+.markLogoLight { display: block; }
+.markLogoDark { display: none; }
+.root[data-theme='dark'] .markLogoLight { display: none; }
+.root[data-theme='dark'] .markLogoDark { display: block; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* shared control look (text-size, brightness, menu) */
+.textSize,
+.brightness,
+.menuBtn {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.textSize {
+  display: inline-flex;
+  overflow: hidden;
+  padding: 0;
+}
+.textSize button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.textSize button:first-child {
+  border-right: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+.textSize button:last-child { font-size: 0.92rem; }
+.textSize button:hover { background: var(--ink); color: var(--bg); }
+
+.brightness {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.brightness:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
+.brightness svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iconSun { display: none; }
+.iconMoon { display: block; }
+.root[data-theme='dark'] .iconSun { display: block; }
+.root[data-theme='dark'] .iconMoon { display: none; }
+
+.menuBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.menuBtn:hover { border-color: var(--crimson); color: var(--crimson); }
+.menuBtnLines {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.menuBtnLines span {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
+}
+
+/* ---- full-screen menu overlay ---- */
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem 2.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+.menuOverlay.isOpen { opacity: 1; visibility: visible; }
+
+.menuTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.menuKicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.menuClose {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.menuCloseX {
+  width: 18px;
+  height: 18px;
+  position: relative;
+}
+.menuCloseX::before,
+.menuCloseX::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: var(--bg);
+}
+.menuCloseX::before { transform: rotate(45deg); }
+.menuCloseX::after { transform: rotate(-45deg); }
+
+.menuItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.menuItem {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  font-family: 'Lato', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  letter-spacing: -0.01em;
+  color: var(--bg);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.menuItem:hover { color: var(--crimson); transform: translateX(20px); }
+.menuItemNum {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  opacity: 0.5;
+}
+
+.menuBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.menuBottom a {
+  color: var(--bg);
+  opacity: 0.7;
+  text-decoration: none;
+  margin-left: 1.5rem;
+  transition: opacity 0.2s ease;
+}
+.menuBottom a:hover { opacity: 1; }
+
+@media (max-width: 640px) {
+  .topbar { padding: 0.8rem 1rem; }
+  .menuOverlay { padding: 1.5rem 1.25rem; }
+  .menuBottom { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .menuBottom a { margin-left: 0; margin-right: 1.25rem; }
+}

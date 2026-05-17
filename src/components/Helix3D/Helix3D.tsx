@@ -73,7 +73,7 @@ interface Strand {
    separate from src/data/strands.ts. */
 const STRANDS: Strand[] = [
   { id: 'vr-rt',       name: 'VR Reminiscence Therapy',     subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.', icon: 'rings', accent: 'Reminiscence Therapy' },
-  { id: 'attraction',  name: 'Subjective Attraction',       subsidiary: 'Kindreon',  tag: 'caregiving research', synopsis: 'How attractiveness perception forms and shifts in informal caregiving contexts — moving beyond dating-app framings.', icon: 'spark', accent: 'Human Attraction' },
+  { id: 'attraction',  name: 'Subjective Attractiveness',   subsidiary: 'Kindreon',  tag: 'attractiveness research', synopsis: 'General research into how subjective attractiveness is perceived, and how it forms and shifts across people and contexts — beyond narrow dating-app or single-domain framings.', icon: 'spark', accent: 'Subjective Attractiveness' },
   { id: 'analytics',   name: 'Health Analytics',            subsidiary: 'Vitrix',    tag: 'measurement',         synopsis: 'Multimodal signal analysis (ECG, motion, sleep) for real-world health states. Instrumenting what people actually do, not what they self-report.', icon: 'wave', accent: 'Health Analytics' },
   { id: 'cognition',   name: 'Cognitive Decline Modelling', subsidiary: 'Acumentra', tag: 'cognitive research',  synopsis: 'Longitudinal cognition modelling — trajectories, not snapshots. Building tools that respect heterogeneity in ageing minds.', icon: 'brain', accent: 'Cognition Care' },
   { id: 'biomarkers',  name: 'Behavioural Biomarkers',      subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Subtle interaction signatures (gait, typing cadence, voice prosody) as early indicators of change — non-invasive and continuous.', icon: 'pulse', accent: 'Behavioural Biomarkers' },
@@ -117,13 +117,13 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
 
-  /* Boot-splash palette. Resolved from the same per-session theme
-     key the effect uses (default dark), so <LoaderWave> and the
-     initial data-theme match on first paint — no light→dark flash
-     under the loader. */
+  /* Boot-splash palette. Resolved from the shared per-session theme
+     key (`mnth:theme`, also used by the Marginalia page) so light/
+     dark carries across pages; defaults dark here when unset. Read
+     before first paint so data-theme matches with no flash. */
   const [introMode] = useState<LoaderMode>(() => {
     try {
-      const s = sessionStorage.getItem('mnth:helixTheme')
+      const s = sessionStorage.getItem('mnth:theme')
       return s === 'light' || s === 'dark' ? s : 'dark'
     } catch {
       return 'dark'
@@ -1230,13 +1230,13 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
 
     /* ---- THEME (scoped to root element) ----
        data-theme is set on THIS root, never document, so the rest of
-       the site is unaffected. The Helix3D view defaults to DARK; if
-       the user has toggled the theme earlier this browser session,
-       that choice (light or dark) is restored from sessionStorage.
-       The button flips it, persists the new value for the session,
-       and triggers a one-shot scene recolour. Set before initThree()
-       runs in BOOT, so the scene is built in the right palette. */
-    const THEME_KEY = 'mnth:helixTheme'
+       the site is unaffected. Defaults DARK here, but the choice is
+       stored under the SHARED key `mnth:theme` (also read/written by
+       the Marginalia page) so light/dark is preserved when moving
+       between the two. The button flips it, persists it, and triggers
+       a one-shot scene recolour. Set before initThree() runs in BOOT,
+       so the scene is built in the right palette. */
+    const THEME_KEY = 'mnth:theme'
     const themeBtn = $('#theme-switch')!
     let savedTheme: string | null = null
     try { savedTheme = sessionStorage.getItem(THEME_KEY) } catch { /* storage unavailable (private mode) */ }
@@ -1375,10 +1375,17 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
     initCursor()
     initScrollNav()   // wheel/swipe traversal; starts in default view
 
+    // The intro loader plays ONCE per browser session — only on the
+    // first view of the site. Returning to #helix3d later (or a dev
+    // re-render) skips straight to the scene.
+    const INTRO_KEY = 'mnth:helixIntroSeen'
+    let introSeen = false
+    try { introSeen = sessionStorage.getItem(INTRO_KEY) === '1' } catch { /* storage unavailable */ }
+
     ;(async function entry() {
-      if (skipIntro) {
-        // Dev re-render: jump straight to the scene — hide the
-        // loader and start rendering immediately.
+      if (skipIntro || introSeen) {
+        // Already seen this session (or dev re-render): jump straight
+        // to the scene — hide the loader and start rendering now.
         $('#loader')?.classList.add('is-hidden')
         startScene()
         return
@@ -1389,6 +1396,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
       // the scene.
       await runLoader($, reg, () => destroyed)
       if (destroyed) return
+      try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* storage unavailable */ }
       startScene()
     })()
 
@@ -1477,7 +1485,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
             are rendered; helix3d.css shows the right one for the
             current data-theme (no JS needed). Swap those files to
             change the logo. */}
-        <a href="#" className="nav-mark" aria-label="Mentheon">
+        <a href="#helix3d" className="nav-mark" aria-label="Mentheon — home">
           <img
             className="nav-mark-logo nav-mark-logo--light"
             src={`${import.meta.env.BASE_URL}favvectorprintlight.svg`}
@@ -1565,11 +1573,10 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           <button className="menu-close" id="menu-close">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          <a className="menu-item" href="#"><span className="menu-item-num">01</span>research</a>
-          <a className="menu-item" href="#"><span className="menu-item-num">02</span>subsidiaries</a>
-          <a className="menu-item" href="#"><span className="menu-item-num">03</span>publications</a>
-          <a className="menu-item" href="#"><span className="menu-item-num">04</span>about</a>
-          <a className="menu-item" href="#"><span className="menu-item-num">05</span>contact</a>
+          <a className="menu-item" href="#helix3d"><span className="menu-item-num">01</span>home</a>
+          <a className="menu-item" href="#marginalia"><span className="menu-item-num">02</span>marginalia</a>
+          <a className="menu-item" href="#who"><span className="menu-item-num">03</span>who</a>
+          <a className="menu-item" href="#concept"><span className="menu-item-num">04</span>concept</a>
         </div>
         <div className="menu-bottom">
           <span>mentheon ltd · companies house 15974246</span>

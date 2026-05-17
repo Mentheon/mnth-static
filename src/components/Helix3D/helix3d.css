@@ -460,9 +460,8 @@
   display: flex; align-items: baseline; gap: 0.3em;
 }
 .helix3d-root .nav-mark .star { color: var(--crimson); font-size: 0.7em; }
-/* Image brand mark in the nav (replaces the text wordmark). Sized
-   to sit in the ~36px nav band; tweak `height` to taste. */
-.helix3d-root .nav-mark-logo { height: 10rem; width: auto; }
+/* Small square corner logo — matches the Marginalia title bar. */
+.helix3d-root .nav-mark-logo { height: 32px; width: auto; display: block; }
 /* Light/dark logo swap, keyed off the root data-theme (same
    mechanism as .theme-switch's sun/moon). Default = light. */
 .helix3d-root .nav-mark-logo--light { display: block; }
@@ -476,13 +475,13 @@
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
   letter-spacing: 0.18em; text-transform: uppercase;
   background: var(--bg); border: 1px solid var(--ink-soft);
-  border-radius: 2px; padding: 0.25rem;
+  border-radius: 0; padding: 0.25rem;
 }
 .helix3d-root .view-toggle button {
   background: transparent; border: none; padding: 0.45rem 0.9rem;
   color: var(--ink-quiet); font: inherit;
   letter-spacing: inherit; text-transform: inherit;
-  transition: color 0.2s, background 0.2s; border-radius: 1px;
+  transition: color 0.2s, background 0.2s; border-radius: 0;
 }
 .helix3d-root .view-toggle button.is-active { color: var(--bg); background: var(--ink); }
 .helix3d-root .view-toggle button:hover:not(.is-active) { color: var(--ink); }
@@ -492,7 +491,7 @@
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
   letter-spacing: 0.18em; text-transform: uppercase;
   background: var(--bg); border: 1px solid var(--ink-soft);
-  border-radius: 2px; padding: 0.45rem 0.9rem;
+  border-radius: 0; padding: 0.45rem 0.9rem;
   color: var(--ink-quiet);
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
@@ -501,32 +500,39 @@
   color: var(--bg); background: var(--ink); border-color: var(--ink);
 }
 
-/* Text-size control — minimal segmented A− / A+ pair. The two
-   glyph sizes hint smaller/larger; sits next to the theme switch. */
+/* Text-size control — kept identical to the global NavBar's
+   .textSize (same font, weight, colour, padding, glyph sizes,
+   hover) so the bar is consistent between pages. Only the border
+   token differs (--ink-soft tracks the Helix3D-scoped theme;
+   NavBar's --line tracks the global one). */
 .helix3d-root .text-size {
   display: inline-flex; align-items: stretch;
   background: var(--bg); border: 1px solid var(--ink-soft);
-  border-radius: 2px;
+  border-radius: 0;
+  font-family: 'JetBrains Mono', monospace;
 }
 .helix3d-root .text-size button {
-  font-family: 'JetBrains Mono', monospace; font-weight: 700;
-  line-height: 1; color: var(--ink-quiet);
-  background: none; padding: 0.35rem 0.6rem;
+  font: inherit; line-height: 1; color: var(--ink);
+  background: none; border: 0;
+  /* Equal-width cells so A− / A+ match despite different glyph
+     sizes (the size difference is the smaller/larger hint). */
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.4rem; height: 2rem; padding: 0; letter-spacing: 0.04em;
   transition: color 0.2s, background 0.2s;
 }
 .helix3d-root .text-size button:first-child {
-  font-size: 0.65rem; border-right: 1px solid var(--ink-soft);
+  font-size: 0.78rem; border-right: 1px solid var(--ink-soft);
 }
-.helix3d-root .text-size button:last-child { font-size: 0.85rem; }
+.helix3d-root .text-size button:last-child { font-size: 0.92rem; }
 .helix3d-root .text-size button:hover { color: var(--bg); background: var(--ink); }
 
 .helix3d-root .theme-switch {
-  width: 36px; height: 36px;
+  width: 34px; height: 32px;
   background: var(--bg); border: 1px solid var(--ink-soft);
-  border-radius: 50%;
+  border-radius: 0;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--ink);
-  transition: background 0.2s, border-color 0.2s, transform 0.4s var(--ease-out);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease-out);
 }
 .helix3d-root .theme-switch:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
 .helix3d-root .theme-switch svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -538,12 +544,15 @@
 .helix3d-root .menu-btn {
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
   letter-spacing: 0.18em; text-transform: uppercase;
-  background: transparent; border: none; color: var(--ink);
-  padding: 0.5rem 0.8rem;
-  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: var(--bg); border: 1px solid var(--ink-soft);
+  border-radius: 0; color: var(--ink);
+  padding: 0.45rem 0.7rem;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  transition: color 0.2s, border-color 0.2s;
 }
+.helix3d-root .menu-btn:hover { border-color: var(--crimson); color: var(--crimson); }
 .helix3d-root .menu-btn-lines { display: inline-flex; flex-direction: column; gap: 4px; }
-.helix3d-root .menu-btn-lines span { display: block; width: 16px; height: 1.5px; background: var(--ink); }
+.helix3d-root .menu-btn-lines span { display: block; width: 16px; height: 1.5px; background: currentColor; }
 
 /* ====== STAGE ====== */
 .helix3d-root .stage {

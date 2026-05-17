@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment, type ReactNode } from 'react'
-import Header from './components/Header'
+import NavBar from './components/NavBar'
 import WhoPage from './components/WhoPage'
 import ConceptView from './components/ConceptView'
 import Helix3D from './components/Helix3D/Helix3D'
@@ -78,9 +78,12 @@ export default function App() {
     const queryStr = hash.includes('?') ? hash.split('?').slice(1).join('?') : ''
     const strandFilter = new URLSearchParams(queryStr).get('strand')
 
+    // Global NavBar (replaces the archived Header/GridNav +
+    // MarginaliaPage). Light/dark is global via NavBar → <html>
+    // data-theme; menu items are consistent with the Helix3D nav.
     content = (
       <>
-        <Header currentHash={hash} />
+        <NavBar />
         {page === 'who' ? (
           <WhoPage />
         ) : page === 'loaders' ? (

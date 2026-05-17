@@ -8,6 +8,23 @@
   --strand-default:  #9C528B;
   --strand-selected: #A30B37;
   --strand-hover-scale: 1.12;
+  --line: rgba(47, 1, 71, 0.20);
+}
+
+/* Global dark theme — NavBar sets data-theme="dark" on <html>; this
+   re-points the colour tokens so every token-driven page flips.
+   (Helix3D scopes its OWN tokens on .helix3d-root and is unaffected.
+   Hard-coded hex in components won't flip — token-driven CSS does.) */
+:root[data-theme="dark"] {
+  --bg:             #1A0226;
+  --ink:            #FFECE1;
+  --plum:           #2A0B3A;
+  --crimson:        #D63158;
+  --grape:          #C589B5;
+  --white:          #FFECE1;
+  --strand-default:  #C589B5;
+  --strand-selected: #D63158;
+  --line: rgba(255, 236, 225, 0.22);
 }
 
 *,
@@ -23,6 +40,7 @@ body {
   font-family: 'Lato', sans-serif;
   background-color: var(--bg);
   color: var(--ink);
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 a {

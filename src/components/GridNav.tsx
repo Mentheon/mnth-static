@@ -1,3 +1,5 @@
+/* ARCHIVED — disused. Was only used by the archived Header.tsx;
+   superseded by the global NavBar. Kept for reference. */
 import styles from './GridNav.module.css'
 
 const NAV_ITEMS = [

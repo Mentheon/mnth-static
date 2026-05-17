@@ -1,3 +1,6 @@
+/* ARCHIVED — disused. Superseded by the global NavBar
+   (src/components/NavBar.tsx). Kept for reference; no longer
+   imported anywhere. Pair: GridNav.tsx. */
 import { useEffect, useRef, useState } from 'react'
 import GridNav from './GridNav'
 import styles from './Header.module.css'
@@ -108,12 +111,14 @@ export default function Header({ currentHash }: HeaderProps) {
     >
       <div className={styles.siteOverlay}>
         <div className={styles.logoWrap}>
-          <img
-            src={`${import.meta.env.BASE_URL}web-svg.svg`}
-            alt="Mentheon Logo"
-            width={518}
-            height={170}
-          />
+          <a href="#helix3d" aria-label="Mentheon — home">
+            <img
+              src={`${import.meta.env.BASE_URL}web-svg.svg`}
+              alt="Mentheon Logo"
+              width={518}
+              height={170}
+            />
+          </a>
         </div>
         <GridNav currentHash={currentHash} />
       </div>

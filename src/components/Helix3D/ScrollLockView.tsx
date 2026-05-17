@@ -61,7 +61,7 @@ interface Strand {
    separate from src/data/strands.ts. */
 const STRANDS: Strand[] = [
   { id: 'vr-rt',       name: 'VR Reminiscence Therapy',     subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Personalised, low-stimulation virtual environments as a digital therapeutic for people living with dementia.', icon: 'rings' },
-  { id: 'attraction',  name: 'Subjective Attraction',       subsidiary: 'Kindreon',  tag: 'caregiving research', synopsis: 'How attractiveness perception forms and shifts in informal caregiving contexts — moving beyond dating-app framings.', icon: 'spark' },
+  { id: 'attraction',  name: 'Subjective Attractiveness',   subsidiary: 'Kindreon',  tag: 'attractiveness research', synopsis: 'General research into how subjective attractiveness is perceived, and how it forms and shifts across people and contexts — beyond narrow dating-app or single-domain framings.', icon: 'spark' },
   { id: 'analytics',   name: 'Health Analytics',            subsidiary: 'Vitrix',    tag: 'measurement',         synopsis: 'Multimodal signal analysis (ECG, motion, sleep) for real-world health states. Instrumenting what people actually do, not what they self-report.', icon: 'wave' },
   { id: 'cognition',   name: 'Cognitive Decline Modelling', subsidiary: 'Acumentra', tag: 'cognitive research',  synopsis: 'Longitudinal cognition modelling — trajectories, not snapshots. Building tools that respect heterogeneity in ageing minds.', icon: 'brain' },
   { id: 'biomarkers',  name: 'Behavioural Biomarkers',      subsidiary: 'Aevorix',   tag: 'ageing technology',   synopsis: 'Subtle interaction signatures (gait, typing cadence, voice prosody) as early indicators of change — non-invasive and continuous.', icon: 'pulse' },
