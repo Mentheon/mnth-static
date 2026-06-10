@@ -42,7 +42,7 @@ export default function App() {
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
     isMarginaliaRoute   ? 'marginalia' :
-    'home'
+    'helix3d'
 
   let content: ReactNode
   if (page === 'helix3d') {
@@ -94,10 +94,10 @@ export default function App() {
         ) : page === 'marginalia' ? (
           <Marginalia slug={marginaliaSlug} strandFilter={strandFilter} />
         ) : (
-          // Default + #concept both render the ConceptView. The
-          // legacy home view (HomeMashup → RDStrands → Helix →
-          // StrandPanel) is intentionally unwired right now; recover
-          // it from git history if you want it back as a route.
+          // `#concept` renders the ConceptView. The legacy home view
+          // (HomeMashup → RDStrands → Helix → StrandPanel) is
+          // intentionally unwired right now; recover it from git
+          // history if you want it back as a route.
           <ConceptView />
         )}
       </>
