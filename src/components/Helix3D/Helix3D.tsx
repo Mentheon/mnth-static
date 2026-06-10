@@ -1485,7 +1485,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
             are rendered; helix3d.css shows the right one for the
             current data-theme (no JS needed). Swap those files to
             change the logo. */}
-        <a href="#helix3d" className="nav-mark" aria-label="Mentheon — home">
+        <a href="#helix3d?skipIntro=true" className="nav-mark" aria-label="Mentheon — home">
           <img
             className="nav-mark-logo nav-mark-logo--light"
             src={`${import.meta.env.BASE_URL}favvectorprintlight.svg`}
@@ -1573,7 +1573,7 @@ export default function Helix3D({ skipIntro = false }: { skipIntro?: boolean } =
           <button className="menu-close" id="menu-close">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          <a className="menu-item" href="#helix3d"><span className="menu-item-num">01</span>home</a>
+          <a className="menu-item" href="#helix3d?skipIntro=true"><span className="menu-item-num">01</span>home</a>
           <a className="menu-item" href="#marginalia"><span className="menu-item-num">02</span>marginalia</a>
           <a className="menu-item" href="#who"><span className="menu-item-num">03</span>who</a>
           <a className="menu-item" href="#concept"><span className="menu-item-num">04</span>concept</a>

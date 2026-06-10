@@ -33,9 +33,14 @@ export default function App() {
   const hashPath = hash.split('?')[0]
   const isMarginaliaRoute =
     hashPath === '#marginalia' || hashPath.startsWith('#marginalia/')
+  // `#helix3d?skipIntro=true` — back traversals home carry this param so
+  // returning to the scene doesn't replay the loader/gate intro. Only the
+  // very first navigation onto the site (no param) plays the intro.
+  const wantsSkipIntro = new URLSearchParams(
+    hash.includes('?') ? hash.split('?').slice(1).join('?') : ''
+  ).get('skipIntro') === 'true'
   const page =
-    hash === '#helix3d'    ? 'helix3d'    :
-    hash === '#helix3d?skipIntro=true' ? 'helix3d'    : // explicit skipIntro param also routes to helix3d
+    hashPath === '#helix3d' ? 'helix3d'    : // bare or ?skipIntro=true both route to helix3d
     hash === '#scrolllock' ? 'scrolllock' :
     hash === '#who'     ? 'who'        :
     hash === '#loaders' ? 'loaders'    :
@@ -50,7 +55,7 @@ export default function App() {
     // Marginalia tab) — rendered standalone, no shared Header.
     // First load (renderKey 0) plays the loader/gate intro; any
     // dev re-render (renderKey > 0) skips straight to the scene.
-    content = <Helix3D skipIntro={renderKey > 0} />
+    content = <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
   } else if (page === 'scrolllock') {
     // Frozen scroll-locked variant of the same 3D concept.
     content = <ScrollLockView />

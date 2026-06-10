@@ -25,7 +25,7 @@ const THEME_KEY = 'mnth:theme';
 
 // Keep this list identical to the Helix3D in-scene menu overlay.
 const MENU = [
-  { num: '01', label: 'home', href: '#helix3d' },
+  { num: '01', label: 'home', href: '#helix3d?skipIntro=true' },
   { num: '02', label: 'marginalia', href: '#marginalia' },
   { num: '03', label: 'who', href: '#who' },
   { num: '04', label: 'concept', href: '#concept' },
@@ -85,7 +85,7 @@ export default function NavBar() {
   return (
     <>
       <header className={styles.bar} ref={barRef}>
-        <a href="#helix3d" className={styles.mark} aria-label="Mentheon — home">
+        <a href="#helix3d?skipIntro=true" className={styles.mark} aria-label="Mentheon — home">
           <img
             className={`${styles.markLogo} ${styles.markLogoLight}`}
             src={`${BASE}favvectorprintlight.svg`}
