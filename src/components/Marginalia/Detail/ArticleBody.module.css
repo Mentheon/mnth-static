@@ -50,11 +50,15 @@
   padding: 0.2rem 0 0.2rem 1.2rem;
   margin: 1.4rem 0;
   font-style: italic;
-  color: var(--plum);
+  /* --ink (not --plum): plum is a dark surface tone in both themes, so
+     using it as text reads dark-on-dark in dark mode. Ink flips with the
+     theme and stays legible; opacity keeps the quote visually softer. */
+  color: var(--ink);
+  opacity: 0.85;
   max-width: 65ch;
 }
 
-.body blockquote p { margin: 0.4rem 0; color: var(--plum); }
+.body blockquote p { margin: 0.4rem 0; }
 
 .body a {
   color: var(--ink);
@@ -130,7 +134,9 @@
 
 /* On-brand syntax-highlight palette. Crimson keywords, plum strings,
    ink-quiet comments, grape numerals/literals. Hits the `common`
-   highlight.js token classes; anything not matched stays ink. */
+   highlight.js token classes; anything not matched stays ink. Every
+   colour resolves through a theme token so the palette flips with
+   light/dark (strings via --code-string — plum reads dark-on-dark). */
 
 .body :global(.hljs-keyword),
 .body :global(.hljs-selector-tag),
@@ -139,7 +145,7 @@
 
 .body :global(.hljs-string),
 .body :global(.hljs-attr),
-.body :global(.hljs-template-variable) { color: var(--plum); }
+.body :global(.hljs-template-variable) { color: var(--code-string); }
 
 .body :global(.hljs-comment),
 .body :global(.hljs-meta),

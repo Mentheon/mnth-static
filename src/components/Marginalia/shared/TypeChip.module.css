@@ -14,6 +14,8 @@
 }
 
 .chipCrimson { background: var(--crimson); }
-.chipPlum    { background: var(--plum); }
+/* Plum stays a dark surface in both themes, so the cream type can't ride
+   the theme-flipping --bg (that goes dark in dark mode). Pin it to cream. */
+.chipPlum    { background: var(--plum); color: var(--white); }
 .chipInk     { background: var(--ink); }
 .chipGrape   { background: var(--grape); }
