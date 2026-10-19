@@ -32,6 +32,9 @@
 }
 
 .tab {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
   position: absolute;
   right: 0;
   top: 50%;

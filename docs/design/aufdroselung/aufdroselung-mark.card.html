@@ -1,0 +1,14 @@
+<!-- @dsCard group="Aufdröselung" viewport="700x190" name="Aufdröselung mark" subtitle="Crimson product tile: Mentheon emblem in cream + Lato 900 “a”" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans)}
+.wrap{padding:18px 20px;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.it{display:flex;flex-direction:column;gap:6px;align-items:center}
+.it img{image-rendering:pixelated;display:block}
+.lbl{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-quiet)}
+.dark{background:#1A0226;padding:14px;display:flex;gap:14px;align-items:flex-end}
+.flip{width:130px;height:130px;perspective:600px}
+.flip .in{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:flip 8s cubic-bezier(.65,0,.35,1) infinite}
+.flip img{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden}
+.flip img+img{transform:rotateY(180deg)}
+@keyframes flip{0%,32.5%{transform:rotateY(0)}50%,82.5%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+</style></head><body><div class="wrap"><div class="it"><img src="../assets/logo.svg" width="130" height="130" alt="mentheon"><span class="lbl">mentheon</span></div><div class="it"><img src="../assets/aufdroselung/aufdroselung-logo.svg" width="130" height="130" alt="aufdröselung"><span class="lbl">aufdröselung</span></div><div class="it"><div class="flip"><div class="in"><img src="../assets/logo.svg" alt=""><img src="../assets/aufdroselung/aufdroselung-logo.svg" alt=""></div></div><span class="lbl">flip · 2.6s hold · 1.4s turn</span></div><div class="it"><div class="dark"><img src="../assets/aufdroselung/aufdroselung-logo.svg" width="64" height="64" alt=""><img src="../assets/aufdroselung/aufdroselung-logo.svg" width="32" height="32" alt=""><img src="../assets/aufdroselung/aufdroselung-logo.svg" width="16" height="16" alt=""></div><span class="lbl">on dark · 64 / 32 / 16</span></div></div></body></html>

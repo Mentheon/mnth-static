@@ -66,3 +66,7 @@
   color: var(--crimson);
   gap: 0.7rem;
 }
+
+/* Back chip + breadcrumb, aligned with the 1280px plate below. */
+.backRow.backRow { max-width: 1280px; margin: 1.5rem auto 0; padding: 0 3rem; box-sizing: border-box; }
+@media (max-width: 880px) { .backRow.backRow { padding: 0 1.25rem; } }
