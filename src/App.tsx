@@ -7,7 +7,11 @@ import ScrollLockView from './components/Helix3D/ScrollLockView'
 import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
 import LoaderGallery from './components/LoaderGallery'
-import { STRANDS } from './data/strands'
+import { STRANDS, STRAND_PAGES } from './data/strands'
+import {
+  FrameworkPage, CategoryPage, PlasmidsPage, RegisterPage, OutputPage, InfrastructurePage, ServicesPage, NotFoundPage,
+} from './components/Framework/pages'
+import { categoryById, outputById, type CategoryId } from './data/framework'
 
 function useHash() {
   const [hash, setHash] = useState(window.location.hash)
@@ -47,6 +51,14 @@ export default function App() {
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
     isMarginaliaRoute   ? 'marginalia' :
+    // Structure v3 routes
+    hashPath === '#framework'       ? 'framework' :
+    hashPath === '#register'        ? 'register' :
+    hashPath === '#plasmids'        ? 'plasmids' :
+    hashPath === '#infrastructure'  ? 'infrastructure' :
+    hashPath === '#services'        ? 'services' :
+    hashPath.startsWith('#category/') ? 'category' :
+    hashPath.startsWith('#output/')   ? 'output' :
     'helix3d'
 
   let content: ReactNode
@@ -60,15 +72,20 @@ export default function App() {
     // Frozen scroll-locked variant of the same 3D concept.
     content = <ScrollLockView />
   } else {
-    // Pick the strand the route is asking for. If `#strand/<id>`
-    // matches a known strand, use that; otherwise fall back to the
-    // first strand with populated `progress` data (currently
-    // Kindreon, the VR Reminiscence Therapy demo).
-    const requestedId = hash.startsWith('#strand/') ? hash.slice('#strand/'.length) : null
+    // Pick the strand the route is asking for. `#strand/<id>` resolves
+    // first against STRAND_PAGES — one full detail page per helix rung
+    // (vr-rt, attraction, analytics, cognition, biomarkers, platform),
+    // which is what the in-scene "See full work strand" CTAs link to.
+    // Fall back to the legacy STRANDS set, then to the first page with
+    // populated `progress` data. Strip any `?query` from the id first.
+    const requestedId = hash.startsWith('#strand/')
+      ? hash.slice('#strand/'.length).split('?')[0]
+      : null
     const detailStrand =
-      (requestedId ? STRANDS.find(s => s.id === requestedId) : null)
-      ?? STRANDS.find(s => s.progress)
-      ?? STRANDS[0]
+      (requestedId ? STRAND_PAGES.find(s => s.id === requestedId) : null)
+      ?? (requestedId ? STRANDS.find(s => s.id === requestedId) : null)
+      ?? STRAND_PAGES.find(s => s.progress)
+      ?? STRAND_PAGES[0]
 
     // Mirror the `#strand/<id>` slug-extraction pattern. `null` means
     // we're on the index/list view; any other value asks for the
@@ -98,6 +115,27 @@ export default function App() {
           <StrandDetail strand={detailStrand} progress={detailStrand.progress} />
         ) : page === 'marginalia' ? (
           <Marginalia slug={marginaliaSlug} strandFilter={strandFilter} />
+        ) : page === 'framework' ? (
+          <FrameworkPage />
+        ) : page === 'register' ? (
+          <RegisterPage query={new URLSearchParams(queryStr)} />
+        ) : page === 'plasmids' ? (
+          <PlasmidsPage />
+        ) : page === 'infrastructure' ? (
+          <InfrastructurePage />
+        ) : page === 'services' ? (
+          <ServicesPage />
+        ) : page === 'category' ? (
+          (() => {
+            const id = hashPath.slice('#category/'.length)
+            const c = categoryById(id)
+            return !c ? <NotFoundPage what="category" /> : c.id === 'plasmids' ? <PlasmidsPage /> : <CategoryPage key={c.id} id={c.id as CategoryId} />
+          })()
+        ) : page === 'output' ? (
+          (() => {
+            const o = outputById(hashPath.slice('#output/'.length))
+            return o ? <OutputPage key={o.id} o={o} /> : <NotFoundPage what="output" />
+          })()
         ) : (
           // `#concept` renders the ConceptView. The legacy home view
           // (HomeMashup → RDStrands → Helix → StrandPanel) is

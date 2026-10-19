@@ -19,7 +19,12 @@ const MAX_PULL = 18    // px — tab travel toward the cursor
 const MAX_REVEAL = 26  // px — exposed inverse-theme band width
 const EASE = 0.2       // per-frame approach factor (exp smoothing)
 
-export default function MarginaliaTab() {
+/* Same tab, reversed: on Marginalia pages it reads "Back to helix"
+   and peels to the helix's blueprint (inverse) ground. Theme is read
+   from .helix3d-root when present, else from <html data-theme>. */
+export default function MarginaliaTab({
+  href = '#marginalia', label = 'Marginalia', ariaLabel = 'Open Marginalia',
+}: { href?: string; label?: string; ariaLabel?: string } = {}) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const bandRef = useRef<HTMLSpanElement>(null)
 
@@ -50,7 +55,7 @@ export default function MarginaliaTab() {
 
       // Opposite of the current theme; recomputed each frame so it
       // tracks the theme-switch button at runtime.
-      const dark = root?.getAttribute('data-theme') === 'dark'
+      const dark = (root ?? document.documentElement).getAttribute('data-theme') === 'dark'
       band.style.background = dark ? LIGHT_BG : DARK_BG
 
       raf = requestAnimationFrame(tick)
@@ -68,11 +73,11 @@ export default function MarginaliaTab() {
       <span className={styles.band} ref={bandRef} aria-hidden="true" />
       <a
         className={styles.tab}
-        href="#marginalia"
-        aria-label="Open Marginalia"
+        href={href}
+        aria-label={ariaLabel}
       >
         <span className={styles.star} aria-hidden="true">✲</span>
-        <span className={styles.text}>Marginalia</span>
+        <span className={styles.text}>{label}</span>
       </a>
     </div>
   )

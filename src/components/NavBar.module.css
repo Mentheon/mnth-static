@@ -238,3 +238,6 @@
   .menuBottom { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
   .menuBottom a { margin-left: 0; margin-right: 1.25rem; }
 }
+
+/* Controls aren't highlightable. */
+.bar, :global(button) { -webkit-user-select: none; user-select: none; }

@@ -1,0 +1,21 @@
+/* Product mark tile (direction 3b) — shared by the staff windows and
+   the project pages. Grape ground by default (cream in dark),
+   crimson when selected. Size it with width/height on .ptile. */
+.ptile {
+  position: relative; display: block; width: 44px; height: 44px; flex: none;
+  background: #9C528B; color: #FFECE1;
+  transition: background-color 0.2s, color 0.2s;
+}
+:root[data-theme="dark"] .ptile, .helix3d-root[data-theme="dark"] .ptile { background: #FFECE1; color: #9C528B; }
+.ptile-emblem {
+  position: absolute; inset: 0; background: currentColor;
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+.ptile svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.ptile .pt-ink { fill: currentColor; }
+.ptile .pt-initial { font-family: 'Lato', sans-serif; font-weight: 900; }
+.ptile .pt-plate { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+.ptile.is-selected { background: var(--crimson); color: #FFECE1; }
+/* Aufdröselung pair: plum (light) / cream (dark), matching Essen's icon. */
+.ptile.is-pair { background: #2F0147; color: #FFECE1; }
+:root[data-theme="dark"] .ptile.is-pair, .helix3d-root[data-theme="dark"] .ptile.is-pair { background: #FFECE1; color: #2F0147; }

@@ -541,6 +541,18 @@
 .helix3d-root[data-theme="dark"] .theme-switch .icon-sun  { display: block; }
 .helix3d-root[data-theme="dark"] .theme-switch .icon-moon { display: none; }
 
+/* Navigation help toggle — sits beside the theme switch so the
+   help pop-out can always be brought back after it's dismissed. */
+.helix3d-root .help-btn {
+  width: 34px; height: 32px;
+  background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.helix3d-root .help-btn:hover,
+.helix3d-root .help-btn.is-on { border-color: var(--crimson); color: var(--crimson); }
+
 .helix3d-root .menu-btn {
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
   letter-spacing: 0.18em; text-transform: uppercase;
@@ -616,21 +628,30 @@
   transform: translateY(-50%);
   /* Alignment gap so the text sits slightly off the pip (clears the
      pip's 3px box-shadow ring) rather than butting against it. */
-  margin-left: 18px;
+  margin-left: calc(18px + var(--side-gap, 0px));
   max-width: 200px;
   text-align: left;
+}
+/* Focused node with its selection tiles expanded: the label sits
+   centred above the sphere (tiles own the sides). */
+.helix3d-root .node-label.is-top .node-label-text,
+.helix3d-root .node-label.is-top.is-left .node-label-text {
+  left: 50%; right: auto; top: auto; bottom: 100%;
+  transform: translate(-50%, -64px);
+  margin: 0; text-align: center;
 }
 .helix3d-root .node-label.is-left .node-label-text {
   left: auto;
   right: 100%;
   margin-left: 0;
-  margin-right: 18px;
+  margin-right: calc(18px + var(--side-gap, 0px));
   text-align: right;
 }
 .helix3d-root .node-label-name {
   font-family: 'Lato', sans-serif; font-weight: 700;
-  font-size: 0.78rem; letter-spacing: -0.005em;
-  color: var(--ink); line-height: 1.15;
+  font-size: 1.4rem; letter-spacing: -0.01em;
+  color: var(--ink); line-height: 1.1;
+  position: relative;
   transition: color 0.2s;
   padding: 0.18rem 0.45rem;
   background: rgba(var(--fog-color), 0.85);
@@ -642,7 +663,7 @@
   display: inline-block;
 }
 .helix3d-root .node-label-sub {
-  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
   letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--ink-quiet); padding: 0 0.45rem;
   margin-top: 0.12rem;
@@ -912,7 +933,310 @@
   cursor: none;
 }
 
+/* ====== STRAND WINDOW — movable / resizable chrome ======
+   Wraps the StrandPanel in a title bar (drag to move, double-click
+   to maximise) with min / max / × controls and a corner resize grip.
+   .is-dock = tethered beside the node (transform set per frame);
+   .is-free = user geometry (inline transform/width/height);
+   .is-max  = fills the stage inside the chrome. The title bar is an
+   ink block with cream mono type, like the footer strip, so it
+   inverts with the theme. */
+.helix3d-root .strand-win { display: flex; flex-direction: column; }
+.helix3d-root .strand-win-crop {
+  position: absolute; top: -12px; left: -12px; width: 24px; height: 24px; z-index: 2;
+  border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson);
+  pointer-events: none;
+}
+.helix3d-root .strand-win-bar {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  height: 34px; padding: 0 0.35rem 0 1rem;
+  background: var(--ink); color: var(--bg);
+  border: 2px solid var(--ink); border-bottom: none; border-radius: 2px 2px 0 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  user-select: none; touch-action: none;
+}
+.helix3d-root .strand-win.is-free .strand-win-bar,
+.helix3d-root .strand-win.is-dock .strand-win-bar { cursor: none; }
+.helix3d-root .strand-win-title { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.helix3d-root .strand-win-ctrls { display: flex; align-items: stretch; gap: 2px; flex: none; }
+.helix3d-root .strand-win-ctrls button {
+  font: inherit; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--bg); padding: 0.4rem 0.6rem; border-radius: 2px;
+  transition: color 0.16s, background-color 0.16s;
+}
+.helix3d-root .strand-win-ctrls button:hover:not(:disabled) { color: var(--crimson); background: var(--bg); }
+.helix3d-root .strand-win-ctrls button:disabled { opacity: 0.4; }
+.helix3d-root .strand-win-ctrls button.is-on { box-shadow: inset 0 -2px 0 var(--crimson); }
+.helix3d-root .strand-win-ctrls .strand-win-close { font-family: 'Lato', sans-serif; font-size: 1.25rem; line-height: 1; letter-spacing: 0; padding: 0.15rem 0.55rem 0.25rem; }
+.helix3d-root .strand-win-body { flex: 1 1 auto; min-height: 0; }
+/* The panel's own top margin / crop / top border are replaced by the bar. */
+.helix3d-root .strand-win-body > div { margin-top: 0; }
+.helix3d-root .strand-win-body > div > div { border-top: none; border-radius: 0 0 2px 2px; }
+.helix3d-root .strand-win-body > div > div > div[aria-hidden="true"]:first-child { display: none; }
+.helix3d-root .strand-win.is-free .strand-win-body,
+.helix3d-root .strand-win.is-max .strand-win-body { overflow: auto; }
+.helix3d-root .strand-win.is-free .strand-win-body > div,
+.helix3d-root .strand-win.is-max .strand-win-body > div { max-height: none; min-height: 100%; }
+.helix3d-root .strand-win.is-free .strand-win-body > div > div,
+.helix3d-root .strand-win.is-max .strand-win-body > div > div { min-height: 100%; }
+.helix3d-root .strand-win.is-max {
+  transform: none !important;
+  left: 2rem; right: 2rem; top: calc(36px + 4.6rem); bottom: 4.2rem;
+  width: auto; height: auto;
+}
+.helix3d-root .strand-win-grip {
+  position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; z-index: 2;
+  touch-action: none;
+  background:
+    linear-gradient(135deg, transparent 0 55%, var(--ink-quiet) 55% 60%, transparent 60% 72%, var(--ink-quiet) 72% 77%, transparent 77%);
+}
+.helix3d-root .strand-win-grip:hover {
+  background:
+    linear-gradient(135deg, transparent 0 55%, var(--crimson) 55% 60%, transparent 60% 72%, var(--crimson) 72% 77%, transparent 77%);
+}
+
+/* ====== NAVIGATION POP-OUT — top right ======
+   Same surface as the old peek card (page colour, ink-soft hairline,
+   md shadow) with the crimson corner crop. Keys are mono caps. */
+.helix3d-root .helix-help {
+  position: absolute; z-index: 45;
+  top: calc(36px + 4.4rem); right: 2rem;
+  width: 300px; padding: 0.75rem 1rem 0.8rem;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  box-shadow: var(--shadow-md);
+  font-family: 'Lato', sans-serif;
+  animation: helixHelpIn 0.5s var(--ease-out) both;
+}
+@keyframes helixHelpIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.helix3d-root .helix-help-crop {
+  position: absolute; top: -10px; right: -10px; width: 20px; height: 20px;
+  border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson);
+  pointer-events: none;
+}
+.helix3d-root .helix-help-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 0.6rem; margin-bottom: 0.7rem;
+  border-bottom: 1px solid var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; white-space: nowrap;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--grape);
+}
+.helix3d-root .helix-help-head .star { color: var(--crimson); }
+.helix3d-root .helix-help-close {
+  color: var(--ink); font-family: 'Lato', sans-serif; font-size: 1.3rem; line-height: 1;
+  padding: 0 0.2rem; transition: color 0.2s;
+}
+.helix3d-root .helix-help-close:hover { color: var(--crimson); }
+.helix3d-root .helix-help-rows { margin: 0; display: grid; gap: 0.4rem; }
+.helix3d-root .helix-help-rows > div { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.75rem; align-items: baseline; }
+.helix3d-root .helix-help-rows dt { display: flex; flex-wrap: nowrap; gap: 0.25rem; }
+.helix3d-root .helix-help-rows dd { margin: 0; font-size: 0.85rem; line-height: 1.4; }
+.helix3d-root .helix-help kbd {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink); border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.12rem 0.38rem; background: var(--bg-soft);
+}
+.helix3d-root .helix-help-foot {
+  margin: 0.8rem 0 0; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet);
+}
+
+/* ====== STRUCTURE v3 — category band rail ======
+   Right-hand rail (the help card sits top-left, clear of it): one tag per category, vertically tracking its band
+   on the coil, joined to the band's dashed ring by a dashed leader.
+   Active band (focused / hovered output) turns crimson. */
+.helix3d-root .band-rail {
+  position: absolute; top: 0; bottom: 0; right: 4.2rem; width: 10.5rem;
+  pointer-events: none; z-index: 7;
+}
+.helix3d-root .band-rail { transition: opacity 0.3s var(--ease-out); }
+.helix3d-root.help-open .band-rail { opacity: 0; }
+.helix3d-root .band-tag {
+  position: absolute; top: 0; right: 0;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 0.6rem;
+  width: 100%; padding: 0.45rem 0.6rem;
+  background: var(--fog-color); backdrop-filter: blur(2px);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  color: var(--ink); text-align: left;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+  transition: opacity 0.3s var(--ease-out), border-color 0.2s, color 0.2s;
+}
+.helix3d-root .band-tag:hover { border-color: var(--ink); }
+.helix3d-root .band-tag.is-active { border-color: var(--crimson); color: var(--crimson); }
+.helix3d-root .band-num { color: var(--ink-quiet); }
+.helix3d-root .band-tag.is-active .band-num { color: var(--crimson); }
+.helix3d-root .band-name { font-weight: 700; }
+.helix3d-root .band-count { color: var(--ink-quiet); }
+.helix3d-root .band-leader {
+  position: absolute; top: 0; left: 0; height: 0;
+  border-top: 1px dashed var(--ink-soft);
+  transition: opacity 0.3s var(--ease-out);
+}
+.helix3d-root .band-leader.is-active { border-top-color: var(--crimson); }
+
+/* Plasmid node labels — off the helix, so set in grape italic. */
+.helix3d-root .node-label-name,
+.helix3d-root .node-label-sub { white-space: nowrap; }
+.helix3d-root .node-label-sub { background: rgba(var(--fog-color), 0.85); backdrop-filter: blur(2px); border-radius: 2px; padding: 1px 6px; }
+.helix3d-root .node-label-text { width: max-content; }
+/* Cropped header: one crimson registration L-mark straddling the
+   name capsule's top-left corner (the Frame motif). */
+.helix3d-root .node-label-name::before {
+  content: ''; position: absolute; top: -5px; left: -5px; width: 10px; height: 10px; pointer-events: none;
+  border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson);
+}
+
+/* ====== List view — grouped by category ====== */
+.helix3d-root .list-band {
+  display: grid; grid-template-columns: 64px 56px auto 1fr auto auto; align-items: center; gap: 1.25rem;
+  margin-top: 2.2rem; padding: 0 0 0.7rem;
+  border-bottom: 2px solid var(--ink);
+}
+.helix3d-root .list-band:first-child { margin-top: 0; }
+.helix3d-root .list-band-num { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--crimson); font-weight: 700; }
+.helix3d-root .list-band-name { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.01em; }
+.helix3d-root .list-band-verb { font-style: italic; opacity: 0.7; }
+.helix3d-root .list-band-status { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
+.helix3d-root .list-band-link { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); transition: color 0.2s; }
+.helix3d-root .list-band-link:hover { color: var(--crimson); }
+.helix3d-root .list-empty { margin: 0; padding: 1rem 0 1rem 80px; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); border-bottom: 1px solid var(--ink-soft); }
+.helix3d-root .listview { overflow-y: auto; }
+/* List view: the blueprint grid stays visible around it; the list
+   itself sits on an opaque plate in the page colour so rows read
+   cleanly over the grid and the staff. */
+.helix3d-root .listview-inner {
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  padding: 1.5rem 2rem 2rem;
+  box-sizing: border-box;
+}
+
+/* ====== Category window: head, project rows, logo tiles ====== */
+.helix3d-root .cp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.helix3d-root .cp-verb { font-weight: 900; font-size: 2.2rem; line-height: 1; letter-spacing: -0.02em; color: var(--crimson); }
+.helix3d-root .cp-projects { display: grid; border-top: 1px solid var(--ink-soft); }
+.helix3d-root .output-peek .cp-project {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 0.9rem;
+  padding: 0.7rem 0; border-bottom: 1px solid var(--ink-soft); color: var(--ink);
+  transition: padding-left 0.25s var(--ease-out), background-color 0.2s;
+}
+.helix3d-root .output-peek .cp-project:hover { padding-left: 0.8rem; background: color-mix(in srgb, var(--crimson) 5%, transparent); }
+.helix3d-root .cp-project-text { display: grid; gap: 0.15rem; min-width: 0; }
+.helix3d-root .cp-project-name { font-weight: 700; font-size: 0.95rem; transition: color 0.2s; }
+.helix3d-root .cp-project-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
+.helix3d-root .cp-arrow { transition: transform 0.25s var(--ease-out), color 0.2s; }
+.helix3d-root .output-peek .cp-project:hover .cp-project-name,
+.helix3d-root .output-peek .cp-project:hover .cp-arrow { color: var(--crimson); }
+.helix3d-root .output-peek .cp-project:hover .cp-arrow { transform: translateX(6px); }
+/* Placeholder project logo — Mentheon tile format (matches the 3D sprite). */
+.helix3d-root .logo-tile {
+  position: relative; width: 44px; height: 44px; padding: 5px 0 0 5px;
+  display: flex; flex-direction: column;
+  background: #2F0147; color: #FFECE1;
+  font-family: 'Lato', sans-serif; font-weight: 900; font-size: 0.82rem; line-height: 1;
+}
+.helix3d-root[data-theme="dark"] .logo-tile { background: #FFECE1; color: #1A0226; }
+.helix3d-root .output-peek .cp-project:hover .logo-tile,
+.helix3d-root .logo-tile.is-selected { background: var(--crimson); color: #FFECE1; }
+.helix3d-root .output-peek .cp-project:hover .logo-tile i,
+.helix3d-root .logo-tile.is-selected i { color: #FFECE1; }
+.helix3d-root .logo-tile { transition: background-color 0.2s, color 0.2s; }
+/* Product mark tile (direction 3b) — default grape ground with cream marks
+   (cream ground, ink marks in dark); crimson ground when selected
+   (row hover / its window open), matching the 3D cube. */
+.helix3d-root .ptile {
+  position: relative; display: block; width: 44px; height: 44px; flex: none;
+  background: #9C528B; color: #FFECE1;
+  transition: background-color 0.2s, color 0.2s;
+}
+.helix3d-root[data-theme="dark"] .ptile { background: #FFECE1; color: #9C528B; }
+.helix3d-root .ptile-emblem {
+  position: absolute; inset: 0; background: currentColor;
+  /* mask image set inline (BASE_URL-relative) in productTileHTML */
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+.helix3d-root .ptile svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.helix3d-root .ptile .pt-ink { fill: currentColor; }
+.helix3d-root .ptile .pt-initial { font-family: 'Lato', sans-serif; font-weight: 900; }
+.helix3d-root .ptile .pt-plate { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+.helix3d-root .ptile.is-selected,
+.helix3d-root .output-peek .cp-project:hover .ptile { background: var(--crimson); color: #FFECE1; }
+.helix3d-root .list-mark .ptile, .helix3d-root .list-mark .logo-tile { width: 56px; height: 56px; }
+.helix3d-root .list-item:hover .ptile { background: var(--crimson); color: #FFECE1; }
+.helix3d-root .op-title-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+/* Window marks: product mark at 104px; Aufdröselung adds its software
+   logo beside the concept mark, each captioned in mono. */
+.helix3d-root .op-marks { display: flex; gap: 0.8rem; }
+.helix3d-root .op-mark { margin: 0; display: grid; gap: 0.35rem; justify-items: start; }
+.helix3d-root .op-mark .ptile, .helix3d-root .op-mark .logo-tile, .helix3d-root .op-mark-img { width: 104px; height: 104px; display: block; }
+.helix3d-root .op-mark .logo-tile { font-size: 1.6rem; padding: 10px 0 0 10px; }
+.helix3d-root .op-mark .logo-tile i { font-size: 0.9rem; right: 7px; bottom: 5px; }
+/* Essen's app icon has its own rounded margin; crop it to the tile. */
+.helix3d-root .op-mark-essen { object-fit: cover; transform: scale(1.22); clip-path: inset(9% round 18%); }
+/* Aufdröselung pair: plum tile (light) / cream tile (dark), matching Essen's icon. */
+.helix3d-root .op-marks--pair .ptile { background: #2F0147; color: #FFECE1; }
+.helix3d-root[data-theme="dark"] .op-marks--pair .ptile { background: #FFECE1; color: #2F0147; }
+.helix3d-root .op-essen-dark { display: none; }
+.helix3d-root[data-theme="dark"] .op-essen-light { display: none; }
+.helix3d-root[data-theme="dark"] .op-essen-dark { display: block; }
+.helix3d-root .op-mark figcaption { font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
+/* Category window rows: marks at 64px. */
+.helix3d-root .output-peek .cp-project { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.helix3d-root .cp-project .ptile, .helix3d-root .cp-project .logo-tile { width: 64px; height: 64px; }
+.helix3d-root .cp-project .logo-tile { font-size: 1.05rem; padding: 7px 0 0 7px; }
+.helix3d-root .logo-tile i { position: absolute; right: 3px; bottom: 2px; font-style: normal; font-size: 0.5rem; color: var(--crimson); }
+
+/* ====== Output window body ====== */
+.helix3d-root .output-peek {
+  background: var(--bg); color: var(--ink);
+  border: 2px solid var(--ink); border-top: none; border-radius: 0 0 2px 2px;
+  padding: 1.6rem 1.8rem 1.7rem;
+  font-family: 'Lato', sans-serif;
+}
+.helix3d-root .op-kicker { margin: 0 0 0.7rem; font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--crimson); }
+.helix3d-root .op-star { padding: 0 0.3em; }
+.helix3d-root .op-title { margin: 0; font-weight: 900; font-size: 1.9rem; line-height: 1.05; letter-spacing: -0.015em; }
+.helix3d-root .op-ph { display: inline-block; margin-left: 0.7rem; vertical-align: 0.35em; padding: 0.15rem 0.45rem; border: 1px solid var(--crimson); border-radius: 2px; color: var(--crimson); font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase; }
+.helix3d-root .op-synopsis { margin: 0.7rem 0 1.2rem; font-style: italic; opacity: 0.7; font-size: 1rem; line-height: 1.5; }
+.helix3d-root .op-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 1.1rem; border-top: 1px dashed var(--ink-soft); border-bottom: 1px dashed var(--ink-soft); }
+.helix3d-root .op-fields > div { padding: 0.75rem 0.9rem 0.8rem 0; min-width: 0; }
+.helix3d-root .op-fields > div + div { padding-left: 0.9rem; border-left: 1px solid var(--ink-soft); }
+.helix3d-root .op-fields dt { margin-bottom: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet); }
+.helix3d-root .op-fields dd { margin: 0; font-weight: 700; font-size: 0.9rem; line-height: 1.3; }
+.helix3d-root .op-stage { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.4rem; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.helix3d-root .op-stage-label { color: var(--ink-quiet); }
+.helix3d-root .op-dots { display: flex; align-items: center; gap: 12px; position: relative; }
+.helix3d-root .op-dots::before { content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 1.5px; background: var(--ink-soft); }
+.helix3d-root .op-dots > span { position: relative; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink-soft); background: var(--bg); }
+.helix3d-root .op-dots > span.is-past { background: var(--ink); border-color: var(--ink); }
+.helix3d-root .op-dots > span.is-current { background: var(--crimson); border-color: var(--crimson); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--crimson); }
+.helix3d-root .op-stage-name { color: var(--crimson); font-weight: 700; }
+.helix3d-root .op-actions { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
+.helix3d-root .output-peek .op-cta {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.75rem 1.2rem; border-radius: 2px;
+  background: var(--crimson); color: #FFECE1;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+  transition: background-color 0.2s, gap 0.2s;
+}
+.helix3d-root .output-peek .op-cta:hover { background: var(--ink); color: var(--bg); gap: 0.9rem; }
+.helix3d-root .output-peek .op-link { font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
+.helix3d-root .output-peek .op-link:hover { color: var(--crimson); border-color: var(--crimson); }
+
+@media (max-width: 1200px) {
+  .helix3d-root .band-rail { width: 2.6rem; right: 3.6rem; }
+  .helix3d-root .band-tag { grid-template-columns: 1fr; padding: 0.4rem 0; text-align: center; }
+  .helix3d-root .band-name, .helix3d-root .band-count { display: none; }
+}
+@media (max-height: 700px) {
+  .helix3d-root .stage-readout { display: none; }
+}
 @media (max-width: 720px) {
+  .helix3d-root .band-rail { display: none; }
+  .helix3d-root .helix-help { top: calc(36px + 4.4rem); left: 1rem; right: 1rem; width: auto; }
+  .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(36px + 3.6rem); bottom: 3.6rem; }
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
   .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: 44px; }
@@ -922,3 +1246,103 @@
   .helix3d-root .footer-strip { padding: 0.8rem 1rem; font-size: 0.55rem; bottom: 28px; }
   .helix3d-root .list-item { grid-template-columns: 50px 56px 1fr auto; gap: 1rem; }
 }
+
+/* Embedded node style: the crimson bead inside the serpent IS the
+   marker, so the label's ink pip (which sits exactly over it) is hidden. */
+.helix3d-root[data-node-style="embedded"] .node-label-pip { display: none; }
+
+/* Top-right control row: one height for every control, set by the
+   staff/list selector. Square icon buttons match it in width. */
+.helix3d-root .nav-controls { --ctl-h: 2.6rem; align-items: stretch; }
+.helix3d-root .nav-controls > * { box-sizing: border-box; height: var(--ctl-h); }
+.helix3d-root .view-toggle { align-items: stretch; }
+.helix3d-root .view-toggle button { display: inline-flex; align-items: center; padding-top: 0; padding-bottom: 0; }
+.helix3d-root .text-size button { display: inline-flex; align-items: center; justify-content: center; min-width: var(--ctl-h); }
+.helix3d-root .help-btn,
+.helix3d-root .theme-switch { width: var(--ctl-h); height: var(--ctl-h); }
+.helix3d-root .menu-btn { display: inline-flex; align-items: center; }
+.helix3d-root .nav-controls .text-size { padding: 0; }
+.helix3d-root .nav-controls .text-size button { height: auto; align-self: stretch; min-width: calc(var(--ctl-h) - 2px); padding: 0 0.5rem; }
+
+/* Focused section cube: name + sub in one boxed caption, CAP_GAP under
+   the cube. Project cubes get the same box (.cube-cap), smaller. */
+.helix3d-root .node-label.is-below .node-label-text,
+.helix3d-root .node-label.is-below.is-left .node-label-text {
+  left: 50%; right: auto; top: 50%; bottom: auto; margin: 0;
+  transform: translate(-50%, var(--below, 96px));
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  text-align: center;
+  background: var(--bg); border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.45rem 0.8rem 0.5rem; box-shadow: var(--shadow-md);
+}
+.helix3d-root .node-label.is-below .node-label-name { border: 0; background: none; padding: 0; font-size: 1.15rem; }
+.helix3d-root .node-label.is-below .node-label-name::before { display: none; }
+.helix3d-root .node-label.is-below .node-label-sub { background: none; padding: 0; backdrop-filter: none; }
+.helix3d-root .cube-cap {
+  position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  width: max-content; text-align: center;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.3rem 0.55rem 0.35rem; box-shadow: var(--shadow-md);
+  opacity: 0; transition: opacity 0.25s var(--ease-out);
+}
+.helix3d-root .cube-cap.is-visible { opacity: 1; }
+.helix3d-root .cube-cap-name { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.85rem; line-height: 1.15; }
+.helix3d-root .cube-cap-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-quiet); white-space: nowrap; }
+
+/* Pixel-locked nav row: the text-size control scales <html> rem, so
+   everything the row's position depends on is in px — the buttons stay
+   put under the cursor while A−/A+ are clicked repeatedly. */
+.helix3d-root .nav { padding: 22px 32px; }
+.helix3d-root .nav-controls { --ctl-h: 42px; gap: 12px; }
+.helix3d-root .nav-controls .view-toggle { font-size: 11.2px; padding: 4px; gap: 6px; }
+.helix3d-root .nav-controls .view-toggle button { padding-left: 14px; padding-right: 14px; }
+.helix3d-root .nav-controls .text-size { font-size: 13px; }
+.helix3d-root .nav-controls .text-size button { padding: 0 8px; min-width: 40px; }
+.helix3d-root .nav-controls .text-size button:first-child { font-size: 12.5px; }
+.helix3d-root .nav-controls .text-size button:last-child { font-size: 14.7px; border-left: 1px solid var(--ink-soft); }
+.helix3d-root .nav-controls .text-size #text-reset { font-size: 13.5px; border-right: 0; }
+.helix3d-root .nav-controls .help-btn { font-size: 12.8px; }
+.helix3d-root .nav-controls .menu-btn { font-size: 11.2px; padding-left: 14px; padding-right: 14px; gap: 10px; }
+.helix3d-root .nav-controls .text-size button { width: 40px; min-width: 40px; padding: 0; letter-spacing: 0; }
+.helix3d-root .nav-controls .view-toggle, .helix3d-root .nav-controls .menu-btn { letter-spacing: 2px; }
+
+/* Section summary on two lines (verb / project count), boxed, and
+   stacked above the 3D canvas, the headline and the project cubes. */
+.helix3d-root .node-labels { z-index: 6; }
+.helix3d-root .node-label-sub { display: inline-flex; flex-direction: column; gap: 1px; line-height: 1.35; padding: 3px 7px; margin-top: 4px;
+  background: var(--bg); border: 1px solid var(--ink-soft); color: var(--ink-quiet); }
+.helix3d-root .node-label-sub-line { display: block; white-space: nowrap; }
+.helix3d-root .node-label.is-left .node-label-sub { align-items: flex-end; }
+.helix3d-root .node-label.is-below .node-label-sub { align-items: center; border: 0; margin-top: 0; }
+.helix3d-root .node-label-sub-line:first-child { color: var(--ink); font-weight: 700; }
+
+/* Not highlightable: controls, moving/animated labels, the headline,
+   marquee, windows' chrome. The footer strip (company no., dates) and
+   window body text stay selectable for copying. */
+.helix3d-root button,
+.helix3d-root [role="tab"],
+.helix3d-root .nav,
+.helix3d-root .marquee,
+.helix3d-root .helix-center-label,
+.helix3d-root .node-label,
+.helix3d-root .helix-help,
+.helix3d-root .menu-overlay,
+.helix3d-root canvas {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.helix3d-root .footer-strip,
+.helix3d-root .footer-strip * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Section mark in list bands (same tile as the staff's section cube). */
+.helix3d-root .list-band-mark { position: relative; width: 64px; height: 64px; display: block; }
+.helix3d-root .list-band-mark img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity 0.2s; }
+.helix3d-root .list-band-mark .lbm-dark, .helix3d-root .list-band-mark .lbm-hot { opacity: 0; }
+.helix3d-root[data-theme="dark"] .list-band-mark .lbm-light { opacity: 0; }
+.helix3d-root[data-theme="dark"] .list-band-mark .lbm-dark { opacity: 1; }
+.helix3d-root .list-band:hover .list-band-mark .lbm-hot { opacity: 1; }

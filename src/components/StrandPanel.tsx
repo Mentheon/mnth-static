@@ -6,9 +6,12 @@ interface StrandPanelProps {
   strand: Strand
   isOpen: boolean
   onClose: () => void
+  /* Hide the built-in × when a host (the Helix3D window) supplies
+     its own close control. */
+  hideClose?: boolean
 }
 
-export default function StrandPanel({ strand, isOpen, onClose }: StrandPanelProps) {
+export default function StrandPanel({ strand, isOpen, onClose, hideClose = false }: StrandPanelProps) {
   return (
     <div
       className={`${styles.panel} ${isOpen ? styles.open : ''}`}
@@ -17,9 +20,11 @@ export default function StrandPanel({ strand, isOpen, onClose }: StrandPanelProp
       <div className={styles.panelInner}>
         <div className={styles.cornerCrop} aria-hidden="true" />
 
-        <button className={styles.closeButton} onClick={onClose} aria-label="Close strand panel">
-          ×
-        </button>
+        {!hideClose && (
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close strand panel">
+            ×
+          </button>
+        )}
 
         <div className={styles.panelHeader}>
           <div className={styles.headerIconCircle}>

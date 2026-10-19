@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Article } from '../types'
 import { STRANDS } from '../../../data/strands'
 import ArticleCard from './ArticleCard'
@@ -25,11 +26,32 @@ function buildCounts(articles: Article[]): Record<string, number> {
   return counts
 }
 
+/* Every term must appear somewhere in title, summary, type, strands
+   or body (case- and accent-insensitive). */
+const fold = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+function haystack(a: Article) {
+  const strandLabels = a.strands.map((id) => STRANDS.find((s) => s.id === id)?.label ?? id).join(' ')
+  return fold([a.title, a.summary, a.type, strandLabels, a.body].join(' '))
+}
+
 export default function MarginaliaList({ articles, activeStrand }: MarginaliaListProps) {
   const counts = buildCounts(articles)
-  const filtered = activeStrand
-    ? articles.filter((a) => a.strands.includes(activeStrand))
-    : articles
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const index = useMemo(() => new Map(articles.map((a) => [a.slug, haystack(a)])), [articles])
+  // "/" focuses search from anywhere on the page.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (e.key === '/' && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { e.preventDefault(); inputRef.current?.focus() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  const terms = fold(query).split(/\s+/).filter(Boolean)
+  const filtered = articles
+    .filter((a) => !activeStrand || a.strands.includes(activeStrand))
+    .filter((a) => terms.every((t) => index.get(a.slug)!.includes(t)))
 
   const activeStrandLabel = activeStrand
     ? STRANDS.find((s) => s.id === activeStrand)?.label ?? null
@@ -55,11 +77,41 @@ export default function MarginaliaList({ articles, activeStrand }: MarginaliaLis
           </p>
         </header>
 
+        <div className={styles.search} role="search">
+          <label className={styles.searchLabel} htmlFor="marginalia-search">
+            <span className={styles.searchStar} aria-hidden="true">✲</span>search
+          </label>
+          <input
+            ref={inputRef}
+            id="marginalia-search"
+            className={styles.searchInput}
+            type="search"
+            value={query}
+            placeholder="titles, notes, strands…"
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { e.stopPropagation(); if (query) setQuery(''); else inputRef.current?.blur() }
+            }}
+          />
+          {query ? (
+            <button type="button" className={styles.searchClear} onClick={() => { setQuery(''); inputRef.current?.focus() }} aria-label="Clear search">×</button>
+          ) : (
+            <span className={styles.searchKbd} aria-hidden="true">/</span>
+          )}
+          <span className={styles.searchCount} aria-live="polite">
+            {String(filtered.length).padStart(2, '0')} / {String(articles.length).padStart(2, '0')}
+          </span>
+        </div>
+
         <StrandFilter activeStrand={activeStrand} counts={counts} />
 
         {filtered.length === 0 ? (
           <p className={styles.empty}>
-            {activeStrandLabel
+            {terms.length
+              ? `No articles match “${query.trim()}”${activeStrandLabel ? ` in ${activeStrandLabel}` : ''}.`
+              : activeStrandLabel
               ? `No articles tagged with ${activeStrandLabel} yet.`
               : 'No articles yet. Check back soon.'}
           </p>

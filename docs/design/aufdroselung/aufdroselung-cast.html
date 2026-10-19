@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Aufdröselung · logo, Essen and characters</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  body { margin: 0; background: #FFECE1; color: #2F0147; font-family: Lato, sans-serif; }
+  a { color: #2F0147; } a:hover { color: #A30B37; }
+  main { max-width: 1180px; margin: 0 auto; padding: 56px 32px 80px; display: flex; flex-direction: column; gap: 56px; }
+  .k { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; color: #9C528B; }
+  h1 { margin: 8px 0 0; font-weight: 900; font-size: 40px; letter-spacing: -0.015em; line-height: 1.05; }
+  h2 { margin: 0 0 18px; font-weight: 700; font-size: 24px; }
+  p { margin: 8px 0 0; font-size: 16px; line-height: 1.6; max-width: 760px; color: rgba(47,1,71,0.75); }
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+  .c { margin: 0; border: 1px solid rgba(47,1,71,0.15); background: #FFF7F2; display: flex; flex-direction: column; }
+  .art { height: 180px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid rgba(47,1,71,0.15); }
+  .art img { max-height: 150px; max-width: 150px; image-rendering: pixelated; }
+  figcaption { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.45; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(47,1,71,0.55); }
+  .tile { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .tile span { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(47,1,71,0.6); }
+  .dark { background: #1A0226; padding: 20px; display: flex; gap: 20px; align-items: flex-end; }
+  ul { margin: 8px 0 0; padding-left: 18px; font-size: 15px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="k">mentheon design system · aufdröselung <span style="color:#A30B37">✲</span> product marks and cast</span>
+    <h1>Aufdröselung logo, Essen and the characters.</h1>
+    <p>The Aufdröselung product mark, Essen in his five states, and the recurring cast of the Essen universe. All characters are pixel art on their native grid, exported as crisp-edged SVG so they scale cleanly.</p>
+  </header>
+  <section>
+    <h2>Aufdröselung mark</h2>
+    <div class="row">
+      <div class="tile"><img src="../assets/logo.svg" alt="" width="160" height="160" onerror="this.parentNode.style.display='none'"><span>front · mentheon</span></div>
+      <div class="tile"><img src="../assets/aufdroselung/aufdroselung-logo.svg" alt="Aufdröselung" width="160" height="160"><span>aufdroselung-logo.svg</span></div>
+      <div class="dark"><img src="../assets/aufdroselung/aufdroselung-logo.svg" alt="" width="96" height="96"><img src="../assets/aufdroselung/aufdroselung-logo.svg" alt="" width="48" height="48"><img src="../assets/aufdroselung/aufdroselung-logo.svg" alt="" width="24" height="24"></div>
+    </div>
+    <ul>
+      <li>Crimson #A30B37 field; Mentheon's emblem in cream #FFECE1, same size and position as the Mentheon tile.</li>
+      <li>Lowercase "a", Lato 900 (outlined in the SVG), baseline 178 and left edge 10 on the 195 grid.</li>
+      <li>No border, outline or shadow inside the tile. Never recolour, crop or move the emblem.</li>
+      <li>Motion: flips about its vertical axis Mentheon ⇄ Aufdröselung, 2.6 s hold, 1.4 s turn, cubic-bezier(0.65,0,0.35,1).</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Essen</h2>
+    <p>A 32 × 32 grape-pink hamster with a cream belly, crimson nose, ω mouth, and a plum hat with grape feather. He is hungry; finished work feeds him.</p>
+    <div class="grid" style="margin-top:20px">
+      <figure class="c"><div class="art"><img src="../assets/essen/essen-idle.svg" alt="Essen · idle"></div><figcaption><b>Essen · idle</b><span>Default resting pose.</span><code>assets/essen/essen-idle.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/essen/essen-hungry.svg" alt="Essen · hungry"></div><figcaption><b>Essen · hungry</b><span>Nothing logged yet; waiting for work.</span><code>assets/essen/essen-hungry.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/essen/essen-eating.svg" alt="Essen · eating"></div><figcaption><b>Essen · eating</b><span>Work is being recorded.</span><code>assets/essen/essen-eating.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/essen/essen-full.svg" alt="Essen · full · day met"></div><figcaption><b>Essen · full · day met</b><span>Goal reached. Also the app icon pose.</span><code>assets/essen/essen-full.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/essen/essen-guide.svg" alt="Essen · guide"></div><figcaption><b>Essen · guide</b><span>Pointing, explaining. Used in tours.</span><code>assets/essen/essen-guide.svg</code></figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <h2>The cast</h2>
+    <div class="grid">
+      <figure class="c"><div class="art"><img src="../assets/characters/nick.svg" alt="Nick"></div><figcaption><b>Nick</b><span>Blond curls, blue eyes, blue striped shirt.</span><code>assets/characters/nick.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/paula.svg" alt="Paula"></div><figcaption><b>Paula</b><span>Long brown hair, round black glasses, white top. Beta tester #00.</span><code>assets/characters/paula.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/paulicholas-bunny.svg" alt="Paulicholas Bunny"></div><figcaption><b>Paulicholas Bunny</b><span>Grey and cuddly, pink inner ears and cheeks. Always beside Paula.</span><code>assets/characters/paulicholas-bunny.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/sunshine-bear.svg" alt="Sunshine Bear"></div><figcaption><b>Sunshine Bear</b><span>Sunflower hood, brown face, green body. Silent mood compass.</span><code>assets/characters/sunshine-bear.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/dr-smith.svg" alt="Dr Smith"></div><figcaption><b>Dr Smith</b><span>Grey-brown hair, tweed blazer, stethoscope. Beta tester #01.</span><code>assets/characters/dr-smith.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/dr-smith-skeptical.svg" alt="Dr Smith · skeptical"></div><figcaption><b>Dr Smith · skeptical</b><span>Arms folded, one eyebrow raised.</span><code>assets/characters/dr-smith-skeptical.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/nick-dance.svg" alt="Nick · dance"></div><figcaption><b>Nick · dance</b><span>Hurra pose.</span><code>assets/characters/nick-dance.svg</code></figcaption></figure>
+      <figure class="c"><div class="art"><img src="../assets/characters/paula-dance.svg" alt="Paula · dance"></div><figcaption><b>Paula · dance</b><span>Hurra pose.</span><code>assets/characters/paula-dance.svg</code></figcaption></figure>
+    </div>
+  </section>
+  <section>
+    <h2>Rules</h2>
+    <ul>
+      <li>Render at whole-number multiples of the native grid (×2, ×4, ×8) with <code>image-rendering: pixelated</code>.</li>
+      <li>Outlines are deep plum #2F0147; don't add drop shadows or soft glows to the sprites.</li>
+      <li>Nick, Paula, the bunny and the bear are personal; use them only in "nur für paula" or beta-tester builds, never in public marketing.</li>
+      <li>Essen is the public mascot and may appear anywhere in Aufdröselung.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

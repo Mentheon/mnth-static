@@ -25,10 +25,14 @@ const THEME_KEY = 'mnth:theme';
 
 // Keep this list identical to the Helix3D in-scene menu overlay.
 const MENU = [
-  { num: '01', label: 'home', href: '#helix3d?skipIntro=true' },
-  { num: '02', label: 'marginalia', href: '#marginalia' },
-  { num: '03', label: 'who', href: '#who' },
-  { num: '04', label: 'concept', href: '#concept' },
+  { num: '01', label: 'pathway', href: '#helix3d?skipIntro=true' },
+  { num: '02', label: 'register', href: '#register' },
+  { num: '03', label: 'plasmids', href: '#plasmids' },
+  { num: '04', label: 'infrastructure', href: '#infrastructure' },
+  { num: '05', label: 'services', href: '#services' },
+  { num: '06', label: 'framework', href: '#framework' },
+  { num: '07', label: 'marginalia', href: '#marginalia' },
+  { num: '08', label: 'who', href: '#who' },
 ];
 
 function readTheme(): Theme {

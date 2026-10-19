@@ -1,0 +1,57 @@
+# Essen palette
+newmtl ink
+Kd 0.1843 0.0039 0.2784
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl grape
+Kd 0.6118 0.3216 0.5451
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl orchid
+Kd 0.7725 0.5373 0.7098
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl plum
+Kd 0.2471 0.0078 0.2784
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl crimson
+Kd 0.6392 0.0431 0.2157
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl rose
+Kd 0.8392 0.1922 0.3451
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+
+newmtl cream
+Kd 1.0000 0.9255 0.8824
+Ka 0 0 0
+Ks 0.05 0.05 0.05
+Ns 10
+d 1
+illum 2
+

@@ -16,12 +16,6 @@ function backToList(e: React.MouseEvent) {
 export default function MarginaliaArticle({ article }: MarginaliaArticleProps) {
   return (
     <>
-      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-        <a href="#marginalia" onClick={backToList}>marginalia</a>
-        <span className={styles.sep}>/</span>
-        <span>{article.slug}</span>
-      </nav>
-
       <main className={styles.page}>
         <article className={styles.frame}>
           <span className={`${styles.cornerCrop} ${styles.cornerTL}`} aria-hidden="true" />
