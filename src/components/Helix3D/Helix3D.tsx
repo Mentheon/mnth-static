@@ -593,7 +593,20 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     let swPending = false, swDecayN = 0, swPrevDx = 0
     const STALL_RELEASE = 900
     let suppressClick = false
-    const DRAG_SENS = 0.006        // rotor radians per px dragged
+    const DRAG_SENS = 0.006        // rotor radians per px — trackpad sideways swipe
+    /* Click-and-drag has its own, gentler gain: 0.006 made a drag feel
+       twitchy. Lower = more px of drag per turn (0.004 ≈ 1570px/turn). */
+    const DRAG_SENS_POINTER = 0.004
+    /* Drag release speed is measured over this window (not from the last
+       pointer event, whose tiny dt read as 20–40 rad/s flings), then
+       capped at SPIN_MAX like the swipe coast. */
+    const FLING_WINDOW_MS = 100
+    /* The rotor follows the drag target with this time constant, once
+       per frame: smooths pointer events that don't line up with frames
+       without a perceptible delay. */
+    const DRAG_FOLLOW_S = 0.03
+    let dragTarget = 0
+    const dragHist: { t: number; a: number }[] = []
     const DRAG_CLICK_PX = 5        // under this travel = a click, not a drag
     const SPIN_DECAY = 0.22        // fraction of velocity kept per second
     const SPIN_STOP = 0.02         // rad/s below which inertia ends
@@ -1771,6 +1784,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dragMoved = false
       dragStartX = dragLastX = e.clientX
       dragLastT = performance.now()
+      dragTarget = rotorAngle
+      dragHist.length = 0
       // A press alone must not leave the focused node — a second click
       // on it OPENS the panel. Focus is only dropped once the press
       // becomes a genuine drag (see onDragMove).
@@ -1779,26 +1794,28 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     function onDragMove(e: PointerEvent) {
       if (!dragging) return
       const now = performance.now()
-      const dt = Math.max((now - dragLastT) / 1000, 0.001)
       const dx = e.clientX - dragLastX
       // Below DRAG_CLICK_PX it's still a click: leave the staff alone, so
       // hand jitter can't nudge a focused section off-centre. dragLastX
       // stays at the press point, so the first real move carries the
       // whole travel since then.
       if (!dragMoved && Math.abs(e.clientX - dragStartX) <= DRAG_CLICK_PX) return
-      rotorAngle += dx * DRAG_SENS
-      spinVel = (dx * DRAG_SENS) / dt   // latest instantaneous velocity
       if (!dragMoved) {
         dragMoved = true
         stallHold = false
         momHalt = false
         spinVel = 0
         rotorTarget = null              // cancel any snap/ease
+        dragTarget = rotorAngle
         focusIndex = -1                 // dragging = exploratory default
         resetCamera()
         deactivate()
         typeAccent(DEFAULT_ACCENT)      // wide view → headline back to default
       }
+      // Move the TARGET; render() eases the rotor onto it once per frame.
+      dragTarget += dx * DRAG_SENS_POINTER
+      dragHist.push({ t: now, a: dragTarget })
+      while (dragHist.length > 2 && now - dragHist[0].t > FLING_WINDOW_MS) dragHist.shift()
       dragLastX = e.clientX
       dragLastT = now
     }
@@ -1808,8 +1825,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       try { renderer.domElement.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       if (!dragMoved) { spinVel = 0; return }    // it was a click
       suppressClick = true                       // swallow the trailing click
+      rotorAngle = dragTarget                    // land exactly where the hand left it
+      // Fling speed: angle travelled over the last FLING_WINDOW_MS, capped.
+      const now = performance.now()
+      const first = dragHist.find((h) => now - h.t <= FLING_WINDOW_MS)
+      const span = first ? (now - first.t) / 1000 : 0
+      spinVel = first && span > 0.016 ? THREE.MathUtils.clamp((dragTarget - first.a) / span, -SPIN_MAX, SPIN_MAX) : 0
       // If the pointer paused before release, don't fling stale velocity.
-      if (performance.now() - dragLastT > 90) spinVel = 0
+      if (now - dragLastT > 90) spinVel = 0
     }
     function onDragCancel() {
       dragging = false
@@ -2220,7 +2243,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (!Number.isFinite(spinVel)) spinVel = 0
       if (!Number.isFinite(swVel)) swVel = 0
       if (dragging) {
-        /* rotorAngle is updated live by onDragMove */
+        // Ease onto the drag target (set by onDragMove), frame-rate safe.
+        if (dragMoved) rotorAngle += (dragTarget - rotorAngle) * (1 - Math.exp(-dt / DRAG_FOLLOW_S))
       } else if (Math.abs(spinVel) > SPIN_STOP) {
         // While swipe events are still arriving they move the rotor
         // directly; the coast takes over once they stop.
