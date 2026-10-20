@@ -658,7 +658,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        canvas pointer/resize listeners. Called once from BOOT. */
     function initThree() {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      // DPR capped at 1.5: ~44% fewer pixels than 2× on retina for a
+      // full-screen canvas, visually indistinguishable on line art.
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
       renderer.setSize(container.clientWidth, container.clientHeight)
       renderer.setClearColor(0x000000, 0)
       container.appendChild(renderer.domElement)
@@ -2275,8 +2277,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (hoveredId) {
         const n = nodes.find((x) => x.strand.id === hoveredId)
         if (n) {
-          const worldP = n.orb.getWorldPosition(new THREE.Vector3())
-          activeNodePointLight.position.copy(worldP)
+          activeNodePointLight.position.copy(n.orb.getWorldPosition(_lp))
           activeNodePointLight.intensity += (1.8 - activeNodePointLight.intensity) * Math.min(1, dt * 8)
         }
       } else {
@@ -2284,8 +2285,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
 
       // 4. Hover detection: raycast the orbs unless the pointer is
-      //    parked off-canvas (x left at -9999).
-      if (pointer.x > -2) {
+      //    parked off-canvas (x left at -9999) or the list view hides
+      //    the canvas.
+      const sceneHidden = listview.classList.contains('is-visible')
+      if (pointer.x > -2 && !sceneHidden) {
         raycaster.setFromCamera(pointer, camera)
         const hits = raycaster.intersectObjects(nodePickables, false)
         if (hits.length) {
@@ -2312,9 +2315,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       })
       reachL.length = 0; reachR.length = 0
       updateLogos(dt)
-      // 5 & 6. Sync the HTML labels, then draw the frame.
+      // 5 & 6. Sync the HTML labels (this also places a window opened in
+      // list view), then draw the frame — skipped while the list view
+      // hides the canvas, which is the bulk of the per-frame cost.
       updateLabels()
-      renderer.render(scene, camera)
+      if (!sceneHidden) renderer.render(scene, camera)
     }
 
     /* Project each orb's 3D world position to screen pixels and
@@ -2325,19 +2330,29 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* One gap (px) between any focused cube's lower edge and its caption. */
     const CAP_GAP = 14
     const capEls = new Map<string, HTMLDivElement>()
+    /* Per-frame scratch + caches: the label elements are looked up once,
+       the layout size is read once per frame (re-reading it after style
+       writes forces a synchronous reflow), and vectors are reused. */
+    const labelEls = new Map<string, HTMLElement>()
+    let labelsElCached: HTMLElement | null = null
+    const _lp = new THREE.Vector3(), _lo = new THREE.Vector3()
     function updateLabels() {
-      const labelsEl = $('#node-labels')!
+      const labelsEl = labelsElCached ?? (labelsElCached = $('#node-labels')!)
       const w = labelsEl.clientWidth
       const h = labelsEl.clientHeight
+      _camUp.setFromMatrixColumn(camera.matrixWorld, 1)
 
-      nodes.forEach((n) => {
-        const worldP = n.orb.getWorldPosition(new THREE.Vector3())
+      nodes.forEach((n, ni) => {
         // project() → normalised device coords (-1..1); remap to px.
-        const projP = worldP.clone().project(camera)
+        const projP = n.orb.getWorldPosition(_lp).project(camera)
         const px = (projP.x * 0.5 + 0.5) * w
         const py = (-projP.y * 0.5 + 0.5) * h
-        const label = $(`.node-label[data-id="${n.strand.id}"]`)
-        if (!label) return
+        let label = labelEls.get(n.strand.id)
+        if (!label || !label.isConnected) {
+          label = $(`.node-label[data-id="${n.strand.id}"]`) ?? undefined
+          if (!label) return
+          labelEls.set(n.strand.id, label)
+        }
         // Anchor the label exactly on the orb so the pip stays
         // centred inside it at all times; only the text block flips
         // to the inboard side via .is-left, so the text never
@@ -2352,7 +2367,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           label.classList.toggle('is-left', px <= w / 2)
         }
         label.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`
-        const ni = nodes.indexOf(n)
         const topMode = (tileMix[ni] ?? 0) > 0.5
         label.classList.toggle('is-top', topMode)
         // Section cubes (embedded): when focused, the name goes BELOW the
@@ -2361,8 +2375,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         label.classList.toggle('is-below', below)
         if (below) {
           const half = n.orb.scale.y * 0.5
-          const lo = n.orb.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
-          const cubeBottom = (-lo.y * 0.5 + 0.5) * labelsEl.clientHeight - py
+          const lo = n.orb.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
+          const cubeBottom = (-lo.y * 0.5 + 0.5) * h - py
           label.style.setProperty('--below', `${Math.round(cubeBottom + CAP_GAP)}px`)
         }
         const ownSide = label.classList.contains('is-left') ? reachL[ni] : reachR[ni]
@@ -2387,9 +2401,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         cap.classList.toggle('is-visible', on)
         if (!on) return
         const half = l.sprite.scale.y * 0.5
-        const lo = l.sprite.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
-        const cx = (lo.x * 0.5 + 0.5) * labelsEl.clientWidth
-        const cy = (-lo.y * 0.5 + 0.5) * labelsEl.clientHeight
+        const lo = l.sprite.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
+        const cx = (lo.x * 0.5 + 0.5) * w
+        const cy = (-lo.y * 0.5 + 0.5) * h
         cap.style.transform = `translate(${Math.round(cx)}px, ${Math.round(cy + CAP_GAP)}px) translate(-50%, 0)`
       })
 
@@ -2401,14 +2415,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       } else if (hoveredId && !panelOpen) {
         const n = nodes.find((x) => x.strand.id === hoveredId)
         if (n) {
-          const bp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const bp = n.orb.getWorldPosition(_lp).project(camera)
           const bx = (bp.x * 0.5 + 0.5) * w
           const by = (-bp.y * 0.5 + 0.5) * h
           // Section cubes: drop the bubble below the cube's lower edge.
           let dy = 28
           if (n.orb.userData.cube) {
             const half = n.orb.scale.y * 0.5
-            const lo = n.orb.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
+            const lo = n.orb.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
             dy = Math.max(28, (-lo.y * 0.5 + 0.5) * h - by + 30)
           }
           bubbleEl.style.transform = `translate(${bx}px, ${by}px) translate(-50%, ${dy}px)`
@@ -2425,7 +2439,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const drawer = $('#strand-drawer') as HTMLDivElement | null
         const n = nodes[focusIndex]
         if (drawer && n) {
-          const dp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const dp = n.orb.getWorldPosition(_lp).project(camera)
           const dx = (dp.x * 0.5 + 0.5) * w
           const dy = (-dp.y * 0.5 + 0.5) * h
           // Pinned to the RIGHT of the node (its left edge sits just
