@@ -595,8 +595,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     let suppressClick = false
     const DRAG_SENS = 0.006        // rotor radians per px — trackpad sideways swipe
     /* Click-and-drag has its own, gentler gain: 0.006 made a drag feel
-       twitchy. Lower = more px of drag per turn (0.004 ≈ 1570px/turn). */
-    const DRAG_SENS_POINTER = 0.004
+       twitchy. Lower = more px of drag per turn (0.003 ≈ 2090px/turn). */
+    const DRAG_SENS_POINTER = 0.003
     /* Drag release speed is measured over this window (not from the last
        pointer event, whose tiny dt read as 20–40 rad/s flings), then
        capped at SPIN_MAX like the swipe coast. */
