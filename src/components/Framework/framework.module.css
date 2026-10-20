@@ -310,6 +310,37 @@
 .bLast .bLabel { left: auto; right: 50%; transform: translateX(7px); width: calc(50% + 0.5rem); text-align: right; }
 .bStage.isPast .bLabel { color: var(--ink); }
 .bStage.isCurrent .bLabel { color: var(--crimson); font-weight: 700; }
+/* Live data (output.inflow): dots stream along the spine from the
+   current stage into the next, which pulses as it receives them. */
+.bFlow { position: absolute; height: 0; pointer-events: none; }
+.bFlowDot {
+  position: absolute; top: 0; left: 0;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--crimson);
+  transform: translate(-50%, -50%);
+  animation: bFlow 2.2s linear infinite;
+}
+@keyframes bFlow {
+  0%   { left: 12px; opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: calc(100% - 12px); opacity: 0; }
+}
+.bFlowLabel {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--crimson);
+}
+.bFlowLive { width: 6px; height: 6px; border-radius: 50%; background: var(--crimson); animation: bLive 1.6s ease-in-out infinite; }
+@keyframes bLive { 50% { opacity: 0.25; } }
+.bStage.isReceiving .bDot { border-color: var(--crimson); animation: bReceive 2.2s ease-out infinite; }
+.bStage.isReceiving .bLabel { color: var(--crimson); }
+@keyframes bReceive {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--crimson) 45%, transparent); }
+  70%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
 .bExit { position: absolute; width: var(--step); height: 0; transform: translateX(-50%); }
 .bExitNode {
   position: absolute; top: 0; left: 50%; width: 11px; height: 11px;
@@ -389,6 +420,17 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
 .miniBar { width: 14px; height: 1.5px; background: var(--ink-soft); flex: none; }
 .miniDot.isPast { background: var(--ink); border-color: var(--ink); }
 .miniBar.isPast { background: var(--ink); }
+.miniBar.isFlowing {
+  background: repeating-linear-gradient(90deg, var(--crimson) 0 3px, transparent 3px 6px);
+  background-size: 12px 100%; height: 2px;
+  animation: miniFlow 0.9s linear infinite;
+}
+@keyframes miniFlow { to { background-position: 12px 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .bFlowDot, .bFlowLive, .bStage.isReceiving .bDot, .miniBar.isFlowing { animation: none; }
+  .bFlowDot:nth-child(2) { left: 30%; } .bFlowDot:nth-child(3) { left: 50%; } .bFlowDot:nth-child(4) { left: 70%; }
+  .bFlowDot:nth-child(1), .bFlowDot:nth-child(5) { display: none; }
+}
 .miniDot.isCurrent { background: var(--crimson); border-color: var(--crimson); }
 .miniLabel { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

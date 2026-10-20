@@ -195,6 +195,8 @@ export function BranchTrack({ o }: { o: Output }) {
   const lanes = Math.max(1, ...[...laneOf.values()])
   const H = LANE0 + (lanes - 1) * LANE_H + 64
   const px = (p: number) => p * 10       // % → viewBox units (0..1000)
+  // Live data (o.inflow): dots stream from the current stage into the next.
+  const flowing = !!o.inflow && o.stage < N - 1
   return (
     <div className={s.btrack} style={{ height: H, ['--step' as string]: `${step}%` }}>
       <svg className={s.btrackSvg} viewBox={`0 0 1000 ${H}`} preserveAspectRatio="none" aria-hidden="true">
@@ -215,13 +217,20 @@ export function BranchTrack({ o }: { o: Output }) {
           return <g key={k} className={cls}><path d={down} vectorEffect="non-scaling-stroke" /><path d={tail} vectorEffect="non-scaling-stroke" /></g>
         })}
       </svg>
+      {flowing && (
+        <div className={s.bFlow} style={{ left: `${X(o.stage)}%`, width: `${step}%`, top: SPINE }} aria-hidden="true">
+          {[0, 1, 2, 3, 4].map((k) => <span key={k} className={s.bFlowDot} style={{ animationDelay: `${k * -0.44}s` }} />)}
+          <span className={s.bFlowLabel}><span className={s.bFlowLive} />{o.inflow}</span>
+        </div>
+      )}
       {t.stages.map((name, i) => (
-        <div key={name} className={cx(s.bStage, i < o.stage && s.isPast, i === o.stage && s.isCurrent, i === 0 && s.bFirst, i === N - 1 && s.bLast)}
+        <div key={name} className={cx(s.bStage, i < o.stage && s.isPast, i === o.stage && s.isCurrent, flowing && i === o.stage + 1 && s.isReceiving, i === 0 && s.bFirst, i === N - 1 && s.bLast)}
           style={{ left: `${X(i)}%`, top: SPINE }} aria-current={i === o.stage ? 'step' : undefined}>
           <span className={s.bLabel}>{name}{t.repeats === i ? ' · repeats' : ''}</span>
           <span className={s.bDot} />
         </div>
       ))}
+      {flowing && <p className={s.srOnly}>{o.inflow}: data flowing from {t.stages[o.stage]} into {t.stages[o.stage + 1]}.</p>}
       {placed.map(({ e, x, y }, k) => {
         const sw = e.kind === 'software' && e.outputId ? outputById(e.outputId) : undefined
         const href = sw ? `#output/${sw.id}` : e.href
@@ -249,7 +258,7 @@ export function MiniStage({ o }: { o: Output }) {
       <span className={s.miniDots} aria-hidden="true">
         {t.stages.map((_, i) => (
           <span key={i} style={{ display: 'contents' }}>
-            {i > 0 && <span className={cx(s.miniBar, i <= o.stage && s.isPast)} />}
+            {i > 0 && <span className={cx(s.miniBar, i <= o.stage && s.isPast, o.inflow && i === o.stage + 1 && s.isFlowing)} />}
             <span className={cx(s.miniDot, i < o.stage && s.isPast, i === o.stage && s.isCurrent)} />
           </span>
         ))}

@@ -293,8 +293,17 @@ export function OutputPage({ o }: { o: Output }) {
       {sw && (
         <Section num={num()} title="Beta testers">
           <div className={s.intake}>
-            <span className={s.intakeState}>beta testing · not yet open</span>
-            <p className={s.intakeText}>Sign-up for this software will open here.</p>
+            {stageLabel(o) === 'Beta testing' ? (
+              <>
+                <span className={s.intakeState}>beta testing · in progress</span>
+                <p className={s.intakeText}>Public sign-up for this software will open here.</p>
+              </>
+            ) : (
+              <>
+                <span className={s.intakeState}>beta testing · not yet open</span>
+                <p className={s.intakeText}>Sign-up for this software will open here.</p>
+              </>
+            )}
           </div>
         </Section>
       )}
