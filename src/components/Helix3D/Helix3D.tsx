@@ -2715,29 +2715,33 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       track.innerHTML = block + block
     }
 
-    /* ---- CURSOR — custom dot + trailing ring ----
-       The dot tracks the mouse 1:1; the ring lerps toward it for a
-       lag effect, and grows (.is-active) over interactive elements.
-       The native cursor is hidden via CSS (restored under 720px).
+    /* ---- CURSOR — native dot + trailing ring ----
+       The dot is the OS cursor itself (--cursor-dot in helix3d.css), so
+       it never lags. The ring eases toward it for a trailing effect,
+       and grows (.is-active) over interactive elements. The easing is
+       time-based (same feel as 0.18/frame at 60fps) so the ring keeps
+       up when frames drop, and the RAF idles once it has caught up.
        Its own RAF is cancelled in cleanup. */
     function initCursor() {
-      const dot  = $('#cursor-dot')
       const ring = $('#cursor-ring')
-      if (!dot || !ring) return
+      if (!ring) return
       let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0
+      let cursorRaf = 0, lastT = 0
+      function lerp(t: number) {
+        const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 1 / 60
+        lastT = t
+        const k = 1 - Math.pow(1 - 0.18, dt * 60)
+        ringX += (mouseX - ringX) * k
+        ringY += (mouseY - ringY) * k
+        if (Math.abs(mouseX - ringX) < 0.1 && Math.abs(mouseY - ringY) < 0.1) { ringX = mouseX; ringY = mouseY }
+        ring!.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`
+        cursorRaf = ringX === mouseX && ringY === mouseY ? 0 : requestAnimationFrame(lerp)
+      }
       const onMove = (e: MouseEvent) => {
         mouseX = e.clientX; mouseY = e.clientY
-        dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`
+        if (!cursorRaf) { lastT = 0; cursorRaf = requestAnimationFrame(lerp) }
       }
-      window.addEventListener('mousemove', onMove)
-      let cursorRaf = 0
-      function lerp() {
-        ringX += (mouseX - ringX) * 0.18
-        ringY += (mouseY - ringY) * 0.18
-        ring!.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`
-        cursorRaf = requestAnimationFrame(lerp)
-      }
-      cursorRaf = requestAnimationFrame(lerp)
+      window.addEventListener('mousemove', onMove, { passive: true })
 
       const interactiveSel = 'a, button, .node-label, .list-item, canvas, .strand-win-bar, .strand-win-grip'
       const onOver = (e: Event) => {
@@ -2876,7 +2880,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
 
       {/* CURSOR — custom pointer (hidden ≤720px); driven by initCursor */}
       <div className="cursor-ring" id="cursor-ring" />
-      <div className="cursor-dot" id="cursor-dot" />
 
       {/* CORNER CROPS — decorative crimson L-marks framing the scene.
           Their offsets clear the marquee (top) and footer (bottom);
