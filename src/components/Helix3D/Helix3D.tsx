@@ -2420,7 +2420,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       //    parked off-canvas (x left at -9999) or the list view hides
       //    the canvas.
       const sceneHidden = listview.classList.contains('is-visible')
-      if (pointer.x > -2 && !sceneHidden) {
+      // No hover highlights while the staff is being dragged or is still
+      // coasting from a fling: cubes flashing crimson under a sweeping
+      // cursor looks clunky. Clear any highlight and resume once settled.
+      const spinning = (dragging && dragMoved) || Math.abs(spinVel) > SPIN_STOP
+      if (spinning) {
+        hoveredOutput = null
+        pointerSection = null
+        if (hoveredId !== null && !isFocused()) deactivate()
+        setLabelHover(null)
+      } else if (pointer.x > -2 && !sceneHidden) {
         raycaster.setFromCamera(pointer, camera)
         const hits = raycaster.intersectObjects(nodePickables, false)
         if (hits.length) {
