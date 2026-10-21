@@ -2461,7 +2461,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         }
       }
 
-      if (pointer.x <= -2) pointerSection = null
+      // Pointer parked (left the canvas, or a touch tap finished): nothing
+      // is hovered any more — clear it, or a tapped cube stays crimson.
+      if (pointer.x <= -2) {
+        pointerSection = null
+        if (hoveredOutput !== null) { hoveredOutput = null; setLabelHover(null) }
+      }
       // Section cubes: plum by default (focused included); crimson only
       // while the cursor is actually on that cube.
       nodes.forEach((n) => {
