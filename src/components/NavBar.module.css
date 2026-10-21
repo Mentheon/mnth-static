@@ -6,6 +6,10 @@
    Square styling, consistent with the Helix3D in-scene nav. */
 
 .bar {
+  /* One control height for the whole bar (logo, A− A A+, theme, menu),
+     in px so it doesn't change with the text-size setting. Heights
+     below are outer heights (borders included). */
+  --ctl-h: 38px;
   position: sticky;
   top: 0;
   z-index: 60;
@@ -13,7 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.9rem 1.5rem;
+  padding: 1.1rem 1.75rem;
   background: var(--bg);
   color: var(--ink);
   border-bottom: 1px solid var(--line);
@@ -26,7 +30,7 @@
   text-decoration: none;
 }
 .markLogo {
-  height: 32px;
+  height: var(--ctl-h);
   width: auto;
   display: block;
 }
@@ -50,6 +54,8 @@
   border: 1px solid var(--line);
   border-radius: 0;
   cursor: pointer;
+  box-sizing: border-box;
+  height: var(--ctl-h);
 }
 
 .textSize {
@@ -68,7 +74,7 @@
   align-items: center;
   justify-content: center;
   width: 2.4rem;
-  height: 2rem;
+  height: 100%;            /* fills the group: outer height = --ctl-h */
   padding: 0;
   cursor: pointer;
   letter-spacing: 0.04em;
@@ -86,8 +92,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 32px;
+  width: var(--ctl-h);
   padding: 0;
   transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
@@ -110,7 +115,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.45rem 0.7rem;
+  padding: 0 0.7rem;
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -255,19 +260,33 @@
     display: flex; justify-content: center; padding: 8px 0;
     background: var(--bg); border-bottom: 1px solid var(--line);
   }
-  .viewSwitch { display: flex; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
+  .bar { --ctl-h: 40px; }   /* phones: every bar control 40px, matching the switch below */
+  /* Room to breathe on phones: tighter edges, a square icon-only menu
+     button (aria-label keeps "Open menu"), small gap on the right. */
+  .bar { padding: 0.8rem 0.9rem; }
+  .controls { gap: 6px; }
+  .menuBtn { width: var(--ctl-h); padding: 0; gap: 0; justify-content: center; font-size: 0; letter-spacing: 0; }
+  .viewSwitch { display: flex; box-sizing: border-box; height: 40px; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
   .viewSwitch a {
-    width: 64px; min-height: 36px; display: flex; align-items: center; justify-content: center;
+    width: 69px; height: 100%; display: flex; align-items: center; justify-content: center;
     color: var(--ink); text-decoration: none;
     font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
   }
   .viewSwitch a[aria-current='page'] { background: var(--ink); color: var(--bg); }
 
   /* A− · A · A+ centred in the bar, directly above 3d | list and the
-     same width (3 × 43 ≈ 2 × 64), logo left, theme + menu right. */
+     same width (3 × 46 = 2 × 69), logo left, theme + menu right. */
   .textSize { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-  .textSize button { width: 43px; height: 36px; min-width: 0; padding: 0; }   /* same height as the switch */
+  .textSize button { width: 46px; min-width: 0; padding: 0; }
 }
 /* Over the 3D staff view: bar + switch row fixed above the scene. */
 .barOver { position: fixed; left: 0; right: 0; top: 0; }
 .viewRowOver { position: fixed; left: 0; right: 0; }
+
+/* Very small phones: narrow the centred pair together so they still
+   line up (3 × 38 = 2 × 57) and clear the logo and right controls. */
+@media (max-width: 360px) {
+  .bar { padding: 0.7rem 0.7rem; }
+  .textSize button { width: 38px; }
+  .viewSwitch a { width: 57px; }
+}
