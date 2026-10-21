@@ -58,6 +58,9 @@
    is the fallback for older browsers. */
 html, body, #root { max-width: 100%; overflow-x: hidden; overflow-x: clip; }
 
+/* No grey flash box on tap (iOS/Android); pressed states come from CSS. */
+* { -webkit-tap-highlight-color: transparent; }
+
 html,
 body {
   margin: 0;

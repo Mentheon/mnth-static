@@ -162,6 +162,8 @@
   /* Dragging the staff must not text-select labels/captions (blue
      boxes); fields inside windows opt back in below. */
   -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;              /* no long-press callout / magnifier */
+  -webkit-tap-highlight-color: transparent; /* no grey box on tap */
   font-family: 'Lato', sans-serif;
   /* Solid themed ground + a low-opacity blueprint grid layered on
      top of it. Painted as the root's own background, so it sits

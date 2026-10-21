@@ -1830,10 +1830,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* Convert mouse position to normalised device coords (-1..1)
        for the raycaster. Off-canvas is parked at -9999 (see onLeave)
        so render() can cheaply skip raycasting. */
-    function onPointerMove(e: PointerEvent) {
+    function aimAt(e: { clientX: number; clientY: number }) {
       const rect = renderer.domElement.getBoundingClientRect()
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+    }
+    /* Hover tracks mice/pens only: a finger sliding over the scene
+       (holding, swiping) must not light cubes up. Taps aim via onClick. */
+    function onPointerMove(e: PointerEvent) {
+      if (e.pointerType === 'touch') return
+      aimAt(e)
     }
 
     /* Render resolution: desktop canvases are big, so cap at 1.5× for
@@ -1932,8 +1938,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (suppressClick) { suppressClick = false; return }
       // Aim at the click/tap point itself: a tap has no hover beforehand,
       // so hoveredOutput would be empty on touch screens.
-      onPointerMove(e as PointerEvent)
+      aimAt(e)
       raycaster.setFromCamera(pointer, camera)
+      // Touch: aim for this tap only, then park the pointer so the tapped
+      // cube isn't left highlighted (there's no hover to clear it).
+      const touchTap = (e as PointerEvent).pointerType === 'touch' || isPhone()
+      if (touchTap) requestAnimationFrame(() => { pointer.x = -9999; pointer.y = -9999 })
       // A project cube anywhere along the ray wins over the strand's hit
       // sphere (on phones the side cubes sit inside that sphere).
       let tapped = raycaster.intersectObjects(nodePickables, false)
