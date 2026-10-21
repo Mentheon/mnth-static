@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.9rem 1.5rem;
+  padding: 1.1rem 1.75rem;
   background: var(--bg);
   color: var(--ink);
   border-bottom: 1px solid var(--line);
@@ -263,7 +263,7 @@
   .bar { --ctl-h: 40px; }   /* phones: every bar control 40px, matching the switch below */
   /* Room to breathe on phones: tighter edges, a square icon-only menu
      button (aria-label keeps "Open menu"), small gap on the right. */
-  .bar { padding: 0.6rem 0.75rem; }
+  .bar { padding: 0.8rem 0.9rem; }
   .controls { gap: 6px; }
   .menuBtn { width: var(--ctl-h); padding: 0; gap: 0; justify-content: center; font-size: 0; letter-spacing: 0; }
   .viewSwitch { display: flex; box-sizing: border-box; height: 40px; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
@@ -286,7 +286,7 @@
 /* Very small phones: narrow the centred pair together so they still
    line up (3 × 38 = 2 × 57) and clear the logo and right controls. */
 @media (max-width: 360px) {
-  .bar { padding: 0.55rem 0.6rem; }
+  .bar { padding: 0.7rem 0.7rem; }
   .textSize button { width: 38px; }
   .viewSwitch a { width: 57px; }
 }
