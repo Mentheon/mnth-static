@@ -60,11 +60,14 @@
     color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.tab:hover,
 .tab:focus-visible {
   background: var(--crimson);
   outline: none;
 }
+@media (hover: hover) { .tab:hover {
+  background: var(--crimson);
+  outline: none;
+} }
 
 .text {
   writing-mode: vertical-rl;
@@ -83,11 +86,14 @@
   transition: color 0.25s;
 }
 
-.tab:hover .star,
 .tab:focus-visible .star {
   /* On crimson ground the star flips to the cream so it stays read. */
   color: var(--bg);
 }
+@media (hover: hover) { .tab:hover .star {
+  /* On crimson ground the star flips to the cream so it stays read. */
+  color: var(--bg);
+} }
 
 /* This tab is rendered inside `.helix3d-root`, whose scoped reset
    `.helix3d-root a { background:none }` (specificity 0,1,1) would
@@ -96,10 +102,12 @@
 .tab.tab {
   background: var(--ink);
 }
-.tab.tab:hover,
 .tab.tab:focus-visible {
   background: var(--crimson);
 }
+@media (hover: hover) { .tab.tab:hover {
+  background: var(--crimson);
+} }
 
 @media (max-width: 720px) {
   .tab {

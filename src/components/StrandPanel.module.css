@@ -53,10 +53,10 @@
   transition: color 0.2s, transform 0.2s;
 }
 
-.closeButton:hover {
+@media (hover: hover) { .closeButton:hover {
   color: #A30B37;
   transform: scale(1.1);
-}
+} }
 
 .panelHeader {
   display: flex;
@@ -130,11 +130,11 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.themeCard:hover {
+@media (hover: hover) { .themeCard:hover {
   background-color: rgba(163, 11, 55, 0.06);
   border-left-color: #A30B37;
   transform: translateX(2px);
-}
+} }
 
 .themeNumber {
   font-size: 0.75rem;
@@ -144,9 +144,9 @@
   margin-bottom: 0.5rem;
 }
 
-.themeCard:hover .themeNumber {
+@media (hover: hover) { .themeCard:hover .themeNumber {
   color: #A30B37;
-}
+} }
 
 .themeTitle {
   font-size: 1.15rem;
@@ -183,19 +183,19 @@
   transition: background-color 0.2s, gap 0.2s;
 }
 
-.ctaLink:hover {
+@media (hover: hover) { .ctaLink:hover {
   background-color: #2F0147;
   gap: 1rem;
-}
+} }
 
 .ctaArrow {
   display: inline-block;
   transition: transform 0.2s;
 }
 
-.ctaLink:hover .ctaArrow {
+@media (hover: hover) { .ctaLink:hover .ctaArrow {
   transform: translateX(3px);
-}
+} }
 
 @media (max-width: 640px) {
   .panelInner { padding: 2rem 1.5rem 1.5rem; }
@@ -214,7 +214,7 @@
    :global keys off the un-hashed .helix3d-root so this never matches
    on the single-theme main site. */
 :global(.helix3d-root) .ctaLink { background-color: #A30B37; }
-:global(.helix3d-root) .ctaLink:hover { background-color: #2F0147; }
+@media (hover: hover) { :global(.helix3d-root) .ctaLink:hover { background-color: #2F0147; } }
 
 /* ===== Dark variant — Helix3D dark theme only =====
    Surface matches the dark scene background exactly: var(--bg) /
@@ -226,7 +226,7 @@
   border-color: var(--ink);
 }
 :global(.helix3d-root[data-theme="dark"]) .closeButton { color: var(--ink); }
-:global(.helix3d-root[data-theme="dark"]) .closeButton:hover { color: #D63158; }
+@media (hover: hover) { :global(.helix3d-root[data-theme="dark"]) .closeButton:hover { color: #D63158; } }
 :global(.helix3d-root[data-theme="dark"]) .panelHeader {
   border-bottom-color: rgba(255, 236, 225, 0.18);
 }
@@ -237,11 +237,11 @@
 :global(.helix3d-root[data-theme="dark"]) .themeCard {
   background-color: rgba(255, 236, 225, 0.05);
 }
-:global(.helix3d-root[data-theme="dark"]) .themeCard:hover {
+@media (hover: hover) { :global(.helix3d-root[data-theme="dark"]) .themeCard:hover {
   background-color: rgba(214, 49, 88, 0.12);
   border-left-color: #D63158;
-}
-:global(.helix3d-root[data-theme="dark"]) .themeCard:hover .themeNumber { color: #D63158; }
-:global(.helix3d-root[data-theme="dark"]) .ctaLink:hover {
+} }
+@media (hover: hover) { :global(.helix3d-root[data-theme="dark"]) .themeCard:hover .themeNumber { color: #D63158; } }
+@media (hover: hover) { :global(.helix3d-root[data-theme="dark"]) .ctaLink:hover {
   background-color: #FFECE1; color: #2F0147;
-}
+} }

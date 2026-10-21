@@ -291,11 +291,11 @@
   transform-box: fill-box;
   transform-origin: center;
 }
-.roadmap-node:hover .roadmap-node-circle {
+@media (hover: hover) { .roadmap-node:hover .roadmap-node-circle {
   /* Hover ONLY scales (Hero behaviour: no fill change on hover —
      fill changes happen only when the bubble is actively selected). */
   transform: scale(1.12);
-}
+} }
 /* Consultancy satellite — dashed outline still distinguishes it. */
 .roadmap-node--satellite .roadmap-node-circle {
   fill: var(--bg);
@@ -303,10 +303,10 @@
   stroke-width: 2.5;
   stroke-dasharray: 5 5;
 }
-.roadmap-node--satellite:hover .roadmap-node-circle {
+@media (hover: hover) { .roadmap-node--satellite:hover .roadmap-node-circle {
   /* Same hover behaviour as Hero: just scale, no fill change. */
   transform: scale(1.12);
-}
+} }
 
 /* Emoji icon centred inside each node — same family + size ratio as
    HeroIconsWithContent (which uses font-size 72px in a 120px circle,
@@ -472,13 +472,18 @@
   opacity: 1;
   pointer-events: auto;
 }
-.concept-c-seemore:hover,
 .concept-c-seemore:focus-visible {
   background-color: var(--crimson);
   color: var(--bg);
   border-color: var(--crimson);
   transform: translate(-50%, -2px);
 }
+@media (hover: hover) { .concept-c-seemore:hover {
+  background-color: var(--crimson);
+  color: var(--bg);
+  border-color: var(--crimson);
+  transform: translate(-50%, -2px);
+} }
 .concept-c-seemore-arrow {
   display: inline-block;
   font-size: 1rem;
@@ -567,16 +572,20 @@
   opacity: 0.35;
   transition: background 220ms ease, opacity 220ms ease, transform 220ms ease;
 }
-.concept-pill:hover .concept-pill-dot {
+@media (hover: hover) { .concept-pill:hover .concept-pill-dot {
   opacity: 0.7;
   transform: scale(1.15);
-}
-.concept-pill--active .concept-pill-dot,
-.concept-pill--active:hover .concept-pill-dot {
+} }
+.concept-pill--active .concept-pill-dot {
   background: var(--crimson);
   opacity: 1;
   transform: scale(1.4);
 }
+@media (hover: hover) { .concept-pill--active:hover .concept-pill-dot {
+  background: var(--crimson);
+  opacity: 1;
+  transform: scale(1.4);
+} }
 
 @media (max-width: 640px) {
   .concept-pillnav { left: 0.6rem; gap: 0.55rem; }
@@ -633,11 +642,11 @@
     background: var(--crimson);
     transform: none;
   }
-  .concept-pill:hover .concept-pill-dot {
+  @media (hover: hover) { .concept-pill:hover .concept-pill-dot {
     /* Subtle haptic-feel cue for touch — slight width nudge. */
     transform: scaleX(1.6);
     transform-origin: left center;
-  }
+  } }
   .concept-section {
     /* Tighter padding — phones can't afford 2rem each side. */
     padding: 1rem;

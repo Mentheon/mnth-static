@@ -1,0 +1,139 @@
+/* Beta seats + request dialog. Global tokens, so it follows the site
+   theme. The dialog uses the strand-window chrome (ink title bar,
+   crimson crop); on phones it becomes a bottom sheet. */
+
+.beta { display: flex; flex-direction: column; align-items: flex-start; }
+
+.count { display: flex; align-items: baseline; gap: 0.75rem; margin: 0; }
+.count b { font-weight: 900; font-size: 2.6rem; line-height: 1; letter-spacing: -0.02em; }
+.count span { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
+
+.meter { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; width: 100%; max-width: 56rem; margin: 0.9rem 0 1.4rem; }
+.meter i { height: 6px; background: var(--ink-soft); }
+.meter i[data-state='taken'] { background: var(--ink); }
+.meter i[data-state='mine'] { background: var(--crimson); }
+
+.seats { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 0.75rem; width: 100%; max-width: 56rem; }
+.seat {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 0 0.6rem; background: none; color: var(--ink);
+  border: 1px solid var(--ink-soft); border-radius: 2px; font: inherit; cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+@media (hover: hover) { .seat:hover:not(:disabled) { border-color: var(--grape); transform: translateY(-2px); } }
+.seat:disabled { cursor: default; }
+.seat[data-state='mine'] { border-color: var(--crimson); border-width: 1.5px; }
+.seat:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+.seat > span { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-quiet); }
+
+.figure { width: 3.2rem; height: 3.7rem; display: block; }
+.figure circle, .figure path { stroke-width: 1.6; stroke-linejoin: round; }
+.figure[data-state='taken'] circle, .figure[data-state='taken'] path { fill: var(--ink); stroke: var(--ink); }
+.figure[data-state='open'] circle, .figure[data-state='open'] path { fill: none; stroke: var(--grape); stroke-dasharray: 4 3; }
+.figure[data-state='mine'] circle, .figure[data-state='mine'] path { fill: var(--crimson); stroke: var(--crimson); }
+
+.legend { display: flex; gap: 1.4rem; margin-top: 1.1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-quiet); }
+.legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend .figure { width: 0.8rem; height: 0.95rem; }
+
+.cta {
+  display: inline-flex; align-items: center; gap: 0.6rem; margin-top: 1.5rem; min-height: 46px; padding: 0 1.3rem;
+  background: var(--crimson); color: #FFECE1; border: none; border-radius: 2px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+  transition: background-color 0.2s, gap 0.2s;
+}
+@media (hover: hover) { .cta:hover:not(:disabled) { background: var(--ink); color: var(--bg); gap: 0.9rem; } }
+.cta:disabled { background: var(--ink-soft); color: var(--ink-quiet); cursor: default; }
+
+/* ---- Request dialog ---- */
+.scrim { position: fixed; inset: 0; z-index: 590; background: rgba(0, 0, 0, 0.24); animation: fade 0.3s ease-out; }
+.dialog {
+  position: fixed; z-index: 600; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(840px, calc(100vw - 32px)); max-height: calc(100dvh - 48px);
+  display: flex; flex-direction: column; color: var(--ink); font-family: 'Lato', sans-serif;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
+}
+.crop { position: absolute; top: -12px; left: -12px; width: 24px; height: 24px; border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson); z-index: 2; }
+.bar {
+  position: relative; flex: none; height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0 0.35rem 0 1rem; background: var(--ink); color: var(--bg); border-radius: 2px 2px 0 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase;
+}
+.grab { display: none; }
+.close { background: none; border: none; color: var(--bg); font-family: 'Lato', sans-serif; font-size: 1.3rem; line-height: 1; padding: 0.15rem 0.55rem; cursor: pointer; border-radius: 2px; }
+@media (hover: hover) { .close:hover { color: var(--crimson); background: var(--bg); } }
+.body {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 2rem;
+  overflow: auto; background: var(--bg); border: 2px solid var(--ink); border-top: none; padding: 1.75rem 1.9rem 1.9rem;
+}
+.title { margin: 0; font-weight: 900; font-size: 1.9rem; line-height: 1.05; }
+.seatPill {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; padding: 0.35rem 0.6rem;
+  border: 1.5px solid var(--crimson); border-radius: 2px; color: var(--crimson);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.seatPill .figure { width: 0.8rem; height: 0.95rem; }
+.label {
+  display: flex; justify-content: space-between; margin: 1.25rem 0 0.5rem;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.label span { font-weight: 400; color: var(--ink-quiet); }
+.input {
+  width: 100%; box-sizing: border-box; min-height: 42px; padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--ink-soft); border-radius: 2px; background: var(--bg); color: var(--ink);
+  font-family: 'Lato', sans-serif; font-size: 1rem; line-height: 1.5; outline: none; resize: vertical;
+}
+.input:focus { border-color: var(--ink); }
+/* 16px+ text stops iOS zooming the page when a field is focused. */
+@media (max-width: 720px) { .input { font-size: 16px; } }
+.platforms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
+.platform {
+  min-height: 42px; border: 1.5px solid var(--ink-soft); border-radius: 2px; background: var(--bg); color: var(--ink); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
+}
+@media (hover: hover) { .platform:hover { border-color: var(--ink); } }
+.platform[aria-checked='true'] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.platform:focus-visible { outline: 2px solid var(--crimson); outline-offset: 2px; }
+.side { display: flex; flex-direction: column; }
+.summary { flex: 1; padding: 0.9rem 1rem; background: var(--bg-soft); border: 1px dashed var(--ink-soft); }
+.summary p { margin: 0 0 0.6rem; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
+.summary pre { margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+.actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0.6rem; margin-top: 0.9rem; }
+.primary, .secondary {
+  min-height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 2px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.primary { background: var(--crimson); color: #FFECE1; border: none; }
+.secondary { background: var(--bg); color: var(--ink); border: 1.5px solid var(--ink); }
+.primary:disabled, .secondary:disabled, .primary[aria-disabled='true'] { background: var(--ink-soft); color: var(--ink-quiet); border: none; cursor: default; }
+.note { margin: 0.75rem 0 0; font-size: 0.85rem; line-height: 1.5; opacity: 0.8; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Phones: five seats per row; the dialog is a bottom sheet, one column. */
+@media (max-width: 720px) {
+  .seats { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6rem 0.35rem; }
+  .meter { margin-bottom: 1.1rem; }
+  .cta { width: 100%; justify-content: center; }
+  /* Bottom sheet that rides above the keyboard (--kb) and never grows
+     past the visible area (--vvh); both set from visualViewport. */
+  .dialog {
+    left: 0; right: 0; top: auto; bottom: var(--kb, 0px); transform: none; width: auto;
+    max-height: calc(var(--vvh, 100dvh) - 12px); animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: bottom 0.2s ease-out, max-height 0.2s ease-out;
+  }
+  .body { overscroll-behavior: contain; }
+  .crop { left: 6px; top: -10px; }
+  .bar { height: 52px; border-radius: 6px 6px 0 0; touch-action: none; }
+  .grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
+  .close { min-width: 44px; min-height: 44px; font-size: 1.6rem; }
+  .body { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.25rem 1rem 1.5rem; border-left: none; border-right: none; }
+  .platforms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .platform, .input { min-height: 44px; }
+  .primary, .secondary { min-height: 48px; }
+}
+@keyframes rise { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim, .dialog { animation: none; }
+}

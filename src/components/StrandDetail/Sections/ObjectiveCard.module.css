@@ -30,14 +30,14 @@
   transition: border-color 0.2s;
 }
 
-.card:hover {
+@media (hover: hover) { .card:hover {
   border-color: #A30B37;
   transform: translateY(-2px);
-}
+} }
 
-.card:hover::after {
+@media (hover: hover) { .card:hover::after {
   border-color: #A30B37;
-}
+} }
 
 .verb {
   font-family: 'Lato', sans-serif;

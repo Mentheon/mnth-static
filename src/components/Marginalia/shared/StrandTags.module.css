@@ -26,7 +26,7 @@
 .tagDetail {
   cursor: pointer;
 }
-.tagDetail:hover {
+@media (hover: hover) { .tagDetail:hover {
   background: var(--crimson);
   color: var(--bg);
-}
+} }

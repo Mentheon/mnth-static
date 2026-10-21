@@ -92,11 +92,13 @@
   letter-spacing: 0.04em;
 }
 .textSize button:first-child {
-  border-right: 1px solid var(--line);
   font-size: 0.78rem;
 }
 .textSize button:last-child { font-size: 0.92rem; }
-.textSize button:hover { background: var(--ink); color: var(--bg); }
+/* A divider before every button but the first (A− | A | A+). */
+.textSize button + button { border-left: 1px solid var(--line); }
+.textSize button:not(:first-child):not(:last-child) { font-size: 0.85rem; }
+@media (hover: hover) { .textSize button:hover { background: var(--ink); color: var(--bg); } }
 
 .brightness {
   display: inline-flex;
@@ -107,7 +109,7 @@
   padding: 0;
   transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-.brightness:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .brightness:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); } }
 .brightness svg {
   width: 16px;
   height: 16px;
@@ -131,7 +133,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
-.menuBtn:hover { border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .menuBtn:hover { border-color: var(--crimson); color: var(--crimson); } }
 .menuBtnLines {
   display: inline-flex;
   flex-direction: column;
@@ -221,7 +223,7 @@
   text-decoration: none;
   transition: color 0.2s ease, transform 0.2s ease;
 }
-.menuItem:hover { color: var(--crimson); transform: translateX(20px); }
+@media (hover: hover) { .menuItem:hover { color: var(--crimson); transform: translateX(20px); } }
 .menuItemNum {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
@@ -247,7 +249,7 @@
   margin-left: 1.5rem;
   transition: opacity 0.2s ease;
 }
-.menuBottom a:hover { opacity: 1; }
+@media (hover: hover) { .menuBottom a:hover { opacity: 1; } }
 
 @media (max-width: 640px) {
   .topbar { padding: 0.8rem 1rem; }

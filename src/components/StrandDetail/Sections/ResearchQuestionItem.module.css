@@ -6,10 +6,10 @@
   transition: border-left-color 0.2s, background 0.2s;
 }
 
-.item:hover {
+@media (hover: hover) { .item:hover {
   border-left-color: #A30B37;
   background: rgba(163, 11, 55, 0.05);
-}
+} }
 
 .num {
   position: absolute;
@@ -21,7 +21,7 @@
   color: #9C528B;
 }
 
-.item:hover .num { color: #A30B37; }
+@media (hover: hover) { .item:hover .num { color: #A30B37; } }
 
 .text {
   font-size: 1rem;

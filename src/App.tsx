@@ -7,11 +7,15 @@ import ScrollLockView from './components/Helix3D/ScrollLockView'
 import StrandDetail from './components/StrandDetail'
 import Marginalia from './components/Marginalia'
 import LoaderGallery from './components/LoaderGallery'
+import AnalyticsNotice from './components/AnalyticsNotice'
+import MobileHome from './components/Mobile/MobileHome'
+import { useIsMobile } from './lib/useIsMobile'
+import { trackPageview } from './lib/analytics'
 import { STRANDS, STRAND_PAGES } from './data/strands'
 import {
-  FrameworkPage, CategoryPage, PlasmidsPage, RegisterPage, OutputPage, InfrastructurePage, ServicesPage, NotFoundPage,
+  FrameworkPage, CategoryPage, PlasmidsPage, RegisterPage, OutputPage, LockedOutputPage, InfrastructurePage, ServicesPage, NotFoundPage,
 } from './components/Framework/pages'
-import { categoryById, outputById, type CategoryId } from './data/framework'
+import { categoryById, outputById, isOpen, type CategoryId } from './data/framework'
 
 function useHash() {
   const [hash, setHash] = useState(window.location.hash)
@@ -40,13 +44,15 @@ export default function App() {
   // `#helix3d?skipIntro=true` — back traversals home carry this param so
   // returning to the scene doesn't replay the loader/gate intro. Only the
   // very first navigation onto the site (no param) plays the intro.
-  const wantsSkipIntro = new URLSearchParams(
-    hash.includes('?') ? hash.split('?').slice(1).join('?') : ''
-  ).get('skipIntro') === 'true'
+  const hashQuery = new URLSearchParams(hash.includes('?') ? hash.split('?').slice(1).join('?') : '')
+  const wantsSkipIntro = hashQuery.get('skipIntro') === 'true'
+  // Phones: the 3D scene is the default home; `#helix3d?view=list`
+  // (the 3d | list switch) shows the condensed strand list instead.
+  const isMobile = useIsMobile()
   const page =
     hashPath === '#helix3d' ? 'helix3d'    : // bare or ?skipIntro=true both route to helix3d
     hash === '#scrolllock' ? 'scrolllock' :
-    hash === '#who'     ? 'who'        :
+    hashPath === '#who' ? 'who'        : // ?person=<id> opens that profile
     hash === '#loaders' ? 'loaders'    :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
@@ -61,13 +67,33 @@ export default function App() {
     hashPath.startsWith('#output/')   ? 'output' :
     'helix3d'
 
+  // Each hash route counts as a pageview. Keyed on the path (not the
+  // full hash), so `?strand=` filter tweaks don't re-count.
+  useEffect(() => { trackPageview() }, [hashPath])
+
+  const mobileHome = page === 'helix3d' && isMobile && hashQuery.get('view') === 'list'
+
   let content: ReactNode
-  if (page === 'helix3d') {
+  if (mobileHome) {
+    content = (
+      <>
+        <NavBar view="list" />
+        <MobileHome />
+      </>
+    )
+  } else if (page === 'helix3d') {
     // Full-viewport takeover with its own chrome (and its own
     // Marginalia tab) — rendered standalone, no shared Header.
     // First load (renderKey 0) plays the loader/gate intro; any
     // dev re-render (renderKey > 0) skips straight to the scene.
-    content = <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
+    content = isMobile ? (
+      // Phones: the site bar (list | staff · menu) over the scene, in
+      // place of the scene's own nav.
+      <>
+        <NavBar view="3d" />
+        <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
+      </>
+    ) : <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
   } else if (page === 'scrolllock') {
     // Frozen scroll-locked variant of the same 3D concept.
     content = <ScrollLockView />
@@ -134,7 +160,9 @@ export default function App() {
         ) : page === 'output' ? (
           (() => {
             const o = outputById(hashPath.slice('#output/'.length))
-            return o ? <OutputPage key={o.id} o={o} /> : <NotFoundPage what="output" />
+            return !o ? <NotFoundPage what="output" />
+              : isOpen(o) ? <OutputPage key={o.id} o={o} />
+              : <LockedOutputPage key={o.id} o={o} />
           })()
         ) : (
           // `#concept` renders the ConceptView. The legacy home view
@@ -153,6 +181,10 @@ export default function App() {
           effect-driven scenes (Helix3D loader/gate/WebGL) rebuild
           from scratch. */}
       <Fragment key={renderKey}>{content}</Fragment>
+
+      {/* First-visit analytics info notice. Outside the keyed Fragment
+          so a dev remount doesn't bring it back. */}
+      <AnalyticsNotice onHelix={page === 'helix3d' && !mobileHome} />
 
       {/* Dev-only re-render button. `import.meta.env.DEV` is statically
           false in production builds, so this is dropped from the

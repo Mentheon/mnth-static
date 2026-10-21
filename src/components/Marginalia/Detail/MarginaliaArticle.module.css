@@ -16,10 +16,10 @@
   transition: color 0.15s, opacity 0.15s;
 }
 
-.breadcrumb a:hover {
+@media (hover: hover) { .breadcrumb a:hover {
   opacity: 1;
   color: var(--crimson);
-}
+} }
 
 .sep {
   padding: 0 0.6em;
@@ -105,12 +105,12 @@
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, gap 0.2s;
 }
 
-.backCta:hover {
+@media (hover: hover) { .backCta:hover {
   background: var(--bg-soft, rgba(47, 1, 71, 0.04));
   border-color: var(--ink);
   color: var(--crimson);
   gap: 0.7rem;
-}
+} }
 
 @media (max-width: 880px) {
   .breadcrumb,

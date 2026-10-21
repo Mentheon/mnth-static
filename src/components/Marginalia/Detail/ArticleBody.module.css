@@ -67,7 +67,7 @@
   text-decoration-thickness: 1px;
   transition: color 0.15s ease;
 }
-.body a:hover { color: var(--crimson); }
+@media (hover: hover) { .body a:hover { color: var(--crimson); } }
 
 .body ul,
 .body ol {

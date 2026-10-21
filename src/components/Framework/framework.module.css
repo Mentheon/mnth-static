@@ -28,7 +28,7 @@
   text-transform: uppercase;
   transition: color 0.2s, border-color 0.2s, gap 0.2s;
 }
-.back:hover { color: var(--crimson); border-color: var(--crimson); gap: 0.9rem; }
+@media (hover: hover) { .back:hover { color: var(--crimson); border-color: var(--crimson); gap: 0.9rem; } }
 .backArrow { font-size: 0.9rem; letter-spacing: 0; }
 .kbd {
   font-size: 0.56rem;
@@ -54,7 +54,7 @@
 }
 .crumbs > span > a, .crumbs > span > span { white-space: nowrap; }
 .crumbs a { color: var(--ink); opacity: 0.7; transition: opacity 0.2s, color 0.2s; }
-.crumbs a:hover { opacity: 1; color: var(--crimson); }
+@media (hover: hover) { .crumbs a:hover { opacity: 1; color: var(--crimson); } }
 .sep { opacity: 0.4; }
 
 /* ---- framed plate ---- */
@@ -163,7 +163,7 @@
   text-wrap: pretty;
 }
 .prose a, .link { color: var(--crimson); border-bottom: 1px solid currentColor; }
-.prose a:hover, .link:hover { color: var(--ink); }
+@media (hover: hover) { .prose a:hover, .link:hover { color: var(--ink); } }
 
 /* ---- meta / field strip ---- */
 .fields {
@@ -190,7 +190,7 @@
 }
 .fieldValue { font-weight: 700; font-size: 0.98rem; line-height: 1.3; }
 .fieldValue a { color: var(--ink); border-bottom: 1px solid var(--ink-soft); }
-.fieldValue a:hover { color: var(--crimson); border-color: var(--crimson); }
+@media (hover: hover) { .fieldValue a:hover { color: var(--crimson); border-color: var(--crimson); } }
 
 /* ---- pathway strip ---- */
 .pathway {
@@ -209,7 +209,7 @@
   color: var(--ink);
   transition: background-color 0.2s, color 0.2s;
 }
-.pathStep:hover { background: var(--bg-soft); color: var(--crimson); }
+@media (hover: hover) { .pathStep:hover { background: var(--bg-soft); color: var(--crimson); } }
 .pathStep.isActive { border-top-color: var(--crimson); border-top-width: 4px; margin-top: -2px; }
 .pathStep.isActive .pathLabel { color: var(--crimson); }
 .pathNum { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--ink-quiet); }
@@ -356,7 +356,7 @@
 .bExit.isSoftware .bExitKind:first-child { color: var(--crimson); }
 .bExitTitle { font-weight: 700; font-size: 0.85rem; line-height: 1.3; color: var(--ink); }
 a.bExitTitle { border-bottom: 1px solid var(--ink-soft); }
-a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
+@media (hover: hover) { a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); } }
 .trackLegend { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 0.4rem 0 0; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
 .trackLegend > span { display: inline-flex; align-items: center; gap: 0.5rem; }
 .legSolid, .legDash, .legSw { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--ink); }
@@ -386,7 +386,7 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
   transition: background-color 0.2s, gap 0.2s;
 }
-.cta:hover { background: var(--ink); color: var(--bg); gap: 0.9rem; }
+@media (hover: hover) { .cta:hover { background: var(--ink); color: var(--bg); gap: 0.9rem; } }
 
 /* ---- objectives (numbered cards) ---- */
 .objectives { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; counter-reset: obj; }
@@ -401,7 +401,7 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
 /* ---- research questions ---- */
 .rqs { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
 .rq { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1rem; padding: 1rem 1.2rem; border-left: 3px solid var(--grape); background: var(--bg-soft); transition: border-color 0.2s; }
-.rq:hover { border-left-color: var(--crimson); }
+@media (hover: hover) { .rq:hover { border-left-color: var(--crimson); } }
 .rqNum { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; color: var(--crimson); padding-top: 0.15rem; }
 .rqText { font-size: 1rem; line-height: 1.55; }
 
@@ -411,7 +411,13 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
 .personRole { font-style: italic; opacity: 0.75; font-size: 0.92rem; }
 .personInst { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
 .personMail { margin-top: 0.6rem; align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
-.personMail:hover { color: var(--crimson); border-color: var(--crimson); }
+@media (hover: hover) { .personMail:hover { color: var(--crimson); border-color: var(--crimson); } }
+/* Profile + email links on one row, sharing a baseline. The button drops
+   its browser padding / line-height so it sits exactly like the link. */
+.personLinks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.25rem; margin-top: 0.6rem; }
+.personLinks .personMail { margin-top: 0; }
+.personBtn { margin: 0; padding: 0 0 2px; background: none; border-top: none; border-left: none; border-right: none; line-height: inherit; font-weight: inherit; cursor: pointer; text-align: left; }
+.personPhoto { width: 64px; height: 64px; display: block; margin-bottom: 0.75rem; }
 
 /* compact stage line (rows) */
 .mini { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
@@ -459,9 +465,16 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
   color: var(--ink);
   transition: padding-left 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s;
 }
-.row:hover { padding-left: 1.5rem; background: color-mix(in srgb, var(--crimson) 5%, transparent); }
-.row:hover .rowTitle, .row:hover .rowArrow { color: var(--crimson); }
-.row:hover .rowArrow { transform: translateX(8px); }
+@media (hover: hover) { .row:hover { padding-left: 1.5rem; background: color-mix(in srgb, var(--crimson) 5%, transparent); } }
+@media (hover: hover) { .row:hover .rowTitle, .row:hover .rowArrow { color: var(--crimson); } }
+@media (hover: hover) { .row:hover .rowArrow { transform: translateX(8px); } }
+/* Locked: listed in its strand, no public page yet. No hover lift. */
+.row.isLocked { cursor: default; }
+.row.isLocked > span:not(.rowArrow) { opacity: 0.6; }
+@media (hover: hover) { .row.isLocked:hover { padding-left: 0; background: none; } }
+@media (hover: hover) { .row.isLocked:hover .rowTitle { color: inherit; } }
+.row.isLocked .rowArrow { transform: none; color: var(--ink-quiet); display: inline-flex; }
+@media (hover: hover) { .row.isLocked:hover .rowArrow { transform: none; color: var(--ink-quiet); display: inline-flex; } }
 .rowCode { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; }
 .rowTitle { display: block; font-weight: 700; font-size: 1.02rem; transition: color 0.2s; }
 .rowSub { display: block; margin-top: 0.2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
@@ -501,8 +514,8 @@ a.bExitTitle:hover { color: var(--crimson); border-color: var(--crimson); }
   border-right: 2px solid var(--grape);
   transition: border-color 0.2s;
 }
-a.card:hover { transform: translateY(-2px); border-color: var(--ink); }
-a.card:hover::after { border-color: var(--crimson); }
+@media (hover: hover) { a.card:hover { transform: translateY(-2px); border-color: var(--ink); } }
+@media (hover: hover) { a.card:hover::after { border-color: var(--crimson); } }
 .cardNum { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
 .cardVerb { font-weight: 900; font-size: 1.9rem; line-height: 1; letter-spacing: -0.02em; color: var(--crimson); }
 .cardTitle { font-weight: 700; font-size: 1.1rem; }
@@ -519,7 +532,7 @@ a.card:hover::after { border-color: var(--crimson); }
   background: var(--bg-soft);
   transition: border-color 0.2s, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.rule:hover { border-left-color: var(--crimson); transform: translateX(2px); }
+@media (hover: hover) { .rule:hover { border-left-color: var(--crimson); transform: translateX(2px); } }
 .ruleLabel { display: block; margin-bottom: 0.25rem; font-weight: 700; font-size: 0.95rem; }
 .ruleText { font-size: 0.95rem; line-height: 1.55; }
 
@@ -565,7 +578,7 @@ a.card:hover::after { border-color: var(--crimson); }
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s, background-color 0.2s;
 }
-.chip:hover { border-color: var(--ink); }
+@media (hover: hover) { .chip:hover { border-color: var(--ink); } }
 .chip.isOn { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .chipCount { margin-left: 0.4em; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; opacity: 0.6; }
 .filterBar {
@@ -581,7 +594,7 @@ a.card:hover::after { border-color: var(--crimson); }
   color: var(--ink-quiet);
 }
 .clear { background: none; border: 0; padding: 0; color: var(--crimson); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
-.clear:hover { color: var(--ink); }
+@media (hover: hover) { .clear:hover { color: var(--ink); } }
 .clear:disabled { opacity: 0.35; cursor: default; color: var(--ink-quiet); }
 
 /* ---- pager (prev / next) ---- */
@@ -597,7 +610,7 @@ a.card:hover::after { border-color: var(--crimson); }
 .pagerLink:last-child { text-align: right; align-items: flex-end; }
 .pagerDir { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet); }
 .pagerName { font-weight: 700; font-size: 1.05rem; transition: color 0.2s; }
-.pagerLink:hover .pagerName { color: var(--crimson); }
+@media (hover: hover) { .pagerLink:hover .pagerName { color: var(--crimson); } }
 
 /* ---- abstract (drop cap) ---- */
 .abstract { font-size: 1.1rem; line-height: 1.65; max-width: 48rem; margin: 0 0 1.5rem; text-wrap: pretty; }
@@ -650,3 +663,48 @@ a.card:hover::after { border-color: var(--crimson); }
 
 /* Chips and buttons aren't highlightable; body copy stays selectable. */
 .back, .kbd, .crumbs { -webkit-user-select: none; user-select: none; }
+
+/* ---- Phone stage track (MobileTrack) — hidden on wider screens ---- */
+.mtrack { display: none; position: relative; width: 300px; margin: 0.5rem auto 0.5rem; }
+.mSpine { position: absolute; left: 149px; width: 2px; background: var(--ink); }
+.mSpine.mFuture { background: var(--ink-soft); }
+.mCurves { position: absolute; inset: 0; overflow: visible; }
+.mCurves path { fill: none; stroke: var(--grape); stroke-width: 1.5; }
+.mCurves .mPossible path { stroke-dasharray: 3 5; }
+.mCurves .mFlow { stroke: var(--crimson); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 8; animation: mFlow 1.1s linear infinite; }
+@keyframes mFlow { to { stroke-dashoffset: -18; } }
+.mPill {
+  position: absolute; z-index: 1; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+  border: 1.5px solid var(--ink-soft); border-radius: 2px; background: var(--bg); color: var(--ink-quiet);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.mPill.isPast { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.mPill.isCurrent { background: var(--crimson); border-color: var(--crimson); color: #FFECE1; font-weight: 700; box-shadow: 0 0 0 4px var(--bg), 0 0 0 5.5px var(--crimson); }
+.mBox {
+  position: absolute; z-index: 1; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+  border: 1.5px solid var(--grape); border-radius: 2px; background: var(--bg); color: var(--grape);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase; text-align: center;
+}
+.mBoxPossible { border-style: dashed; }
+.mBoxEnd { border-color: var(--ink); color: var(--ink); }
+.mFlowLabel { position: absolute; z-index: 1; display: inline-flex; align-items: center; gap: 0.35rem; font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); }
+.mFlowLabel i { width: 6px; height: 6px; border-radius: 50%; background: var(--crimson); }
+
+/* ---- Phones (≤720px) ---- */
+@media (max-width: 720px) {
+  .shell { padding: 0 0.6rem; }
+  .topRow { gap: 0.75rem; }
+  .kbd { display: none; }                      /* no Esc on a phone */
+  .frame { padding: 1.5rem 1.1rem 2rem; }
+  /* Corner crops sit inside the phone gutter (was −14px, wider than it). */
+  .crop { width: 18px; height: 18px; }
+  .cropTL { top: -8px; left: -8px; } .cropTR { top: -8px; right: -8px; }
+  .cropBL { bottom: -8px; left: -8px; } .cropBR { bottom: -8px; right: -8px; }
+  .cards { grid-template-columns: 1fr; }
+  .marks { justify-content: flex-start; }
+  .btrack, .trackLegend { display: none; }
+  .mtrack { display: block; }
+}
+/* Very narrow phones: shrink the track to fit rather than overflow. */
+@media (max-width: 340px) { .mtrack { transform: scale(0.9); transform-origin: top center; margin-bottom: -2rem; } }
+@media (prefers-reduced-motion: reduce) { .mCurves .mFlow { animation: none; } }

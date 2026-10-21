@@ -16,6 +16,7 @@ import * as THREE from 'three'
 import markSrc from './MentheonMark.tsx?raw'
 import { HELIX_CATEGORIES, categoryById, outputsIn, pad2 } from '../../data/framework'
 import { emblemImg, productMarksReady } from '../ProductMark'
+import { skipIntroAlways, setSkipIntroAlways } from '../../lib/introGate'
 
 /* Local copies of the easing/clamp helpers the prototype used. */
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
@@ -871,6 +872,7 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
     return () => window.removeEventListener('resize', fit)
   }, [])
   const [skipHover, setSkipHover] = useState(false)
+  const [skipAlways, setSkipAlways] = useState(skipIntroAlways)
   const C = PALETTE[theme === 'dark' ? 'dark' : 'light']
   const bg = C.bg
   return (
@@ -890,7 +892,7 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
       {T < CUES.Settle && (
         <button type="button"
           onClick={finish}
-          onMouseEnter={() => setSkipHover(true)} onMouseLeave={() => setSkipHover(false)}
+          onPointerEnter={(e) => { if (e.pointerType === 'mouse') setSkipHover(true) }} onPointerLeave={() => setSkipHover(false)}
           style={{ position: 'absolute', right: 64 * scale, bottom: 56 * scale, transform: `scale(${scale})`, transformOrigin: 'bottom right',
             display: 'flex', whiteSpace: 'nowrap', width: 'max-content', alignItems: 'center', gap: skipHover ? 20 : 14,
             fontFamily: "'JetBrains Mono', monospace", fontSize: 19, fontWeight: 500, letterSpacing: '0.22em', textTransform: 'uppercase',
@@ -900,6 +902,19 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
             transition: 'color 200ms cubic-bezier(0.22,1,0.36,1), border-color 200ms cubic-bezier(0.22,1,0.36,1), gap 200ms cubic-bezier(0.22,1,0.36,1)' }}>
           <span>skip intro</span><span aria-hidden="true">↦</span>
         </button>
+      )}
+      {/* "skip always" — sits above the skip button, same scaling and fade.
+          Saved per browser (introGate); Helix3D won't mount the intro again. */}
+      {T < CUES.Settle && (
+        <label style={{ position: 'absolute', right: 64 * scale, bottom: (56 + 78) * scale, transform: `scale(${scale})`, transformOrigin: 'bottom right',
+          display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap', cursor: 'pointer',
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 16, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.ink,
+          opacity: MOTION.fade(T, CUES.Sketch + 0.4, CUES.Sketch + 0.9) * (1 - MOTION.fade(T, CUES.Settle - 0.4, CUES.Settle)) }}>
+          <input type="checkbox" checked={skipAlways}
+            onChange={(e) => { setSkipAlways(e.target.checked); setSkipIntroAlways(e.target.checked) }}
+            style={{ width: 22, height: 22, margin: 0, accentColor: C.crimson, cursor: 'pointer' }} />
+          skip always
+        </label>
       )}
     </div>
   )

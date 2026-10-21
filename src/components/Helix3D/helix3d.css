@@ -231,7 +231,7 @@
   border: 1px solid var(--ink); border-radius: 2px;
   transition: opacity 0.2s var(--ease-out);
 }
-.helix3d-root .loader-enter:hover { opacity: 0.82; }
+@media (hover: hover) { .helix3d-root .loader-enter:hover { opacity: 0.82; } }
 
 /* ---- shared logo tile: one artwork source for all five concepts ---- */
 .helix3d-root .logo-tile { position: relative; width: 195px; height: 195px; }
@@ -425,7 +425,7 @@
   transition: background 0.2s, color 0.2s, border-color 0.2s;
   display: inline-flex; align-items: center; gap: 0.6rem;
 }
-.helix3d-root .gate-btn:hover { background: var(--gate-fg); color: var(--gate-bg); border-color: var(--gate-fg); }
+@media (hover: hover) { .helix3d-root .gate-btn:hover { background: var(--gate-fg); color: var(--gate-bg); border-color: var(--gate-fg); } }
 .helix3d-root .gate-btn-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
 /* ====== MARQUEE / NAV ====== */
@@ -488,7 +488,7 @@
   transition: color 0.2s, background 0.2s; border-radius: 0;
 }
 .helix3d-root .view-toggle button.is-active { color: var(--bg); background: var(--ink); }
-.helix3d-root .view-toggle button:hover:not(.is-active) { color: var(--ink); }
+@media (hover: hover) { .helix3d-root .view-toggle button:hover:not(.is-active) { color: var(--ink); } }
 
 /* Sketch-render toggle — sized/typed like the view-toggle pills. */
 .helix3d-root .render-toggle {
@@ -499,7 +499,7 @@
   color: var(--ink-quiet);
   transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
-.helix3d-root .render-toggle:hover { color: var(--ink); border-color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .render-toggle:hover { color: var(--ink); border-color: var(--crimson); } }
 .helix3d-root .render-toggle.is-active {
   color: var(--bg); background: var(--ink); border-color: var(--ink);
 }
@@ -528,7 +528,7 @@
   font-size: 0.78rem; border-right: 1px solid var(--ink-soft);
 }
 .helix3d-root .text-size button:last-child { font-size: 0.92rem; }
-.helix3d-root .text-size button:hover { color: var(--bg); background: var(--ink); }
+@media (hover: hover) { .helix3d-root .text-size button:hover { color: var(--bg); background: var(--ink); } }
 
 .helix3d-root .theme-switch {
   width: 34px; height: 32px;
@@ -538,7 +538,7 @@
   color: var(--ink);
   transition: background 0.2s, border-color 0.2s, transform 0.2s var(--ease-out);
 }
-.helix3d-root .theme-switch:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .theme-switch:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); } }
 .helix3d-root .theme-switch svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .helix3d-root .theme-switch .icon-sun  { display: none; }
 .helix3d-root .theme-switch .icon-moon { display: block; }
@@ -554,8 +554,8 @@
   color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
-.helix3d-root .help-btn:hover,
 .helix3d-root .help-btn.is-on { border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .help-btn:hover { border-color: var(--crimson); color: var(--crimson); } }
 
 .helix3d-root .menu-btn {
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
@@ -566,7 +566,7 @@
   display: inline-flex; align-items: center; gap: 0.55rem;
   transition: color 0.2s, border-color 0.2s;
 }
-.helix3d-root .menu-btn:hover { border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .menu-btn:hover { border-color: var(--crimson); color: var(--crimson); } }
 .helix3d-root .menu-btn-lines { display: inline-flex; flex-direction: column; gap: 4px; }
 .helix3d-root .menu-btn-lines span { display: block; width: 16px; height: 1.5px; background: currentColor; }
 
@@ -703,7 +703,7 @@
 }
 .helix3d-root .node-bubble span { font-size: 1.1em; line-height: 1; }
 .helix3d-root .node-bubble.is-visible { opacity: 1; pointer-events: auto; }
-.helix3d-root .node-bubble.is-visible:hover { filter: brightness(1.08); }
+@media (hover: hover) { .helix3d-root .node-bubble.is-visible:hover { filter: brightness(1.08); } }
 
 /* Fog overlay over canvas */
 .helix3d-root .helix-fog {
@@ -803,10 +803,19 @@
 .helix3d-root .list-item:nth-child(6) { animation-delay: 0.30s; }
 @keyframes helix3dListFadeIn { to { opacity: 1; transform: translateY(0); } }
 .helix3d-root .listview:not(.is-visible) .list-item { animation: none; opacity: 0; }
-.helix3d-root .list-item:hover { padding-left: 1.5rem; }
-.helix3d-root .list-item:hover .list-disc { background: var(--crimson); }
-.helix3d-root .list-item:hover .list-title { color: var(--crimson); }
-.helix3d-root .list-item:hover .list-arrow { transform: translateX(8px); color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .list-item:not(.is-locked):hover { padding-left: 1.5rem; } }
+@media (hover: hover) { .helix3d-root .list-item:not(.is-locked):hover .list-disc { background: var(--crimson); } }
+@media (hover: hover) { .helix3d-root .list-item:not(.is-locked):hover .list-title { color: var(--crimson); } }
+@media (hover: hover) { .helix3d-root .list-item:not(.is-locked):hover .list-arrow { transform: translateX(8px); color: var(--crimson); } }
+/* Locked project (no public page yet): listed in its strand, padlocked,
+   no hover lift. Only outputs with `open` in data/framework link on. */
+.helix3d-root .list-item.is-locked { cursor: var(--cursor-dot); }
+.helix3d-root .list-item.is-locked .list-meta, .helix3d-root .list-item.is-locked .list-num { opacity: 0.6; }
+@media (hover: hover) { .helix3d-root .list-item.is-locked:hover { padding-left: 0; } }
+@media (hover: hover) { .helix3d-root .list-item.is-locked:hover .list-title { color: inherit; } }
+.helix3d-root .list-item.is-locked .list-arrow { transform: none; color: var(--ink-quiet); display: inline-flex; }
+@media (hover: hover) { .helix3d-root .list-item.is-locked:hover .list-arrow { transform: none; color: var(--ink-quiet); display: inline-flex; } }
+.helix3d-root .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .helix3d-root .list-num { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; letter-spacing: 0.16em; color: var(--ink-quiet); font-weight: 500; }
 .helix3d-root .list-disc {
   width: 56px; height: 56px; border-radius: 50%;
@@ -890,7 +899,7 @@
   font-weight: 500; letter-spacing: 0.22em;
   color: var(--gate-fg-soft); margin-right: 0.4em;
 }
-.helix3d-root .menu-item:hover { color: var(--crimson); transform: translateX(20px); }
+@media (hover: hover) { .helix3d-root .menu-item:hover { color: var(--crimson); transform: translateX(20px); } }
 .helix3d-root .menu-bottom {
   display: flex; justify-content: space-between; align-items: flex-end;
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
@@ -898,7 +907,7 @@
   color: var(--gate-fg-quiet);
 }
 .helix3d-root .menu-bottom a { color: var(--menu-fg); opacity: 0.7; text-decoration: none; margin-left: 1.5rem; transition: opacity 0.2s; }
-.helix3d-root .menu-bottom a:hover { opacity: 1; }
+@media (hover: hover) { .helix3d-root .menu-bottom a:hover { opacity: 1; } }
 
 .helix3d-root .transition-overlay {
   position: fixed; inset: 0; z-index: 500;
@@ -970,7 +979,7 @@
   color: var(--bg); padding: 0.4rem 0.6rem; border-radius: 2px;
   transition: color 0.16s, background-color 0.16s;
 }
-.helix3d-root .strand-win-ctrls button:hover:not(:disabled) { color: var(--crimson); background: var(--bg); }
+@media (hover: hover) { .helix3d-root .strand-win-ctrls button:hover:not(:disabled) { color: var(--crimson); background: var(--bg); } }
 .helix3d-root .strand-win-ctrls button:disabled { opacity: 0.4; }
 .helix3d-root .strand-win-ctrls button.is-on { box-shadow: inset 0 -2px 0 var(--crimson); }
 .helix3d-root .strand-win-ctrls .strand-win-close { font-family: 'Lato', sans-serif; font-size: 1.25rem; line-height: 1; letter-spacing: 0; padding: 0.15rem 0.55rem 0.25rem; }
@@ -996,10 +1005,10 @@
   background:
     linear-gradient(135deg, transparent 0 55%, var(--ink-quiet) 55% 60%, transparent 60% 72%, var(--ink-quiet) 72% 77%, transparent 77%);
 }
-.helix3d-root .strand-win-grip:hover {
+@media (hover: hover) { .helix3d-root .strand-win-grip:hover {
   background:
     linear-gradient(135deg, transparent 0 55%, var(--crimson) 55% 60%, transparent 60% 72%, var(--crimson) 72% 77%, transparent 77%);
-}
+} }
 
 /* ====== NAVIGATION POP-OUT — top right ======
    Same surface as the old peek card (page colour, ink-soft hairline,
@@ -1032,7 +1041,7 @@
   color: var(--ink); font-family: 'Lato', sans-serif; font-size: 1.3rem; line-height: 1;
   padding: 0 0.2rem; transition: color 0.2s;
 }
-.helix3d-root .helix-help-close:hover { color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .helix-help-close:hover { color: var(--crimson); } }
 .helix3d-root .helix-help-rows { margin: 0; display: grid; gap: 0.4rem; }
 .helix3d-root .helix-help-rows > div { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.75rem; align-items: baseline; }
 .helix3d-root .helix-help-rows dt { display: flex; flex-wrap: nowrap; gap: 0.25rem; }
@@ -1068,7 +1077,7 @@
   font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
   transition: opacity 0.3s var(--ease-out), border-color 0.2s, color 0.2s;
 }
-.helix3d-root .band-tag:hover { border-color: var(--ink); }
+@media (hover: hover) { .helix3d-root .band-tag:hover { border-color: var(--ink); } }
 .helix3d-root .band-tag.is-active { border-color: var(--crimson); color: var(--crimson); }
 .helix3d-root .band-num { color: var(--ink-quiet); }
 .helix3d-root .band-tag.is-active .band-num { color: var(--crimson); }
@@ -1105,7 +1114,7 @@
 .helix3d-root .list-band-verb { font-style: italic; opacity: 0.7; }
 .helix3d-root .list-band-status { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
 .helix3d-root .list-band-link { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); transition: color 0.2s; }
-.helix3d-root .list-band-link:hover { color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .list-band-link:hover { color: var(--crimson); } }
 .helix3d-root .list-empty { margin: 0; padding: 1rem 0 1rem 80px; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); border-bottom: 1px solid var(--ink-soft); }
 .helix3d-root .listview { overflow-y: auto; }
 /* List view: the blueprint grid stays visible around it; the list
@@ -1127,14 +1136,17 @@
   padding: 0.7rem 0; border-bottom: 1px solid var(--ink-soft); color: var(--ink);
   transition: padding-left 0.25s var(--ease-out), background-color 0.2s;
 }
-.helix3d-root .output-peek .cp-project:hover { padding-left: 0.8rem; background: color-mix(in srgb, var(--crimson) 5%, transparent); }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover { padding-left: 0.8rem; background: color-mix(in srgb, var(--crimson) 5%, transparent); } }
 .helix3d-root .cp-project-text { display: grid; gap: 0.15rem; min-width: 0; }
 .helix3d-root .cp-project-name { font-weight: 700; font-size: 0.95rem; transition: color 0.2s; }
 .helix3d-root .cp-project-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
 .helix3d-root .cp-arrow { transition: transform 0.25s var(--ease-out), color 0.2s; }
-.helix3d-root .output-peek .cp-project:hover .cp-project-name,
-.helix3d-root .output-peek .cp-project:hover .cp-arrow { color: var(--crimson); }
-.helix3d-root .output-peek .cp-project:hover .cp-arrow { transform: translateX(6px); }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover .cp-project-name, .helix3d-root .output-peek .cp-project:not(.is-locked):hover .cp-arrow { color: var(--crimson); } }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover .cp-arrow { transform: translateX(6px); } }
+.helix3d-root .output-peek .cp-project.is-locked .cp-project-text { opacity: 0.6; }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project.is-locked:hover { padding-left: 0; background: none; } }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project.is-locked:hover .cp-project-name { color: inherit; } }
+.helix3d-root .cp-lock { display: inline-flex; color: var(--ink-quiet); }
 /* Placeholder project logo — Mentheon tile format (matches the 3D sprite). */
 .helix3d-root .logo-tile {
   position: relative; width: 44px; height: 44px; padding: 5px 0 0 5px;
@@ -1143,10 +1155,10 @@
   font-family: 'Lato', sans-serif; font-weight: 900; font-size: 0.82rem; line-height: 1;
 }
 .helix3d-root[data-theme="dark"] .logo-tile { background: #FFECE1; color: #1A0226; }
-.helix3d-root .output-peek .cp-project:hover .logo-tile,
 .helix3d-root .logo-tile.is-selected { background: var(--crimson); color: #FFECE1; }
-.helix3d-root .output-peek .cp-project:hover .logo-tile i,
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover .logo-tile { background: var(--crimson); color: #FFECE1; } }
 .helix3d-root .logo-tile.is-selected i { color: #FFECE1; }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover .logo-tile i { color: #FFECE1; } }
 .helix3d-root .logo-tile { transition: background-color 0.2s, color 0.2s; }
 /* Product mark tile (direction 3b) — default grape ground with cream marks
    (cream ground, ink marks in dark); crimson ground when selected
@@ -1166,10 +1178,10 @@
 .helix3d-root .ptile .pt-ink { fill: currentColor; }
 .helix3d-root .ptile .pt-initial { font-family: 'Lato', sans-serif; font-weight: 900; }
 .helix3d-root .ptile .pt-plate { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
-.helix3d-root .ptile.is-selected,
-.helix3d-root .output-peek .cp-project:hover .ptile { background: var(--crimson); color: #FFECE1; }
+.helix3d-root .ptile.is-selected { background: var(--crimson); color: #FFECE1; }
+@media (hover: hover) { .helix3d-root .output-peek .cp-project:not(.is-locked):hover .ptile { background: var(--crimson); color: #FFECE1; } }
 .helix3d-root .list-mark .ptile, .helix3d-root .list-mark .logo-tile { width: 56px; height: 56px; }
-.helix3d-root .list-item:hover .ptile { background: var(--crimson); color: #FFECE1; }
+@media (hover: hover) { .helix3d-root .list-item:not(.is-locked):hover .ptile { background: var(--crimson); color: #FFECE1; } }
 .helix3d-root .op-title-row { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
 /* Window marks: product mark at 104px; Aufdröselung adds its software
    logo beside the concept mark, each captioned in mono. */
@@ -1226,9 +1238,9 @@
   font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
   transition: background-color 0.2s, gap 0.2s;
 }
-.helix3d-root .output-peek .op-cta:hover { background: var(--ink); color: var(--bg); gap: 0.9rem; }
+@media (hover: hover) { .helix3d-root .output-peek .op-cta:hover { background: var(--ink); color: var(--bg); gap: 0.9rem; } }
 .helix3d-root .output-peek .op-link { font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
-.helix3d-root .output-peek .op-link:hover { color: var(--crimson); border-color: var(--crimson); }
+@media (hover: hover) { .helix3d-root .output-peek .op-link:hover { color: var(--crimson); border-color: var(--crimson); } }
 
 @media (max-width: 1200px) {
   .helix3d-root .band-rail { width: 2.6rem; right: 3.6rem; }
@@ -1350,4 +1362,101 @@
 .helix3d-root .list-band-mark .lbm-dark, .helix3d-root .list-band-mark .lbm-hot { opacity: 0; }
 .helix3d-root[data-theme="dark"] .list-band-mark .lbm-light { opacity: 0; }
 .helix3d-root[data-theme="dark"] .list-band-mark .lbm-dark { opacity: 1; }
-.helix3d-root .list-band:hover .list-band-mark .lbm-hot { opacity: 1; }
+@media (hover: hover) { .helix3d-root .list-band:hover .list-band-mark .lbm-hot { opacity: 1; } }
+
+/* ====== PHONES (≤720px) — option B: fit row + dock ======
+   The scene fills the screen (no page scroll; touch on the canvas is
+   ours, not the browser's). Nav slims to logo · staff/list · menu;
+   theme + text size move into the menu; marquee, help pop-out, footer
+   strip and the Marginalia tab (it's in the menu) are hidden. A dock
+   at thumb height steps strands: ‹ name · n of 06 ›. */
+.helix3d-root .mobile-dock, .helix3d-root .menu-mobile-ctrls, .helix3d-root .strand-win-grab { display: none; }
+@media (max-width: 720px) {
+  .helix3d-root { height: 100dvh; overscroll-behavior: none; }
+  .helix3d-root canvas { touch-action: none; }
+  .helix3d-root .marquee,
+  .helix3d-root .helix-help,
+  .helix3d-root .footer-strip,
+  .helix3d-root .marginalia-tab-wrap,
+  .helix3d-root .nav-controls .text-size,
+  .helix3d-root .nav-controls .help-btn,
+  .helix3d-root .nav-controls .theme-switch { display: none !important; }
+  /* Phones: the site NavBar (list | staff · menu) sits over the scene;
+     the scene's own nav is dropped. */
+  .helix3d-root .nav { display: none !important; }
+  .helix3d-root .nav-controls { --ctl-h: 40px; gap: 6px; }
+  /* staff | list centred in the top bar (logo left, menu right). The
+     nav is position: fixed, so it's the containing block. */
+  .helix3d-root .nav-controls .view-toggle { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  /* The side headline ("A new era of …") floats over the cubes on a
+     phone; the dock already names the strand. Also: captions cut at once
+     (no fade) so the last strand's don't linger mid-swipe. */
+  .helix3d-root .helix-center-label { display: none; }
+  .helix3d-root .cube-cap, .helix3d-root .node-label { transition: none; }
+  .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: calc(var(--header-h, 58px) + 62px); }   /* below site bar + list|staff row */
+  .helix3d-root .corner-crop--bl, .helix3d-root .corner-crop--br { bottom: 92px; }
+  /* Edge fog: the desktop oval veils the side cubes on a narrow screen
+     (they sit ~80% out, under 30–50% cream), so fog top/bottom only. */
+  .helix3d-root .helix-fog {
+    background: linear-gradient(to bottom,
+      rgba(var(--fog-color), 0.85) 0%, rgba(var(--fog-color), 0) 14%,
+      rgba(var(--fog-color), 0) 82%, rgba(var(--fog-color), 0.85) 100%);
+  }
+
+  .helix3d-root .mobile-dock {
+    position: fixed; z-index: 45; left: 10px; right: 10px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: stretch;
+    height: 64px; background: #2F0147; color: #FFECE1; border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+  .helix3d-root[data-theme="dark"] .mobile-dock { background: #FFECE1; color: #2F0147; }
+  .helix3d-root .mobile-dock button { background: none; border: none; color: inherit; padding: 0; cursor: pointer; }
+  .helix3d-root .md-arrow { font-family: 'Lato', sans-serif; font-size: 1.6rem; }
+  .helix3d-root .md-arrow:disabled { opacity: 0.3; }
+  .helix3d-root .md-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; }
+  .helix3d-root .md-mid b { font-family: 'Lato', sans-serif; font-weight: 900; font-size: 1rem; letter-spacing: 0; }
+  .helix3d-root .md-mid span { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.75; }
+
+  .helix3d-root .menu-mobile-ctrls {
+    display: flex; gap: 8px; margin-bottom: 1rem;
+  }
+  .helix3d-root .menu-top { touch-action: none; }   /* swipe down to close */
+  .helix3d-root .menu-mobile-ctrls button {
+    min-height: 44px; padding: 0 14px; background: none; color: var(--menu-fg, #FFECE1);
+    border: 1.5px solid currentColor; border-radius: 2px; opacity: 0.85;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  /* Strand / project window = a bottom sheet on phones: pinned full
+     width (overrides the per-frame docking transform and any free/max
+     geometry), its body scrolls, no min/max/resize. Covers the dock. */
+  .helix3d-root .strand-drawer.strand-win,
+  .helix3d-root .strand-drawer.strand-win.is-free,
+  .helix3d-root .strand-drawer.strand-win.is-max {
+    position: fixed; left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important;
+    transform: none !important; width: auto !important; height: auto !important;
+    max-height: calc(100dvh - 64px); z-index: 600;
+    animation: helixSheetRise 0.35s var(--ease-out);
+  }
+  .helix3d-root .strand-win-crop { left: 6px; top: -10px; }
+  .helix3d-root .strand-win-bar { position: relative; height: 52px; border-radius: 6px 6px 0 0; cursor: default; border-left: none; border-right: none; touch-action: none; }
+  .helix3d-root .strand-win-grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
+  .helix3d-root .strand-win-ctrls button:not(.strand-win-close) { display: none; }
+  .helix3d-root .strand-win-ctrls .strand-win-close { min-width: 44px; min-height: 44px; font-size: 1.6rem; }
+  .helix3d-root .strand-win-grip { display: none; }
+  /* Project captions sit above their cubes (Helix3D sets max-width to
+     the cube's width): name only, ellipsised. */
+  .helix3d-root .cube-cap { padding: 0.35rem 0.5rem; min-height: 32px; justify-content: center; }
+  .helix3d-root .cube-cap.is-visible { pointer-events: auto; cursor: pointer; }   /* tap target (visible only) */
+  .helix3d-root .cube-cap-sub { display: none; }
+  .helix3d-root .cube-cap-name { font-size: 0.7rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .helix3d-root .strand-win-body { overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .helix3d-root .strand-win-body > div, .helix3d-root .strand-win-body > div > div { max-height: none; }
+  .helix3d-root .output-peek { padding: 1.2rem 1rem 1.5rem; border-left: none; border-right: none; }
+  .helix3d-root .op-fields { grid-template-columns: 1fr; }
+  .helix3d-root .op-fields > div + div { padding-left: 0; border-left: none; border-top: 1px solid var(--ink-soft); }
+  .helix3d-root .cp-head { flex-wrap: wrap; }
+  .helix3d-root .output-peek .cp-project { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .helix3d-root .cp-project .ptile, .helix3d-root .cp-project .logo-tile { width: 48px; height: 48px; }
+}
+@keyframes helixSheetRise { from { translate: 0 100%; } to { translate: 0 0; } }

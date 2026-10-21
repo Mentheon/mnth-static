@@ -41,9 +41,9 @@
   transition: background-color 160ms ease;
 }
 
-.navItem:hover {
+@media (hover: hover) { .navItem:hover {
   background-color: #520359;
-}
+} }
 
 .navItem.active {
   background-color: var(--crimson);

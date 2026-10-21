@@ -4,6 +4,8 @@
    at the bottom are LABELLED PLACEHOLDERS until real work is assigned
    (set placeholder:false and fill title/synopsis when it is). */
 
+import { CONTACT_EMAIL } from './people'
+
 export type CategoryId = 'detection' | 'monitoring' | 'forecasting' | 'therapeutics' | 'perception' | 'plasmids'
 export type OutputTypeId = 'programme' | 'artefact' | 'software' | 'product'
 export type RegClass = 'None' | 'Wellness' | 'Digital biomarker' | 'Diagnostic' | 'Prognostic' | 'Digital therapeutic'
@@ -36,6 +38,18 @@ export const CATEGORIES: Category[] = [
     purpose: 'Standalone experimental software with no clinical purpose', typicalOutputs: 'Software projects', typicalRegClass: 'None' },
 ]
 export const HELIX_CATEGORIES = CATEGORIES.filter((c) => c.onHelix)
+/* Each category is presented as a strand. `split` is the two-line break
+   on its logo tile (Helix3D cube faces, the mobile list). */
+export const STRAND: Record<CategoryId, { name: string; split: [string, string] }> = {
+  plasmids:     { name: 'Plasmids',  split: ['PLAS', 'MIDS'] },
+  detection:    { name: 'Aevorix',   split: ['AEV', 'ORIX'] },
+  monitoring:   { name: 'Vitrix',    split: ['VIT', 'RIX'] },
+  forecasting:  { name: 'Acumentra', split: ['ACU', 'MENTRA'] },
+  therapeutics: { name: 'Lenitudo',  split: ['LENI', 'TUDO'] },
+  perception:   { name: 'Kindreon',  split: ['KIND', 'REON'] },
+}
+/* Staff order: Plasmids at the head, then the pathway, Perception last. */
+export const STAFF_ORDER: CategoryId[] = ['plasmids', 'detection', 'monitoring', 'forecasting', 'therapeutics', 'perception']
 export const categoryById = (id: string) => CATEGORIES.find((c) => c.id === id)
 
 export const BOUNDARIES: { pair: [CategoryId, CategoryId]; label: string; text: string }[] = [
@@ -155,8 +169,20 @@ export interface Output {
   contacts?: Contact[]
   /* Set once the work is finalised and there is a DOI / URL / repo. */
   link?: { kind: 'publication' | 'artefact' | 'code'; href: string }
+  /* Set → the project page is public. Unset outputs still show in their
+     strand (list, window, register) but stop there, with a padlock. */
+  open?: boolean
+  /* Beta seats (software). Static: bump `taken` by hand as requests are
+     confirmed. `email` is where "Open email" sends a request; without it
+     the dialog offers Copy summary only. */
+  beta?: { seats: number; taken: number; email?: string }
 }
-export interface Contact { name: string; role: string; institution: string; email: string }
+export interface Contact {
+  name: string; role: string; institution: string
+  email?: string
+  /* Id in data/people → the card links to their profile window on #who. */
+  person?: string
+}
 export const LINK_LABEL = { publication: 'View publication', artefact: 'View artefact', code: 'View code' } as const
 export const isSoftware = (o: { type: OutputTypeId }) => o.type === 'software' || o.type === 'product'
 
@@ -190,12 +216,15 @@ export const OUTPUTS: Output[] = [
   ph('THE-02', { category: 'therapeutics', type: 'artefact',  stage: 0, regClass: 'Wellness',          affiliation: { kind: 'owned' } }),
   ph('PER-01', { product: 'Sphekia', title: 'Sphekia', placeholder: false, synopsis: 'Description to be assigned.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
   ph('PER-02', { product: 'Fernfenster', title: 'Fernfenster', placeholder: false, synopsis: 'LDR diorama portal.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
-  ph('PLA-01', { product: 'Aufdröselung', title: 'Aufdröselung', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' }, inflow: 'Insights flowing in' }),
+  ph('PLA-01', { product: 'Aufdröselung', title: 'Aufdröselung', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' }, inflow: 'Insights flowing in', open: true,
+    beta: { seats: 10, taken: 3, email: CONTACT_EMAIL },
+    contacts: [{ name: 'Nicholas Quentin Smith', role: 'Founder & Director of Research', institution: 'Mentheon', person: 'nicholas', email: CONTACT_EMAIL }] }),
   ph('PLA-02', { product: 'Rostrella', title: 'Rostrella', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
 ]
 
 export const outputById = (id: string) => OUTPUTS.find((o) => o.id === id)
 export const outputsIn = (c: CategoryId) => OUTPUTS.filter((o) => o.category === c)
+export const isOpen = (o: Output) => !!o.open
 export const stageLabel = (o: Output) => typeById(o.type).stages[o.stage]
 export const outputName = (o: Output) => (o.placeholder ? `${o.title} · ${o.code}` : o.title)
 export const affiliationLabel = (o: Output) =>

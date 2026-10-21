@@ -1,0 +1,152 @@
+/* Person window — same chrome as the Helix3D strand window
+   (helix3d.css "STRAND WINDOW" + "Output window body"), ported onto
+   the global tokens so it follows the site-wide light/dark theme.
+   Keep the two in step if either changes. */
+
+.scrim {
+  position: fixed; inset: 0; z-index: 590;
+  background: rgba(0, 0, 0, 0.22);          /* faint dim, no blur */
+  animation: scrimIn 0.3s ease-out;
+}
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+
+.win {
+  position: fixed; left: 0; top: 0; z-index: 600;
+  display: flex; flex-direction: column;
+  width: min(720px, calc(100vw - 32px));
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
+  text-align: left;
+  animation: drawOut 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Docked: unrolls downward from under the disc it came from. */
+@keyframes drawOut {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+.max {
+  transform: none !important;
+  left: 2rem; right: 2rem; top: 5.5rem; bottom: 2rem;
+  width: auto; height: auto;
+}
+@media (max-width: 720px) {
+  .max { left: 0.5rem; right: 0.5rem; top: 4.5rem; bottom: 0.5rem; }
+}
+
+.crop {
+  position: absolute; top: -12px; left: -12px; width: 24px; height: 24px; z-index: 2;
+  border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson);
+  pointer-events: none;
+}
+
+.bar {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  height: 34px; padding: 0 0.35rem 0 1rem;
+  background: var(--ink); color: var(--bg);
+  border: 2px solid var(--ink); border-bottom: none; border-radius: 2px 2px 0 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  user-select: none; touch-action: none; cursor: grab;
+}
+.max .bar { cursor: default; }
+.title { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctrls { display: flex; align-items: stretch; gap: 2px; flex: none; }
+.ctrls button {
+  font: inherit; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--bg); background: none; border: none; cursor: pointer;
+  padding: 0.4rem 0.6rem; border-radius: 2px;
+  transition: color 0.16s, background-color 0.16s;
+}
+@media (hover: hover) { .ctrls button:hover:not(:disabled) { color: var(--crimson); background: var(--bg); } }
+.ctrls button:disabled { opacity: 0.4; cursor: default; }
+.ctrls button.on { box-shadow: inset 0 -2px 0 var(--crimson); }
+.ctrls .close { font-family: 'Lato', sans-serif; font-size: 1.25rem; line-height: 1; letter-spacing: 0; padding: 0.15rem 0.55rem 0.25rem; }
+
+/* Body — the "output-peek" surface. Scrolls when the window is
+   smaller than its content (free / max, or a short viewport). */
+.body {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  background: var(--bg); color: var(--ink);
+  border: 2px solid var(--ink); border-top: none; border-radius: 0 0 2px 2px;
+  padding: 1.6rem 1.8rem 1.7rem;
+  font-family: 'Lato', sans-serif;
+}
+
+.kicker { margin: 0 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--crimson); }
+.star { padding: 0 0.3em; }
+
+.head { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.2rem; }
+.avatar { flex: none; width: 104px; height: 104px; display: block; }
+.name { margin: 0; font-weight: 900; font-size: 1.9rem; line-height: 1.05; letter-spacing: -0.015em; }
+/* Role — filled crimson tag, matching the open profile on the page. */
+.role {
+  display: inline-block; margin: 0.6rem 0 0; padding: 0.4rem 0.75rem;
+  border-radius: 2px; background: var(--crimson); color: #FFECE1;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+.creds { margin: 0.5rem 0 0; font-style: italic; opacity: 0.7; font-size: 1rem; }
+
+.fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-top: 1px dashed var(--ink-soft); border-bottom: 1px dashed var(--ink-soft); }
+.fields > div { padding: 0.75rem 0.9rem 0.8rem 0; min-width: 0; }
+.fields > div + div { padding-left: 0.9rem; border-left: 1px solid var(--ink-soft); }
+.fields dt { margin-bottom: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-quiet); }
+.fields dd { margin: 0; }
+.themeTitle { display: block; font-weight: 700; font-size: 0.9rem; line-height: 1.3; }
+.themeDesc { display: block; margin-top: 0.35rem; font-size: 0.82rem; line-height: 1.45; opacity: 0.75; }
+
+@media (max-width: 720px) {
+  .body { padding: 1.2rem 1.1rem 1.3rem; }
+  .avatar { width: 72px; height: 72px; }
+  .name { font-size: 1.45rem; }
+  .fields { grid-template-columns: 1fr; }
+  .fields > div + div { padding-left: 0; border-left: none; border-top: 1px solid var(--ink-soft); }
+}
+
+/* LinkedIn — the strand window's mono .op-link style, with the logo. */
+.linkedin {
+  display: inline-flex; align-items: center; gap: 0.5rem; min-height: 24px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--ink-soft); padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+/* LinkedIn + email side by side, centre-aligned; wraps on narrow screens. */
+.links { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.25rem; margin-top: 0.7rem; }
+.linkedin img, .linkedin svg { display: block; flex: none; width: 18px; height: 18px; }
+@media (hover: hover) { .linkedin:hover { color: var(--crimson); border-color: var(--crimson); } }
+.email { text-transform: none; letter-spacing: 0.04em; }
+
+.grip {
+  position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; z-index: 2;
+  touch-action: none; cursor: nwse-resize;
+  background:
+    linear-gradient(135deg, transparent 0 55%, var(--ink-quiet) 55% 60%, transparent 60% 72%, var(--ink-quiet) 72% 77%, transparent 77%);
+}
+@media (hover: hover) { .grip:hover {
+  background:
+    linear-gradient(135deg, transparent 0 55%, var(--crimson) 55% 60%, transparent 60% 72%, var(--crimson) 72% 77%, transparent 77%);
+} }
+
+@media (prefers-reduced-motion: reduce) {
+  .win, .scrim { animation: none; }
+}
+
+.grab { display: none; }
+
+/* Phones: a bottom sheet — full width, pinned to the bottom (overrides
+   the docked/free inline transform), no min/max/resize. */
+@media (max-width: 720px) {
+  .win {
+    left: 0 !important; right: 0; top: auto !important; bottom: 0;
+    transform: none !important; width: auto !important; height: auto !important; max-height: 88dvh !important;
+    animation: sheetRise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .crop { left: 6px; top: -10px; }
+  .bar { position: relative; height: 52px; border-radius: 6px 6px 0 0; cursor: default; touch-action: none; }
+  .grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
+  .ctrls button:not(.close) { display: none; }
+  .ctrls .close { min-width: 44px; min-height: 44px; font-size: 1.6rem; }
+  .grip { display: none; }
+  .body { border-left: none; border-right: none; }
+}
+@keyframes sheetRise { from { translate: 0 100%; } to { translate: 0 0; } }

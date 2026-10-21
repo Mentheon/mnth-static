@@ -1,7 +1,115 @@
-.credentials {
-  font-size: 1rem;
+/* #who — circular profiles inside the framework PageShell plate. */
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2.5rem 2rem;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: opacity 0.3s ease;
+}
+.isDim { opacity: 0.4; }
+@media (hover: hover) { .isDim:hover { opacity: 1; } }
+
+.disc {
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease-out;
+}
+.isOpen .disc { transform: scale(1.06); }
+@media (hover: hover) { .disc:hover { transform: scale(1.06); } }
+.disc:focus-visible { outline: 2px solid var(--crimson); outline-offset: 8px; }
+
+/* Always a true circle — square box, round clip, photo cropped to fill.
+   PersonAvatar adds the grape (crimson when open) ring. */
+.avatar {
+  width: clamp(120px, 16vw, 168px);
+  aspect-ratio: 1;
+  height: auto;
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+}
+
+.num {
+  margin-top: 1.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--crimson);
+}
+.name {
   margin-top: 0.35rem;
-  opacity: 0.7;
-  font-weight: bold;
-  color: var(--ink);
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+.isOpen .name { color: var(--crimson); }
+.role {
+  margin-top: 0.55rem;
+  padding: 0.35rem 0.7rem;
+  border: 1.5px solid var(--crimson);
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  transition: background-color 0.2s, color 0.2s;
+}
+.isOpen .role { background: var(--crimson); color: #FFECE1; }
+.creds {
+  margin-top: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+/* ---- Phones: swipe carousel + "Everyone" list ---- */
+.swipe, .everyone { display: none; }
+@media (max-width: 720px) {
+  /* Breaks out of the plate's side padding; one card centred, the
+     neighbours peeking ~22px either side (padding 36 − gap 14). The
+     last person is ordered first so someone peeks in on the left. */
+  .grid {
+    position: relative; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+    margin: 0 -1.1rem; padding: 8px 36px 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    max-width: calc(100% + 2.2rem); box-sizing: border-box; overscroll-behavior-x: contain;
+  }
+  .grid::-webkit-scrollbar { display: none; }
+  .person { flex: 0 0 100%; scroll-snap-align: center; padding: 1.1rem 0.5rem 1.3rem; border: 1px solid var(--ink-soft); background: var(--bg); }
+  .person:last-child { order: -1; }
+  .isDim { opacity: 1; }
+  .avatar { width: 150px; }
+  .swipe {
+    display: block; margin: 0.6rem 0 0; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet);
+  }
+  .everyone { display: block; margin-top: 2.5rem; }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .listRow {
+    display: grid; grid-template-columns: 52px minmax(0, 1fr) 20px; align-items: center; gap: 0.9rem; width: 100%;
+    min-height: 72px; padding: 0.6rem 0; border: none; border-bottom: 1px solid var(--ink-soft);
+    background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+  }
+  .listAvatar { width: 52px; height: 52px; display: block; border-radius: 50%; object-fit: cover; }
+  .listName { display: block; font-weight: 700; font-size: 1rem; }
+  .listRole { display: block; margin-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); }
+  .listArrow { color: var(--crimson); }
 }

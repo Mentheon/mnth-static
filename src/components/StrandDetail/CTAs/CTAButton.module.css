@@ -16,10 +16,10 @@
   color: #FFECE1;
 }
 
-.primary:hover {
+@media (hover: hover) { .primary:hover {
   background: #2F0147;
   gap: 0.9rem;
-}
+} }
 
 .secondary {
   background: transparent;
@@ -27,16 +27,16 @@
   border: 2px solid #2F0147;
 }
 
-.secondary:hover {
+@media (hover: hover) { .secondary:hover {
   background: #2F0147;
   color: #FFECE1;
-}
+} }
 
 .arrow {
   transition: transform 0.2s;
   display: inline-block;
 }
 
-.cta:hover .arrow {
+@media (hover: hover) { .cta:hover .arrow {
   transform: translateX(3px);
-}
+} }

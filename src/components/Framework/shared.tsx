@@ -2,9 +2,10 @@ import { useEffect, type ReactNode } from 'react'
 import s from './framework.module.css'
 import {
   CATEGORIES, HELIX_CATEGORIES, typeById, outputsIn, categoryStatus, stageLabel, outputName,
-  affiliationLabel, categoryById, pad2, exitsFor, outputById, EXIT_LABEL,
+  affiliationLabel, categoryById, pad2, exitsFor, outputById, EXIT_LABEL, isOpen,
   type Output, type CategoryId, type OutputTypeId,
 } from '../../data/framework'
+import Padlock from '../Padlock'
 
 export const HOME_HREF = '#helix3d?skipIntro=true'
 export const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(' ')
@@ -172,6 +173,77 @@ export function StageLine({ type, current, aligned = false }: { type: OutputType
   )
 }
 
+/* Phone stage track (≤720px; BranchTrack is hidden there): stages as
+   pills down a centred spine; exits curve off to a side box between the
+   stage they leave and the next, then rejoin it (or end). Software
+   projects end in a fork: software product / retired. Live data
+   (o.inflow) streams down the spine into the next stage. */
+export function MobileTrack({ o }: { o: Output }) {
+  const t = typeById(o.type)
+  const N = t.stages.length
+  const W = 300, MID = 150, PW = 140, PH = 34, STEP = 92, BW = 104, BH = 30
+  const y = (i: number) => i * STEP                          // pill top
+  const exits = exitsFor(o)
+  const used = new Map<number, number>()
+  const placed = exits.map((e) => {
+    const k = used.get(e.after) ?? 0
+    used.set(e.after, k + 1)
+    // Software branches go left; the rest start on the right, alternating.
+    const left = e.kind === 'software' ? k % 2 === 0 : k % 2 === 1
+    const top = y(e.after) + PH + (STEP - PH - BH) / 2
+    return { e, left, top, cx: left ? BW / 2 : W - BW / 2 }
+  })
+  const fork = o.type === 'software'
+  const H = y(N - 1) + PH + (fork ? 76 : 6)
+  const flowing = !!o.inflow && o.stage < N - 1
+  const lx = MID - PW / 2, rx = MID + PW / 2
+  return (
+    <div className={s.mtrack} style={{ height: H }}>
+      <div className={s.mSpine} style={{ top: PH / 2, height: y(Math.min(o.stage, N - 1)) }} />
+      <div className={cx(s.mSpine, s.mFuture)} style={{ top: y(o.stage) + PH / 2, height: y(N - 1) - y(o.stage) }} />
+      <svg className={s.mCurves} viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+        {flowing && <path className={s.mFlow} d={`M${MID} ${y(o.stage) + PH + 6} L${MID} ${y(o.stage + 1) - 6}`} />}
+        {placed.map(({ e, left, top, cx: bx }, k) => {
+          const sx = left ? lx + 12 : rx - 12, sy = y(e.after) + PH
+          const down = `M${sx} ${sy} C${sx} ${sy + 12}, ${bx} ${top - 12}, ${bx} ${top}`
+          const ex = left ? lx : rx, ey = y(e.after + 1) + PH / 2
+          const back = e.behaviour === 'rejoin' && e.after < N - 1
+            ? `M${bx} ${top + BH} C${bx} ${top + BH + 14}, ${ex + (left ? -16 : 16)} ${ey}, ${ex} ${ey}` : ''
+          return <g key={k} className={e.possible ? s.mPossible : undefined}><path d={down} />{back && <path d={back} />}</g>
+        })}
+        {fork && (
+          <>
+            <path d={`M${lx + 20} ${y(N - 1) + PH} C${lx + 8} ${y(N - 1) + PH + 16}, ${BW / 2} ${y(N - 1) + PH + 12}, ${BW / 2} ${y(N - 1) + PH + 34}`} />
+            <path d={`M${rx - 20} ${y(N - 1) + PH} C${rx - 8} ${y(N - 1) + PH + 16}, ${W - BW / 2} ${y(N - 1) + PH + 12}, ${W - BW / 2} ${y(N - 1) + PH + 34}`} />
+          </>
+        )}
+      </svg>
+      {t.stages.map((name, i) => (
+        <div key={name} className={cx(s.mPill, i < o.stage && s.isPast, i === o.stage && s.isCurrent)}
+          style={{ top: y(i), left: lx, width: PW, height: PH }} aria-current={i === o.stage ? 'step' : undefined}>
+          {pad2(i + 1)} · {i === N - 1 && fork ? 'decision' : name}
+        </div>
+      ))}
+      {flowing && (
+        <span className={s.mFlowLabel} style={{ top: y(o.stage) + PH + (STEP - PH) / 2 - 7, left: MID + 12 }}>
+          <i />{o.inflow}
+        </span>
+      )}
+      {placed.map(({ e, left, top }, k) => (
+        <div key={k} className={cx(s.mBox, e.possible && s.mBoxPossible)} style={{ top, left: left ? 0 : W - BW, width: BW, height: BH }}>
+          {EXIT_LABEL[e.kind]}
+        </div>
+      ))}
+      {fork && (
+        <>
+          <div className={cx(s.mBox, s.mBoxEnd)} style={{ top: y(N - 1) + PH + 34, left: 0, width: BW, height: BH }}>software product</div>
+          <div className={cx(s.mBox, s.mBoxEnd)} style={{ top: y(N - 1) + PH + 34, left: W - BW, width: BW, height: BH }}>retired</div>
+        </>
+      )}
+    </div>
+  )
+}
+
 /* Branching stage track for one output. The main track runs left →
    right; exits drop below from the stage they branch after, then
    either curve back up into the next stage (rejoin) or stop at a bar
@@ -233,7 +305,7 @@ export function BranchTrack({ o }: { o: Output }) {
       {flowing && <p className={s.srOnly}>{o.inflow}: data flowing from {t.stages[o.stage]} into {t.stages[o.stage + 1]}.</p>}
       {placed.map(({ e, x, y }, k) => {
         const sw = e.kind === 'software' && e.outputId ? outputById(e.outputId) : undefined
-        const href = sw ? `#output/${sw.id}` : e.href
+        const href = sw ? (isOpen(sw) ? `#output/${sw.id}` : undefined) : e.href
         const title = sw ? `${sw.code} · ${outputName(sw)}` : e.title
         return (
           <div key={k} className={cx(s.bExit, e.possible && s.isPossible, e.kind === 'software' && s.isSoftware)} style={{ left: `${x}%`, top: y }}>
@@ -277,19 +349,32 @@ export function OutputRows({ items, showCategory = true }: { items: Output[]; sh
         <span>{showCategory ? 'category' : 'regulatory class'}</span><span>affiliation</span><span />
       </div>
       <div className={s.rows} role="list">
-        {items.map((o) => (
-          <a key={o.id} href={outHref(o)} className={s.row} role="listitem">
-            <span className={s.rowCode}>{o.code}</span>
-            <span>
-              <span className={s.rowTitle}>{outputName(o)}</span>
-              <span className={s.rowSub}>{typeById(o.type).label}</span>
-            </span>
-            <span className={s.rowCell}><MiniStage o={o} /></span>
-            <span className={s.rowCell}>{showCategory ? categoryById(o.category)!.label : o.regClass}</span>
-            <span className={s.rowCell}>{o.affiliation.kind === 'owned' ? 'Mentheon-owned' : 'Affiliated'}</span>
-            <span className={s.rowArrow} aria-hidden="true">→</span>
-          </a>
-        ))}
+        {items.map((o) => {
+          const cells = (
+            <>
+              <span className={s.rowCode}>{o.code}</span>
+              <span>
+                <span className={s.rowTitle}>{outputName(o)}</span>
+                <span className={s.rowSub}>{typeById(o.type).label}</span>
+              </span>
+              <span className={s.rowCell}><MiniStage o={o} /></span>
+              <span className={s.rowCell}>{showCategory ? categoryById(o.category)!.label : o.regClass}</span>
+              <span className={s.rowCell}>{o.affiliation.kind === 'owned' ? 'Mentheon-owned' : 'Affiliated'}</span>
+            </>
+          )
+          // Projects without a public page yet: listed, but not linked.
+          return isOpen(o) ? (
+            <a key={o.id} href={outHref(o)} className={s.row} role="listitem">
+              {cells}
+              <span className={s.rowArrow} aria-hidden="true">→</span>
+            </a>
+          ) : (
+            <div key={o.id} className={cx(s.row, s.isLocked)} role="listitem" title="Details coming soon">
+              {cells}
+              <span className={s.rowArrow}><Padlock /><span className={s.srOnly}>details coming soon</span></span>
+            </div>
+          )
+        })}
       </div>
     </>
   )

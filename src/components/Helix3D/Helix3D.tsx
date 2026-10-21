@@ -8,10 +8,14 @@ import { adjustTextScale, applyTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
 import {
   OUTPUTS, CATEGORIES, HELIX_CATEGORIES, categoryById, typeById, stageLabel, outputName, affiliationLabel,
-  categoryStatus, outputsIn, pad2, LINK_LABEL, type Output,
+  categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
 } from '../../data/framework'
+import Padlock, { LOCK_SVG } from '../Padlock'
 import './helix3d.css'
 import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID } from '../ProductMark'
+import { markIntroDone, skipIntroAlways } from '../../lib/introGate'
+import { useSwipeDown } from '../../lib/useSwipeDown'
+import { CONTACT_EMAIL } from '../../data/people'
 
 /* =================================================================
    Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
@@ -84,7 +88,9 @@ const STRANDS: Strand[] = STAFF_CATS.map((c, i) => {
   return {
     id: c.id, name: c.label,
     subsidiary: `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(os.length)} project${os.length === 1 ? '' : 's'}`,
-    tag: c.purpose, synopsis: c.purpose, icon: ICON_BY_CAT[c.id], accent: c.label, category: c.id, band: i, outputs: os,
+    tag: c.purpose, synopsis: c.purpose, icon: ICON_BY_CAT[c.id], category: c.id, band: i, outputs: os,
+    // Headline reads "A new era of <accent>"; Plasmids gets its own phrase.
+    accent: c.id === 'plasmids' ? 'Novel Software' : c.label,
   }
 })
 const PROJECT_PREFIX = 'out:'
@@ -160,7 +166,7 @@ function OutputPeek({ o }: { o: Output }) {
         <span className="op-stage-name">{pad2(o.stage + 1)} · {stageLabel(o)}</span>
       </div>
       <div className="op-actions">
-        <a className="op-cta" href={`#output/${o.id}`}>view details <span aria-hidden="true">→</span></a>
+        {isOpen(o) && <a className="op-cta" href={`#output/${o.id}`}>view details <span aria-hidden="true">→</span></a>}
         {o.link && <a className="op-link" href={o.link.href} target="_blank" rel="noreferrer">{LINK_LABEL[o.link.kind].toLowerCase()} <span aria-hidden="true">↦</span></a>}
         <a className="op-link" href={c.id === 'plasmids' ? '#plasmids' : `#category/${c.id}`}>{c.label.toLowerCase()} <span aria-hidden="true">→</span></a>
       </div>
@@ -196,18 +202,31 @@ function CategoryPeek({ s }: { s: Strand }) {
       </dl>
       {s.outputs.length ? (
         <div className="cp-projects">
-          {s.outputs.map((o) => (
-            <a key={o.id} className="cp-project" href={`#output/${o.id}`}
-              onMouseEnter={() => { peekHover.id = o.id }} onMouseLeave={() => { peekHover.id = null }}
-              onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
-              <LogoTile o={o} />
-              <span className="cp-project-text">
-                <span className="cp-project-name">{outputName(o)}</span>
-                <span className="cp-project-sub">{typeById(o.type).label.toLowerCase()} · {stageLabel(o).toLowerCase()}</span>
-              </span>
-              <span className="cp-arrow" aria-hidden="true">→</span>
-            </a>
-          ))}
+          {s.outputs.map((o) => {
+            const body = (
+              <>
+                <LogoTile o={o} />
+                <span className="cp-project-text">
+                  <span className="cp-project-name">{outputName(o)}</span>
+                  <span className="cp-project-sub">{typeById(o.type).label.toLowerCase()} · {stageLabel(o).toLowerCase()}</span>
+                </span>
+              </>
+            )
+            // No public page yet: listed in its strand, padlocked, not linked.
+            return isOpen(o) ? (
+              <a key={o.id} className="cp-project" href={`#output/${o.id}`}
+                onMouseEnter={() => { peekHover.id = o.id }} onMouseLeave={() => { peekHover.id = null }}
+                onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
+                {body}
+                <span className="cp-arrow" aria-hidden="true">→</span>
+              </a>
+            ) : (
+              <div key={o.id} className="cp-project is-locked" title="Details coming soon">
+                {body}
+                <span className="cp-lock"><Padlock /><span className="sr-only">details coming soon</span></span>
+              </div>
+            )
+          })}
         </div>
       ) : <p className="list-empty" style={{ paddingLeft: 0 }}>no projects yet</p>}
       <div className="op-actions" style={{ marginTop: '1.3rem' }}>
@@ -253,6 +272,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
   const [introOn, setIntroOn] = useState(() => {
     if (skipIntro) return false
     if (alwaysIntro) return true             // preview pages: replay every load
+    if (skipIntroAlways()) return false      // "skip always" ticked on the intro
     try { return sessionStorage.getItem('mnth:helixIntroSeen') !== '1' } catch { return true }
   })
   const introDoneRef = useRef<() => void>(() => {})
@@ -267,6 +287,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     setPanelStrand(null)
     closePanelRef.current()
   }
+  // Phones: the window is a bottom sheet — swipe its bar down to close.
+  const winSwipe = useSwipeDown(handlePanelClose)
 
   /* Strand WINDOW state. 'dock' = default: tethered beside the
      focused node, positioned per frame by updateLabels(). 'free' =
@@ -289,6 +311,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
      rect so a docked window lifts off exactly where it is. */
   const onWinDragStart = (e: ReactPointerEvent) => {
     if (e.button !== 0 || winModeRef.current === 'max') return
+    if (window.matchMedia('(max-width: 720px)').matches) return   // phones: fixed bottom sheet
     if ((e.target as HTMLElement).closest('button')) return
     const r = drawerRect(); if (!r) return
     e.preventDefault()
@@ -339,6 +362,23 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
      unless dismissed this session; '?' toggles it. */
   const HELP_KEY = 'mnth:helix-help'
   const [helpOpen, setHelpOpen] = useState(false)
+
+  /* Phone dock (≤720px, CSS-only visibility): ‹ strand · n of 06 ›.
+     dockIdx mirrors the scene's focusIndex (polled in the render loop);
+     the refs call back into the scene. */
+  const [dockIdx, setDockIdx] = useState(-1)
+  const dockStepRef = useRef<(dir: number) => void>(() => {})
+  const dockOpenRef = useRef<() => void>(() => {})
+
+  /* The scene fills the screen: no page scroll, rubber-band or
+     pull-to-refresh behind it (matters on phones). */
+  useEffect(() => {
+    const h = document.documentElement, b = document.body
+    const prev = [h.style.overflow, b.style.overflow, h.style.overscrollBehavior, b.style.overscrollBehavior]
+    h.style.overflow = 'hidden'; b.style.overflow = 'hidden'
+    h.style.overscrollBehavior = 'none'; b.style.overscrollBehavior = 'none'
+    return () => { [h.style.overflow, b.style.overflow, h.style.overscrollBehavior, b.style.overscrollBehavior] = prev }
+  }, [])
   const showHelpRef = useRef<(force?: boolean) => void>(() => {})
   showHelpRef.current = (force = false) => {
     if (force) { setHelpOpen((o) => !o); return }
@@ -476,12 +516,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        side faces visible so they read as cubes. gap = node-centre to
        cube-centre distance in cube widths. */
     const LOGO = { sizeFar: 0.02625, sizeNear: 0.0525, gap: 1.55, tiltX: -0.32, tiltY: 0.5,
-      /* Up close (node focused) the cubes ease into flat, square
-         SELECTION TILES set right against the node's outer ring, facing
-         the camera square-on: tileFrac = edge as a fraction of viewport
-         height; tileDepth = thickness relative to edge; tileGap = world
-         clearance from the ring. Coil + node stay clear in the middle. */
-      tileFrac: 0.17, tileDepth: 0.08, tileGap: 0.03, ease: 6 }
+      /* Up close (node focused) the cubes ease into square SELECTION
+         TILES set right against the node's outer ring, facing the camera
+         square-on: tileFrac = edge as a fraction of viewport height;
+         tileDepth = thickness relative to edge (1 = full cube, so the
+         side cubes show their sides in perspective while flipping
+         strands); tileGap = world clearance from the ring. Coil + node
+         stay clear in the middle. */
+      tileFrac: 0.17, tileDepth: 1, tileGap: 0.03, ease: 6 }
     const tileMix: number[] = []
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
@@ -671,9 +713,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        canvas pointer/resize listeners. Called once from BOOT. */
     function initThree() {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      // DPR capped at 1.5: ~44% fewer pixels than 2× on retina for a
-      // full-screen canvas, visually indistinguishable on line art.
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+      // DPR: 1.5× cap on desktop, full density on phones (pixelRatio()).
+      renderer.setPixelRatio(pixelRatio())
       renderer.setSize(container.clientWidth, container.clientHeight)
       renderer.setClearColor(0x000000, 0)
       container.appendChild(renderer.domElement)
@@ -1155,10 +1196,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        Strand Logos tile: ink ground (cream in dark), cream emblem, the
        brand name split over two lines in Lato 900, bottom-left.
        Selected/hovered: crimson ground. */
-    const STRAND_SPLITS: Record<string, [string, string]> = {
-      therapeutics: ['LENI', 'TUDO'], detection: ['AEV', 'ORIX'], monitoring: ['VIT', 'RIX'],
-      forecasting: ['ACU', 'MENTRA'], perception: ['KIND', 'REON'], plasmids: ['PLAS', 'MIDS'],
-    }
+    const STRAND_SPLITS: Record<string, [string, string]> =
+      Object.fromEntries(Object.entries(STRAND).map(([cat, v]) => [cat, v.split]))
     let _sctx: CanvasRenderingContext2D | null = null
     const latoW = (s: string) => {
       if (!_sctx) _sctx = document.createElement('canvas').getContext('2d')
@@ -1582,6 +1621,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     }
     const _lift = new THREE.Vector3()
     const _inv2 = new THREE.Quaternion()
+    const logoFade = new Map<THREE.Object3D, number>()   // phones: per-cube fade (see updateLogos)
     function updateLogos(dt: number) {
       nodes.forEach((_, i) => {
         const target = isFocused() && focusIndex === i ? 1 : 0
@@ -1595,13 +1635,18 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const slotOf = new Map<number, number>()
       const nodeEdge: number[] = []
       momStep(dt)
+      // Cube sizes are fractions of viewport HEIGHT; on a tall phone the
+      // focused row (side cube · strand cube · side cube) would overflow
+      // the width, so scale everything to fit it (1 on landscape).
+      const portraitFit = Math.min(1, camera.aspect * 1.3)
+      const portrait = camera.aspect < 1
       nodes.forEach((n, i) => {
         if (!n.orb.userData.cube) return
         n.orb.getWorldPosition(_np)
         const d = camera.position.distanceTo(_np)
         const f = THREE.MathUtils.clamp((d - 2.2) / 6, 0, 1)
         const m = THREE.MathUtils.smoothstep(tileMix[i] ?? 0, 0, 1)
-        const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m)
+        const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * portraitFit
         const s = frac * 2 * d * tanH * NODE_CUBE_K
         nodeEdge[i] = s
         n.orb.scale.setScalar(s)
@@ -1631,13 +1676,26 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const f = THREE.MathUtils.clamp((d - 2.2) / 6, 0, 1)
         const m = THREE.MathUtils.smoothstep(tileMix[l.node] ?? 0, 0, 1)
         const hov = hoveredOutput === l.o.id ? (m > 0.5 ? 1.06 : 1.2) : 1
-        const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * hov
-        const s = frac * 2 * d * tanH                        // edge, world units
+        const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * hov * portraitFit
+        let s = frac * 2 * d * tanH                          // edge, world units
         const [sx, sy] = SLOTS[k % SLOTS.length]
         const ring = k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
         const ne = nodeEdge[l.node] ?? 0          // section cube edge (embedded style)
-        const offCube = Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
-        const offTile = Math.max(NODE.ringR2 * 1.1, ne * 0.5) + LOGO.tileGap + s / 2
+        // Portrait phones: all three (cube · strand · cube) must fit the
+        // width. Cap a side cube's edge to the room left beside the strand
+        // cube (6% margin); spacing below ignores the outer ring there.
+        if (portrait && sx !== 0) s = Math.min(s, Math.max(0.01, d * tanH * camera.aspect * 0.94 - ne * 0.5 - LOGO.tileGap))
+        // Phones (locked on one strand): only the focused strand and its
+        // neighbours above/below keep their project cubes (a preview of
+        // the next swipe); the rest ease out so nothing lingers.
+        const fadeWant = portrait && isFocused() && Math.abs(l.node - focusIndex) > 1 ? 0 : 1
+        const fade = (logoFade.get(l.sprite) ?? 1) + (fadeWant - (logoFade.get(l.sprite) ?? 1)) * Math.min(1, dt * 9)
+        logoFade.set(l.sprite, fade)
+        l.sprite.visible = fade > 0.03
+        s *= fade
+        // Phones: neighbour strands' cubes hug their strand cube (not the ring).
+        const offCube = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
         _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
         rotor.worldToLocal(_wp)
@@ -1651,6 +1709,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           setLitSide(mats[0] as unknown as THREE.MeshLambertMaterial, sel ? new THREE.Color(cssVar('--crimson') || '#A30B37') : (mats[0].userData.base as THREE.Color))
         }
         if (essen && l.o.id === AUF_ID) {
+          // Essen goes wherever its cube goes (hidden with it on phones).
+          essen.visible = l.sprite.visible
+          if (essen3d) essen3d.visible = l.sprite.visible
           // Essen: a slow loop around the cube's edge plus a quick bob.
           const t = performance.now() / 1000
           const ef = THREE.MathUtils.lerp(ESSEN.sizeNear, ESSEN.sizeFar, f) * (1 + 0.4 * m)
@@ -1759,6 +1820,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (!renderer) return
       const w = container.clientWidth
       const h = container.clientHeight
+      renderer.setPixelRatio(pixelRatio())
       renderer.setSize(w, h)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
@@ -1774,12 +1836,28 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
     }
 
+    /* Render resolution: desktop canvases are big, so cap at 1.5× for
+       speed; phones are small but 3× dense, and at 1.5× the cube edges
+       render soft (upscaled), so let them use their full density. */
+    function pixelRatio() {
+      const phone = Math.min(window.innerWidth, window.innerHeight) <= 720
+      return Math.min(window.devicePixelRatio || 1, phone ? 3 : 1.5)
+    }
+
+    /* Phone layout (matches the ≤720px CSS): the view locks onto one
+       strand (cube + its two project cubes) and swipes step strands. */
+    const isPhone = () => window.matchMedia('(max-width: 720px)').matches
+    const _tapV = new THREE.Vector3()
+
     /* ---- DRAG-TO-SPIN ---- grab the canvas and fling the coil;
        it keeps spinning with decaying momentum. Grabbing drops you
        into the free wide view (clears focus + camera) so the whole
        spiral is visible while it spins. */
     function onDragDown(e: PointerEvent) {
       if (e.button !== 0 || panelOpen) return
+      // Phones: the view is locked on a strand; vertical swipes step
+      // strands (initScrollNav). A drag-spin would hijack every swipe.
+      if (isPhone()) return
       dragging = true
       dragMoved = false
       dragStartX = dragLastX = e.clientX
@@ -1850,9 +1928,30 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
 
     /* Canvas click → focus / open the hovered node (see onNodeClick).
        Skipped if this "click" was actually the end of a drag-spin. */
-    function onClick() {
+    function onClick(e: MouseEvent) {
       if (suppressClick) { suppressClick = false; return }
-      if (hoveredOutput) { openProject(hoveredOutput); return }
+      // Aim at the click/tap point itself: a tap has no hover beforehand,
+      // so hoveredOutput would be empty on touch screens.
+      onPointerMove(e as PointerEvent)
+      raycaster.setFromCamera(pointer, camera)
+      // A project cube anywhere along the ray wins over the strand's hit
+      // sphere (on phones the side cubes sit inside that sphere).
+      let tapped = raycaster.intersectObjects(nodePickables, false)
+        .find((h) => h.object.userData.outputId)?.object.userData.outputId as string | undefined
+      // Phones: forgiving taps — the focused strand's nearest project cube
+      // within ~70px of the tap counts.
+      if (!tapped && isPhone() && isFocused()) {
+        const r = renderer.domElement.getBoundingClientRect()
+        const tx = e.clientX - r.left, ty = e.clientY - r.top
+        let best = 70
+        logos.forEach((l) => {
+          if (l.node !== focusIndex) return
+          const p = l.sprite.getWorldPosition(_tapV).project(camera)
+          const dpx = Math.hypot((p.x * 0.5 + 0.5) * r.width - tx, (-p.y * 0.5 + 0.5) * r.height - ty)
+          if (dpx < best) { best = dpx; tapped = l.o.id }
+        })
+      }
+      if (tapped ?? hoveredOutput) { openProject((tapped ?? hoveredOutput)!); return }
       // Hit-test the actual click point: while focused, hoveredId falls
       // back to the focused node, so it can't tell a click on the node
       // from a click on open space. Open space → leave the focus.
@@ -1860,7 +1959,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const hit = raycaster.intersectObjects(nodePickables, false)[0]
       const hitId = hit ? (hit.object.userData.strandId as string | undefined) : undefined
       if (!hitId) {
-        if (isFocused()) exitToDefault()
+        if (isFocused() && !isPhone()) exitToDefault()   // phones stay locked on the strand
         return
       }
       const idx = nodes.findIndex((x) => x.strand.id === hitId)
@@ -1957,6 +2056,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (!o) return
       const i = nodes.findIndex((x) => x.strand.category === o.category)
       if (i < 0) return
+      // No public page yet → show its strand's window instead.
+      if (!isOpen(o)) { openPanel(i); return }
       focusByIndex(i)
       panelOpen = true
       setPanelStrand({ id: PROJECT_PREFIX + o.id, label: o.title, tagline: '', href: '#output/' + o.id, themes: [] })
@@ -2008,7 +2109,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     }
     const onKey = (e: KeyboardEvent) => {
       if (!animationActive) return
-      if ($('#menu-overlay')?.classList.contains('is-open')) return
+      // Menu open: Esc closes it; every other key is ignored.
+      if ($('#menu-overlay')?.classList.contains('is-open')) {
+        if (e.key === 'Escape') { e.preventDefault(); onMenuClose() }
+        return
+      }
       const tgt = e.target instanceof Element ? (e.target as HTMLElement) : null
       if (tgt && /^(INPUT|TEXTAREA|SELECT)$/.test(tgt.tagName)) return
       const listUp = listview.classList.contains('is-visible')
@@ -2055,6 +2160,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         return
       }
       const next = focusIndex + dir
+      // Phones: locked on a strand — the ends stop rather than zoom out.
+      if (isPhone() && (next < 0 || next >= NODE.count)) return
       if (next < 0 || next >= NODE.count) {
         focusIndex = -1            // off either end → default
         resetCamera()
@@ -2160,6 +2267,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
       const onTouchEnd = (e: TouchEvent) => {
         if (panelOpen || listview.classList.contains('is-visible')) return
+        if ($('#menu-overlay')?.classList.contains('is-open')) return   // menu's own swipe
         const dy = (e.changedTouches[0]?.clientY ?? touchY) - touchY
         if (Math.abs(dy) < 40) return
         step(dy < 0 ? 1 : -1)                  // swipe up → next
@@ -2316,9 +2424,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         raycaster.setFromCamera(pointer, camera)
         const hits = raycaster.intersectObjects(nodePickables, false)
         if (hits.length) {
-          const id = hits[0].object.userData.strandId as string
-          hoveredOutput = (hits[0].object.userData.outputId as string | undefined) ?? null
-          pointerSection = hits[0].object.userData.outputId ? null : id   // the cube or its hit area
+          const top = hits.find((h) => h.object.userData.outputId) ?? hits[0]   // project cubes first
+          const id = top.object.userData.strandId as string
+          hoveredOutput = (top.object.userData.outputId as string | undefined) ?? null
+          pointerSection = top.object.userData.outputId ? null : id   // the cube or its hit area
           if (id !== hoveredId) activate(id)
           setLabelHover(id)
         } else {
@@ -2364,6 +2473,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const labelsEl = labelsElCached ?? (labelsElCached = $('#node-labels')!)
       const w = labelsEl.clientWidth
       const h = labelsEl.clientHeight
+      const phone = isPhone()
       _camUp.setFromMatrixColumn(camera.matrixWorld, 1)
 
       nodes.forEach((n, ni) => {
@@ -2405,7 +2515,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         }
         const ownSide = label.classList.contains('is-left') ? reachL[ni] : reachR[ni]
         label.style.setProperty('--side-gap', topMode ? '0px' : `${Math.round(ownSide ?? 0)}px`)
-        label.style.opacity = '1'
+        // Phones, focused: only the focused strand's label; the others
+        // would float over the locked three-cube view.
+        const hideHere = phone && isFocused() && ni !== focusIndex
+        label.style.opacity = hideHere ? '0' : '1'
+        label.style.visibility = hideHere ? 'hidden' : ''          // no fade-out ghost mid-swipe
       })
 
 
@@ -2417,18 +2531,31 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         if (!cap) {
           cap = document.createElement('div')
           cap.className = 'cube-cap'
+          const oid = l.o.id
+          cap.addEventListener('click', () => openProject(oid))   // phones: the caption is a tap target too
           cap.innerHTML = `<span class="cube-cap-name">${l.o.product || outputName(l.o)}</span><span class="cube-cap-sub">${typeById(l.o.type).label.toLowerCase()}</span><span class="cube-cap-sub">${String(stageLabel(l.o) || '').toLowerCase()}</span>`
           capsEl.appendChild(cap)
           capEls.set(l.o.id, cap)
         }
         const on = !!nodes[l.node]?.orb.userData.cube && (tileMix[l.node] ?? 0) > 0.6 && !panelOpen
+          && (!phone || l.node === focusIndex)                       // phones: the focused strand's only, at once
         cap.classList.toggle('is-visible', on)
         if (!on) return
+        // Desktop: under the cube. Phones: ABOVE it, no wider than the
+        // cube — the strand's own label owns the band below the row.
         const half = l.sprite.scale.y * 0.5
-        const lo = l.sprite.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
+        const lo = l.sprite.getWorldPosition(_lo).addScaledVector(_camUp, phone ? half : -half).project(camera)
         const cx = (lo.x * 0.5 + 0.5) * w
         const cy = (-lo.y * 0.5 + 0.5) * h
-        cap.style.transform = `translate(${Math.round(cx)}px, ${Math.round(cy + CAP_GAP)}px) translate(-50%, 0)`
+        if (phone) {
+          const edge = l.sprite.getWorldPosition(_lp).addScaledVector(_camUp, -half).project(camera)
+          const cubePx = Math.abs(((-edge.y * 0.5 + 0.5) * h) - cy)       // on-screen edge length
+          cap.style.maxWidth = `${Math.round(cubePx + 8)}px`
+          cap.style.transform = `translate(${Math.round(cx)}px, ${Math.round(cy - CAP_GAP * 0.6)}px) translate(-50%, -100%)`
+        } else {
+          cap.style.maxWidth = ''
+          cap.style.transform = `translate(${Math.round(cx)}px, ${Math.round(cy + CAP_GAP)}px) translate(-50%, 0)`
+        }
       })
 
       // "view more" bubble — pinned just below the active (focused
@@ -2487,12 +2614,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        the loader+gate finish (startScene flips it on). */
     let lastT = performance.now()
     let startT = lastT
+    let dockSeen = -2
     function loop(t: number) {
       if (destroyed) return
       const dt = Math.min(0.05, (t - lastT) / 1000)
       const elapsed = (t - startT) / 1000
       lastT = t
       if (animationActive) render(dt, elapsed)
+      if (focusIndex !== dockSeen) { dockSeen = focusIndex; setDockIdx(focusIndex) }
       rafId = requestAnimationFrame(loop)
     }
 
@@ -2597,18 +2726,21 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <span class="list-band-status">${pad2(items.length)} · ${categoryStatus(c.id)}</span>
           <a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>
         </div>
-        ${items.length ? items.map((o) => `
-        <a class="list-item" href="#output/${o.id}" data-out="${o.id}">
+        ${items.length ? items.map((o) => {
+          const body = `
           <span class="list-num">${o.code}</span>
           <div class="list-mark">${productTileHTML(o)}</div>
           <div class="list-meta">
             <div class="list-title">${outputName(o)}</div>
             <div class="list-tag">${typeById(o.type).label.toLowerCase()} · ${stageLabel(o).toLowerCase()}</div>
-          </div>
-          <span class="list-arrow">→</span>
-        </a>`).join('') : '<p class="list-empty">no projects yet</p>'}`
+          </div>`
+          // No public page yet: listed, padlocked, not linked.
+          return isOpen(o)
+            ? `<a class="list-item" href="#output/${o.id}" data-out="${o.id}">${body}<span class="list-arrow">→</span></a>`
+            : `<div class="list-item is-locked" title="Details coming soon">${body}<span class="list-arrow">${LOCK_SVG}<span class="sr-only">details coming soon</span></span></div>`
+        }).join('') : '<p class="list-empty">no projects yet</p>'}`
       }).join('')
-      inner.querySelectorAll<HTMLElement>('.list-item').forEach((a) => {
+      inner.querySelectorAll<HTMLElement>('.list-item[data-out]').forEach((a) => {
         a.addEventListener('click', (e) => {
           e.preventDefault()
           if (a.dataset.out) openProject(a.dataset.out)
@@ -2680,6 +2812,15 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       requestAnimationFrame(() => refreshSceneColours())
     }
     themeBtn.addEventListener('click', onThemeClick)
+    // Phones use the site NavBar over the scene; it broadcasts its theme.
+    const onSiteTheme = (e: Event) => {
+      const next = (e as CustomEvent<string>).detail
+      if ((next !== 'light' && next !== 'dark') || next === root.getAttribute('data-theme')) return
+      root.setAttribute('data-theme', next)
+      requestAnimationFrame(() => refreshSceneColours())
+    }
+    window.addEventListener('mnth:theme', onSiteTheme)
+    cleanups.push(() => window.removeEventListener('mnth:theme', onSiteTheme))
 
     /* ---- TEXT SIZE — global rem scale (whole site, persisted).
        Lives next to the theme switch; see ../../lib/textScale. */
@@ -2757,7 +2898,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        The dot is the OS cursor itself (--cursor-dot in helix3d.css), so
        it never lags. The ring eases toward it for a trailing effect,
        and grows (.is-active) over interactive elements. The easing is
-       time-based (same feel as 0.18/frame at 60fps) so the ring keeps
+       time-based (RING_FOLLOW of the gap per frame at 60fps; 0.18 felt
+       laggy; 0.6 closes half the gap in ~13ms) so the ring keeps
        up when frames drop, and the RAF idles once it has caught up.
        Its own RAF is cancelled in cleanup. */
     function initCursor() {
@@ -2765,10 +2907,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (!ring) return
       let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0
       let cursorRaf = 0, lastT = 0
+      const RING_FOLLOW = 0.6
       function lerp(t: number) {
         const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 1 / 60
         lastT = t
-        const k = 1 - Math.pow(1 - 0.18, dt * 60)
+        const k = 1 - Math.pow(1 - RING_FOLLOW, dt * 60)
         ringX += (mouseX - ringX) * k
         ringY += (mouseY - ringY) * k
         if (Math.abs(mouseX - ringX) < 0.1 && Math.abs(mouseY - ringY) < 0.1) { ringX = mouseX; ringY = mouseY }
@@ -2813,6 +2956,33 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     }
     $('#menu-open')!.addEventListener('click', onMenuOpen)
     $('#menu-close')!.addEventListener('click', onMenuClose)
+    // Swipe down from the menu's top row to close it (same feel as the
+    // sheets' useSwipeDown: follows the finger, closes past 90px).
+    const menuTopEl = menuOverlay.querySelector('.menu-top') as HTMLElement | null
+    let mY: number | null = null, mDy = 0
+    const mStart = (e: TouchEvent) => { mY = e.touches[0].clientY; mDy = 0 }
+    const mMove = (e: TouchEvent) => {
+      if (mY === null) return
+      mDy = Math.max(0, e.touches[0].clientY - mY)
+      menuOverlay.style.translate = `0 ${mDy}px`
+      menuOverlay.style.transition = 'none'
+    }
+    const mEnd = () => {
+      menuOverlay.style.translate = ''
+      menuOverlay.style.transition = ''
+      if (mDy > 90) onMenuClose()
+      mY = null; mDy = 0
+    }
+    menuTopEl?.addEventListener('touchstart', mStart, { passive: true })
+    menuTopEl?.addEventListener('touchmove', mMove, { passive: true })
+    menuTopEl?.addEventListener('touchend', mEnd)
+    menuTopEl?.addEventListener('touchcancel', mEnd)
+    cleanups.push(() => {
+      menuTopEl?.removeEventListener('touchstart', mStart)
+      menuTopEl?.removeEventListener('touchmove', mMove)
+      menuTopEl?.removeEventListener('touchend', mEnd)
+      menuTopEl?.removeEventListener('touchcancel', mEnd)
+    })
 
     /* ---- LOADER + GATE — the intro sequence ----
        Implementation lives in ./HelixIntro (HelixIntroMarkup +
@@ -2831,6 +3001,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     initThree()
     initCursor()
     initScrollNav()   // wheel/swipe traversal; starts in default view
+    // Phone dock: ‹ › step strands (or the open window); the name opens it.
+    dockStepRef.current = (dir) => { if (panelOpen) stepPanel(dir); else traverse(dir) }
+    dockOpenRef.current = () => { if (isFocused()) openPanel(focusIndex); else focusByIndex(0) }
 
     // The intro loader plays ONCE per browser session — only on the
     // first view of the site. Returning to #helix3d later (or a dev
@@ -2840,11 +3013,13 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     try { introSeen = sessionStorage.getItem(INTRO_KEY) === '1' } catch { /* storage unavailable */ }
 
     ;(async function entry() {
-      if (skipIntro || (introSeen && !alwaysIntro)) {
+      if (skipIntro || ((introSeen || skipIntroAlways()) && !alwaysIntro)) {
         // Already seen this session (or dev re-render): jump straight
         // to the scene — hide the loader and start rendering now.
         $('#loader')?.classList.add('is-hidden')
         startScene()
+        if (isPhone()) focusByIndex(0, true)
+        markIntroDone()
         return
       }
       // Serpent intro plays (or is skipped); its onDone resolves this
@@ -2853,6 +3028,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (destroyed) return
       try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* storage unavailable */ }
       startScene()
+      if (isPhone()) focusByIndex(0)
+      markIntroDone()
     })()
 
     /* ---- TEARDOWN ----
@@ -3023,6 +3200,17 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       </main>
 
       {/* FOOTER — static company strip (z 20) */}
+      <nav className="mobile-dock" aria-label="Strands">
+        <button type="button" className="md-arrow" onClick={() => dockStepRef.current(-1)}
+          disabled={dockIdx === 0} aria-label="Previous strand">‹</button>
+        <button type="button" className="md-mid" onClick={() => dockOpenRef.current()}>
+          <b>{dockIdx >= 0 ? STRAND[STRANDS[dockIdx].category as keyof typeof STRAND].name : 'Strands'}</b>
+          <span>{dockIdx >= 0 ? `${pad2(dockIdx + 1)} of ${pad2(STRANDS.length)} · view more` : `${pad2(STRANDS.length)} strands · swipe ↕`}</span>
+        </button>
+        <button type="button" className="md-arrow" onClick={() => dockStepRef.current(1)}
+          disabled={dockIdx === STRANDS.length - 1} aria-label="Next strand">›</button>
+      </nav>
+
       <div className="footer-strip">
         <span>mentheon ltd · <strong>15974246</strong></span>
         <span><strong>est 09.2024 · </strong> bloemfontein · newcastle · london</span>
@@ -3032,9 +3220,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       {/* MENU — full-screen overlay (z 200), toggled via .is-open by
           #menu-open / #menu-close. Links are placeholders. */}
       <div className="menu-overlay" id="menu-overlay" aria-hidden="true">
+        {/* Phones: theme + text size live here (the nav is slimmed). */}
+        <div className="menu-mobile-ctrls">
+          <button type="button" onClick={() => adjustTextScale(-TEXT_STEP)} aria-label="Decrease text size">A−</button>
+          <button type="button" onClick={() => applyTextScale(1)} aria-label="Default text size">A</button>
+          <button type="button" onClick={() => adjustTextScale(TEXT_STEP)} aria-label="Increase text size">A+</button>
+          <button type="button" onClick={() => (rootRef.current?.querySelector('#theme-switch') as HTMLButtonElement | null)?.click()}>light / dark</button>
+        </div>
         <div className="menu-top">
           <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.7rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--gate-fg-quiet)' }}>index ✲ mentheon</span>
-          <button className="menu-close" id="menu-close">close <span className="menu-close-x" /></button>
+          <button className="menu-close" id="menu-close" title="Close (esc)" aria-label="Close menu (Esc)">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
           {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services']].map(([label, href], i) => (
@@ -3043,7 +3238,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         </div>
         <div className="menu-bottom">
           <span>mentheon ltd · companies house 15974246</span>
-          <span><a href="#">linkedin</a><a href="#">github</a><a href="#">contact</a></span>
+          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a></span>
         </div>
       </div>
 
@@ -3064,12 +3259,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
             aria-modal="true"
             aria-label={panelStrand.label}
             onClick={(e) => e.stopPropagation()}
-            style={winMode === 'free'
-              ? { transform: `translate(${winRect.x}px, ${winRect.y}px)`, width: winRect.w, height: winRect.h ?? undefined }
-              : undefined}
+            style={{
+              ...(winMode === 'free'
+                ? { transform: `translate(${winRect.x}px, ${winRect.y}px)`, width: winRect.w, height: winRect.h ?? undefined }
+                : {}),
+              ...winSwipe.style,
+            }}
           >
             <div className="strand-win-crop" aria-hidden="true" />
-            <div className="strand-win-bar" onPointerDown={onWinDragStart} onDoubleClick={onWinMax}>
+            <div className="strand-win-bar" onPointerDown={onWinDragStart} onDoubleClick={onWinMax} {...winSwipe.handlers}>
+              <span className="strand-win-grab" aria-hidden="true" />
               <span className="strand-win-title">
                 {panelOut && panelCat ? <>{panelOut.code.toLowerCase()} · {panelCat.label.toLowerCase()} · project</>
                   : panelS && panelCat ? <>{panelCat.num} · {panelCat.label.toLowerCase()} · {pad2(panelS.band + 1)} of {pad2(STRANDS.length)}</> : null}
@@ -3113,7 +3312,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           .helix3d-root so it themes with data-theme and stacks
           correctly among the scene layers (above nav/marquee,
           below the modal/gate/loader). */}
-      <MarginaliaTab />
+      <div className="marginalia-tab-wrap"><MarginaliaTab /></div>
     </div>
   )
 }

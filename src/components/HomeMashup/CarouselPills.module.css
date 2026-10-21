@@ -38,17 +38,21 @@
   transition: background 220ms ease, opacity 220ms ease, transform 220ms ease;
 }
 
-.pill:hover .pillDot {
+@media (hover: hover) { .pill:hover .pillDot {
   opacity: 0.7;
   transform: scale(1.15);
-}
+} }
 
-.pillActive .pillDot,
-.pillActive:hover .pillDot {
+.pillActive .pillDot {
   background: var(--crimson);
   opacity: 1;
   transform: scale(1.4);
 }
+@media (hover: hover) { .pillActive:hover .pillDot {
+  background: var(--crimson);
+  opacity: 1;
+  transform: scale(1.4);
+} }
 
 @media (max-width: 640px) {
   .pillnav {
