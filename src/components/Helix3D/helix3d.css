@@ -159,6 +159,11 @@
   position: fixed;
   inset: 0;
   z-index: 1;
+  /* Dragging the staff must not text-select labels/captions (blue
+     boxes); fields inside windows opt back in below. */
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;              /* no long-press callout / magnifier */
+  -webkit-tap-highlight-color: transparent; /* no grey box on tap */
   font-family: 'Lato', sans-serif;
   /* Solid themed ground + a low-opacity blueprint grid layered on
      top of it. Painted as the root's own background, so it sits
@@ -1460,3 +1465,5 @@
   .helix3d-root .cp-project .ptile, .helix3d-root .cp-project .logo-tile { width: 48px; height: 48px; }
 }
 @keyframes helixSheetRise { from { translate: 0 100%; } to { translate: 0 0; } }
+
+.helix3d-root input, .helix3d-root textarea, .helix3d-root .strand-win-body { -webkit-user-select: text; user-select: text; }

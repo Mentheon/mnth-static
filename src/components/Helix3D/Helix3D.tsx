@@ -215,7 +215,8 @@ function CategoryPeek({ s }: { s: Strand }) {
             // No public page yet: listed in its strand, padlocked, not linked.
             return isOpen(o) ? (
               <a key={o.id} className="cp-project" href={`#output/${o.id}`}
-                onMouseEnter={() => { peekHover.id = o.id }} onMouseLeave={() => { peekHover.id = null }}
+                onPointerEnter={(e) => { if (e.pointerType === 'mouse') peekHover.id = o.id }}
+                onPointerLeave={() => { peekHover.id = null }}
                 onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
                 {body}
                 <span className="cp-arrow" aria-hidden="true">→</span>
@@ -287,6 +288,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     setPanelStrand(null)
     closePanelRef.current()
   }
+  // A row's cube highlight (peekHover) must not outlive the window:
+  // taps never send a "leave", and rows unmount without blurring.
+  useEffect(() => { if (!panelStrand) peekHover.id = null }, [panelStrand])
   // Phones: the window is a bottom sheet — swipe its bar down to close.
   const winSwipe = useSwipeDown(handlePanelClose)
 
@@ -1830,10 +1834,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* Convert mouse position to normalised device coords (-1..1)
        for the raycaster. Off-canvas is parked at -9999 (see onLeave)
        so render() can cheaply skip raycasting. */
-    function onPointerMove(e: PointerEvent) {
+    function aimAt(e: { clientX: number; clientY: number }) {
       const rect = renderer.domElement.getBoundingClientRect()
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+    }
+    /* Hover tracks mice/pens only: a finger sliding over the scene
+       (holding, swiping) must not light cubes up. Taps aim via onClick. */
+    function onPointerMove(e: PointerEvent) {
+      if (e.pointerType === 'touch') return
+      aimAt(e)
     }
 
     /* Render resolution: desktop canvases are big, so cap at 1.5× for
@@ -1932,8 +1942,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (suppressClick) { suppressClick = false; return }
       // Aim at the click/tap point itself: a tap has no hover beforehand,
       // so hoveredOutput would be empty on touch screens.
-      onPointerMove(e as PointerEvent)
+      aimAt(e)
       raycaster.setFromCamera(pointer, camera)
+      // Touch: aim for this tap only, then park the pointer so the tapped
+      // cube isn't left highlighted (there's no hover to clear it).
+      const touchTap = (e as PointerEvent).pointerType === 'touch' || isPhone()
+      if (touchTap) requestAnimationFrame(() => { pointer.x = -9999; pointer.y = -9999 })
       // A project cube anywhere along the ray wins over the strand's hit
       // sphere (on phones the side cubes sit inside that sphere).
       let tapped = raycaster.intersectObjects(nodePickables, false)
@@ -2420,7 +2434,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       //    parked off-canvas (x left at -9999) or the list view hides
       //    the canvas.
       const sceneHidden = listview.classList.contains('is-visible')
-      if (pointer.x > -2 && !sceneHidden) {
+      // No hover highlights while the staff is being dragged or is still
+      // coasting from a fling: cubes flashing crimson under a sweeping
+      // cursor looks clunky. Clear any highlight and resume once settled.
+      const spinning = (dragging && dragMoved) || Math.abs(spinVel) > SPIN_STOP
+      if (spinning) {
+        hoveredOutput = null
+        pointerSection = null
+        if (hoveredId !== null && !isFocused()) deactivate()
+        setLabelHover(null)
+      } else if (pointer.x > -2 && !sceneHidden) {
         raycaster.setFromCamera(pointer, camera)
         const hits = raycaster.intersectObjects(nodePickables, false)
         if (hits.length) {
@@ -2438,7 +2461,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         }
       }
 
-      if (pointer.x <= -2) pointerSection = null
+      // Pointer parked (left the canvas, or a touch tap finished): nothing
+      // is hovered any more — clear it, or a tapped cube stays crimson.
+      if (pointer.x <= -2) {
+        pointerSection = null
+        if (hoveredOutput !== null) { hoveredOutput = null; setLabelHover(null) }
+      }
       // Section cubes: plum by default (focused included); crimson only
       // while the cursor is actually on that cube.
       nodes.forEach((n) => {
