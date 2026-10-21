@@ -93,7 +93,7 @@ export const OUTPUT_TYPES: OutputType[] = [
   { id: 'software', label: 'Software project',
     definition: 'Experimental software built to gain empirical insight into its field',
     direction: 'Top-down, never without rationale', categoryRule: 'Optional (Plasmids if none fits)',
-    stages: ['Nascent', 'Concept & rationale', 'Prototype', 'Experimental release', 'Insights', 'Product or retired'] },
+    stages: ['Nascent', 'Concept & rationale', 'Prototype', 'Beta testing', 'Insights', 'Product or retired'] },
   { id: 'product', label: 'Software product',
     definition: 'Finalised software derived from one of the above, refined for release',
     direction: 'Derived', categoryRule: 'Inherited from its source',
@@ -143,6 +143,9 @@ export interface Output {
   affiliation: Affiliation
   source?: string        // products: id of the output it derives from
   exits?: Exit[]
+  /* Set → data is live: the track animates it flowing from the current
+     stage into the next one, captioned with this text. */
+  inflow?: string
   /* Product mark (lettered tile: emblem + lowercase initial + mono
      name plate). Set → the output shows its product logo. */
   product?: string
@@ -173,19 +176,22 @@ const ph = (code: string, o: Omit<Output, 'id' | 'code' | 'placeholder' | 'title
   id: code.toLowerCase(), code, placeholder: true, title: 'Untitled output', synopsis: PH, contacts: PH_CONTACT, ...o,
 })
 
+/* Public stages are held at Nascent for every output except
+   Aufdröselung (in beta testing, insights flowing in). Advance a
+   stage here only once that work is cleared to be shown publicly. */
 export const OUTPUTS: Output[] = [
-  ph('DET-01', { product: 'Frühspur', title: 'Frühspur', placeholder: false, synopsis: 'Behavioural biomarkers.', category: 'detection',    type: 'programme', stage: 2, regClass: 'Digital biomarker', affiliation: { kind: 'owned' } }),
-  ph('DET-02', { category: 'detection',    type: 'software',  stage: 1, regClass: 'Digital biomarker', affiliation: { kind: 'owned' } }),
-  ph('MON-01', { product: 'Stetwacht', title: 'Stetwacht', placeholder: false, synopsis: 'Health analytics.', category: 'monitoring',   type: 'programme', stage: 2, regClass: 'Wellness',          affiliation: { kind: 'affiliated', partner: 'Partner institution' } }),
-  ph('MON-02', { category: 'monitoring',   type: 'product',   stage: 0, regClass: 'Wellness',          affiliation: { kind: 'owned' }, source: 'mon-01' }),
-  ph('FOR-01', { product: 'Vorbahn', title: 'Vorbahn', placeholder: false, synopsis: 'Trajectory forecasting.', category: 'forecasting',  type: 'programme', stage: 1, regClass: 'Prognostic',        affiliation: { kind: 'owned' } }),
+  ph('DET-01', { product: 'Frühspur', title: 'Frühspur', placeholder: false, synopsis: 'Behavioural biomarkers.', category: 'detection',    type: 'programme', stage: 0, regClass: 'Digital biomarker', affiliation: { kind: 'owned' } }),
+  ph('DET-02', { category: 'detection',    type: 'software',  stage: 0, regClass: 'Digital biomarker', affiliation: { kind: 'owned' } }),
+  ph('MON-01', { product: 'Stetwacht', title: 'Stetwacht', placeholder: false, synopsis: 'Health analytics.', category: 'monitoring',   type: 'programme', stage: 0, regClass: 'Wellness',          affiliation: { kind: 'affiliated', partner: 'Partner institution' } }),
+  ph('MON-02', { category: 'monitoring',   type: 'software',  stage: 0, regClass: 'Wellness',          affiliation: { kind: 'owned' } }),
+  ph('FOR-01', { product: 'Vorbahn', title: 'Vorbahn', placeholder: false, synopsis: 'Trajectory forecasting.', category: 'forecasting',  type: 'programme', stage: 0, regClass: 'Prognostic',        affiliation: { kind: 'owned' } }),
   ph('FOR-02', { product: 'Offenwort', title: 'Offenwort', placeholder: false, synopsis: 'Disclosure ethics.', category: 'forecasting',  type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
-  ph('THE-01', { product: 'Erinnerstube', title: 'Erinnerstube', placeholder: false, synopsis: 'VR reminiscence therapy.', category: 'therapeutics', type: 'programme', stage: 3, regClass: 'Digital therapeutic', affiliation: { kind: 'owned' } }),
-  ph('THE-02', { category: 'therapeutics', type: 'artefact',  stage: 2, regClass: 'Wellness',          affiliation: { kind: 'owned' } }),
-  ph('PER-01', { product: 'Sphekia', title: 'Sphekia', placeholder: false, synopsis: 'Description to be assigned.', category: 'perception',   type: 'artefact',  stage: 1, regClass: 'None',              affiliation: { kind: 'owned' } }),
+  ph('THE-01', { product: 'Erinnerstube', title: 'Erinnerstube', placeholder: false, synopsis: 'VR reminiscence therapy.', category: 'therapeutics', type: 'programme', stage: 0, regClass: 'Digital therapeutic', affiliation: { kind: 'owned' } }),
+  ph('THE-02', { category: 'therapeutics', type: 'artefact',  stage: 0, regClass: 'Wellness',          affiliation: { kind: 'owned' } }),
+  ph('PER-01', { product: 'Sphekia', title: 'Sphekia', placeholder: false, synopsis: 'Description to be assigned.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
   ph('PER-02', { product: 'Fernfenster', title: 'Fernfenster', placeholder: false, synopsis: 'LDR diorama portal.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
-  ph('PLA-01', { product: 'Aufdröselung', title: 'Aufdröselung', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' } }),
-  ph('PLA-02', { product: 'Rostrella', title: 'Rostrella', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' } }),
+  ph('PLA-01', { product: 'Aufdröselung', title: 'Aufdröselung', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' }, inflow: 'Insights flowing in' }),
+  ph('PLA-02', { product: 'Rostrella', title: 'Rostrella', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
 ]
 
 export const outputById = (id: string) => OUTPUTS.find((o) => o.id === id)

@@ -593,7 +593,20 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     let swPending = false, swDecayN = 0, swPrevDx = 0
     const STALL_RELEASE = 900
     let suppressClick = false
-    const DRAG_SENS = 0.006        // rotor radians per px dragged
+    const DRAG_SENS = 0.006        // rotor radians per px — trackpad sideways swipe
+    /* Click-and-drag has its own, gentler gain: 0.006 made a drag feel
+       twitchy. Lower = more px of drag per turn (0.003 ≈ 2090px/turn). */
+    const DRAG_SENS_POINTER = 0.003
+    /* Drag release speed is measured over this window (not from the last
+       pointer event, whose tiny dt read as 20–40 rad/s flings), then
+       capped at SPIN_MAX like the swipe coast. */
+    const FLING_WINDOW_MS = 100
+    /* The rotor follows the drag target with this time constant, once
+       per frame: smooths pointer events that don't line up with frames
+       without a perceptible delay. */
+    const DRAG_FOLLOW_S = 0.03
+    let dragTarget = 0
+    const dragHist: { t: number; a: number }[] = []
     const DRAG_CLICK_PX = 5        // under this travel = a click, not a drag
     const SPIN_DECAY = 0.22        // fraction of velocity kept per second
     const SPIN_STOP = 0.02         // rad/s below which inertia ends
@@ -658,7 +671,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        canvas pointer/resize listeners. Called once from BOOT. */
     function initThree() {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      // DPR capped at 1.5: ~44% fewer pixels than 2× on retina for a
+      // full-screen canvas, visually indistinguishable on line art.
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
       renderer.setSize(container.clientWidth, container.clientHeight)
       renderer.setClearColor(0x000000, 0)
       container.appendChild(renderer.domElement)
@@ -1769,6 +1784,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dragMoved = false
       dragStartX = dragLastX = e.clientX
       dragLastT = performance.now()
+      dragTarget = rotorAngle
+      dragHist.length = 0
       // A press alone must not leave the focused node — a second click
       // on it OPENS the panel. Focus is only dropped once the press
       // becomes a genuine drag (see onDragMove).
@@ -1777,26 +1794,28 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     function onDragMove(e: PointerEvent) {
       if (!dragging) return
       const now = performance.now()
-      const dt = Math.max((now - dragLastT) / 1000, 0.001)
       const dx = e.clientX - dragLastX
       // Below DRAG_CLICK_PX it's still a click: leave the staff alone, so
       // hand jitter can't nudge a focused section off-centre. dragLastX
       // stays at the press point, so the first real move carries the
       // whole travel since then.
       if (!dragMoved && Math.abs(e.clientX - dragStartX) <= DRAG_CLICK_PX) return
-      rotorAngle += dx * DRAG_SENS
-      spinVel = (dx * DRAG_SENS) / dt   // latest instantaneous velocity
       if (!dragMoved) {
         dragMoved = true
         stallHold = false
         momHalt = false
         spinVel = 0
         rotorTarget = null              // cancel any snap/ease
+        dragTarget = rotorAngle
         focusIndex = -1                 // dragging = exploratory default
         resetCamera()
         deactivate()
         typeAccent(DEFAULT_ACCENT)      // wide view → headline back to default
       }
+      // Move the TARGET; render() eases the rotor onto it once per frame.
+      dragTarget += dx * DRAG_SENS_POINTER
+      dragHist.push({ t: now, a: dragTarget })
+      while (dragHist.length > 2 && now - dragHist[0].t > FLING_WINDOW_MS) dragHist.shift()
       dragLastX = e.clientX
       dragLastT = now
     }
@@ -1806,8 +1825,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       try { renderer.domElement.releasePointerCapture(e.pointerId) } catch { /* noop */ }
       if (!dragMoved) { spinVel = 0; return }    // it was a click
       suppressClick = true                       // swallow the trailing click
+      rotorAngle = dragTarget                    // land exactly where the hand left it
+      // Fling speed: angle travelled over the last FLING_WINDOW_MS, capped.
+      const now = performance.now()
+      const first = dragHist.find((h) => now - h.t <= FLING_WINDOW_MS)
+      const span = first ? (now - first.t) / 1000 : 0
+      spinVel = first && span > 0.016 ? THREE.MathUtils.clamp((dragTarget - first.a) / span, -SPIN_MAX, SPIN_MAX) : 0
       // If the pointer paused before release, don't fling stale velocity.
-      if (performance.now() - dragLastT > 90) spinVel = 0
+      if (now - dragLastT > 90) spinVel = 0
     }
     function onDragCancel() {
       dragging = false
@@ -2218,7 +2243,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (!Number.isFinite(spinVel)) spinVel = 0
       if (!Number.isFinite(swVel)) swVel = 0
       if (dragging) {
-        /* rotorAngle is updated live by onDragMove */
+        // Ease onto the drag target (set by onDragMove), frame-rate safe.
+        if (dragMoved) rotorAngle += (dragTarget - rotorAngle) * (1 - Math.exp(-dt / DRAG_FOLLOW_S))
       } else if (Math.abs(spinVel) > SPIN_STOP) {
         // While swipe events are still arriving they move the rotor
         // directly; the coast takes over once they stop.
@@ -2275,8 +2301,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       if (hoveredId) {
         const n = nodes.find((x) => x.strand.id === hoveredId)
         if (n) {
-          const worldP = n.orb.getWorldPosition(new THREE.Vector3())
-          activeNodePointLight.position.copy(worldP)
+          activeNodePointLight.position.copy(n.orb.getWorldPosition(_lp))
           activeNodePointLight.intensity += (1.8 - activeNodePointLight.intensity) * Math.min(1, dt * 8)
         }
       } else {
@@ -2284,8 +2309,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
 
       // 4. Hover detection: raycast the orbs unless the pointer is
-      //    parked off-canvas (x left at -9999).
-      if (pointer.x > -2) {
+      //    parked off-canvas (x left at -9999) or the list view hides
+      //    the canvas.
+      const sceneHidden = listview.classList.contains('is-visible')
+      if (pointer.x > -2 && !sceneHidden) {
         raycaster.setFromCamera(pointer, camera)
         const hits = raycaster.intersectObjects(nodePickables, false)
         if (hits.length) {
@@ -2312,9 +2339,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       })
       reachL.length = 0; reachR.length = 0
       updateLogos(dt)
-      // 5 & 6. Sync the HTML labels, then draw the frame.
+      // 5 & 6. Sync the HTML labels (this also places a window opened in
+      // list view), then draw the frame — skipped while the list view
+      // hides the canvas, which is the bulk of the per-frame cost.
       updateLabels()
-      renderer.render(scene, camera)
+      if (!sceneHidden) renderer.render(scene, camera)
     }
 
     /* Project each orb's 3D world position to screen pixels and
@@ -2325,19 +2354,29 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* One gap (px) between any focused cube's lower edge and its caption. */
     const CAP_GAP = 14
     const capEls = new Map<string, HTMLDivElement>()
+    /* Per-frame scratch + caches: the label elements are looked up once,
+       the layout size is read once per frame (re-reading it after style
+       writes forces a synchronous reflow), and vectors are reused. */
+    const labelEls = new Map<string, HTMLElement>()
+    let labelsElCached: HTMLElement | null = null
+    const _lp = new THREE.Vector3(), _lo = new THREE.Vector3()
     function updateLabels() {
-      const labelsEl = $('#node-labels')!
+      const labelsEl = labelsElCached ?? (labelsElCached = $('#node-labels')!)
       const w = labelsEl.clientWidth
       const h = labelsEl.clientHeight
+      _camUp.setFromMatrixColumn(camera.matrixWorld, 1)
 
-      nodes.forEach((n) => {
-        const worldP = n.orb.getWorldPosition(new THREE.Vector3())
+      nodes.forEach((n, ni) => {
         // project() → normalised device coords (-1..1); remap to px.
-        const projP = worldP.clone().project(camera)
+        const projP = n.orb.getWorldPosition(_lp).project(camera)
         const px = (projP.x * 0.5 + 0.5) * w
         const py = (-projP.y * 0.5 + 0.5) * h
-        const label = $(`.node-label[data-id="${n.strand.id}"]`)
-        if (!label) return
+        let label = labelEls.get(n.strand.id)
+        if (!label || !label.isConnected) {
+          label = $(`.node-label[data-id="${n.strand.id}"]`) ?? undefined
+          if (!label) return
+          labelEls.set(n.strand.id, label)
+        }
         // Anchor the label exactly on the orb so the pip stays
         // centred inside it at all times; only the text block flips
         // to the inboard side via .is-left, so the text never
@@ -2352,7 +2391,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           label.classList.toggle('is-left', px <= w / 2)
         }
         label.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`
-        const ni = nodes.indexOf(n)
         const topMode = (tileMix[ni] ?? 0) > 0.5
         label.classList.toggle('is-top', topMode)
         // Section cubes (embedded): when focused, the name goes BELOW the
@@ -2361,8 +2399,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         label.classList.toggle('is-below', below)
         if (below) {
           const half = n.orb.scale.y * 0.5
-          const lo = n.orb.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
-          const cubeBottom = (-lo.y * 0.5 + 0.5) * labelsEl.clientHeight - py
+          const lo = n.orb.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
+          const cubeBottom = (-lo.y * 0.5 + 0.5) * h - py
           label.style.setProperty('--below', `${Math.round(cubeBottom + CAP_GAP)}px`)
         }
         const ownSide = label.classList.contains('is-left') ? reachL[ni] : reachR[ni]
@@ -2387,9 +2425,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         cap.classList.toggle('is-visible', on)
         if (!on) return
         const half = l.sprite.scale.y * 0.5
-        const lo = l.sprite.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
-        const cx = (lo.x * 0.5 + 0.5) * labelsEl.clientWidth
-        const cy = (-lo.y * 0.5 + 0.5) * labelsEl.clientHeight
+        const lo = l.sprite.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
+        const cx = (lo.x * 0.5 + 0.5) * w
+        const cy = (-lo.y * 0.5 + 0.5) * h
         cap.style.transform = `translate(${Math.round(cx)}px, ${Math.round(cy + CAP_GAP)}px) translate(-50%, 0)`
       })
 
@@ -2401,14 +2439,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       } else if (hoveredId && !panelOpen) {
         const n = nodes.find((x) => x.strand.id === hoveredId)
         if (n) {
-          const bp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const bp = n.orb.getWorldPosition(_lp).project(camera)
           const bx = (bp.x * 0.5 + 0.5) * w
           const by = (-bp.y * 0.5 + 0.5) * h
           // Section cubes: drop the bubble below the cube's lower edge.
           let dy = 28
           if (n.orb.userData.cube) {
             const half = n.orb.scale.y * 0.5
-            const lo = n.orb.getWorldPosition(new THREE.Vector3()).addScaledVector(_camUp.setFromMatrixColumn(camera.matrixWorld, 1), -half).project(camera)
+            const lo = n.orb.getWorldPosition(_lo).addScaledVector(_camUp, -half).project(camera)
             dy = Math.max(28, (-lo.y * 0.5 + 0.5) * h - by + 30)
           }
           bubbleEl.style.transform = `translate(${bx}px, ${by}px) translate(-50%, ${dy}px)`
@@ -2425,7 +2463,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const drawer = $('#strand-drawer') as HTMLDivElement | null
         const n = nodes[focusIndex]
         if (drawer && n) {
-          const dp = n.orb.getWorldPosition(new THREE.Vector3()).project(camera)
+          const dp = n.orb.getWorldPosition(_lp).project(camera)
           const dx = (dp.x * 0.5 + 0.5) * w
           const dy = (-dp.y * 0.5 + 0.5) * h
           // Pinned to the RIGHT of the node (its left edge sits just
@@ -2715,29 +2753,33 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       track.innerHTML = block + block
     }
 
-    /* ---- CURSOR — custom dot + trailing ring ----
-       The dot tracks the mouse 1:1; the ring lerps toward it for a
-       lag effect, and grows (.is-active) over interactive elements.
-       The native cursor is hidden via CSS (restored under 720px).
+    /* ---- CURSOR — native dot + trailing ring ----
+       The dot is the OS cursor itself (--cursor-dot in helix3d.css), so
+       it never lags. The ring eases toward it for a trailing effect,
+       and grows (.is-active) over interactive elements. The easing is
+       time-based (same feel as 0.18/frame at 60fps) so the ring keeps
+       up when frames drop, and the RAF idles once it has caught up.
        Its own RAF is cancelled in cleanup. */
     function initCursor() {
-      const dot  = $('#cursor-dot')
       const ring = $('#cursor-ring')
-      if (!dot || !ring) return
+      if (!ring) return
       let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0
+      let cursorRaf = 0, lastT = 0
+      function lerp(t: number) {
+        const dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 1 / 60
+        lastT = t
+        const k = 1 - Math.pow(1 - 0.18, dt * 60)
+        ringX += (mouseX - ringX) * k
+        ringY += (mouseY - ringY) * k
+        if (Math.abs(mouseX - ringX) < 0.1 && Math.abs(mouseY - ringY) < 0.1) { ringX = mouseX; ringY = mouseY }
+        ring!.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`
+        cursorRaf = ringX === mouseX && ringY === mouseY ? 0 : requestAnimationFrame(lerp)
+      }
       const onMove = (e: MouseEvent) => {
         mouseX = e.clientX; mouseY = e.clientY
-        dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`
+        if (!cursorRaf) { lastT = 0; cursorRaf = requestAnimationFrame(lerp) }
       }
-      window.addEventListener('mousemove', onMove)
-      let cursorRaf = 0
-      function lerp() {
-        ringX += (mouseX - ringX) * 0.18
-        ringY += (mouseY - ringY) * 0.18
-        ring!.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`
-        cursorRaf = requestAnimationFrame(lerp)
-      }
-      cursorRaf = requestAnimationFrame(lerp)
+      window.addEventListener('mousemove', onMove, { passive: true })
 
       const interactiveSel = 'a, button, .node-label, .list-item, canvas, .strand-win-bar, .strand-win-grip'
       const onOver = (e: Event) => {
@@ -2876,7 +2918,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
 
       {/* CURSOR — custom pointer (hidden ≤720px); driven by initCursor */}
       <div className="cursor-ring" id="cursor-ring" />
-      <div className="cursor-dot" id="cursor-dot" />
 
       {/* CORNER CROPS — decorative crimson L-marks framing the scene.
           Their offsets clear the marquee (top) and footer (bottom);

@@ -108,8 +108,9 @@ const BODY = { R: 0.085, segs: 220, rad: 8 };
 const NODE = { orbR: 0.16, ring1: 0.22, ring2: 0.3 };
 
 function buildScene(C, cubes, dark) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // DPR capped at 1.5: ~44% fewer pixels than 2× on retina, visually the same here.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(W, H, false);
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();

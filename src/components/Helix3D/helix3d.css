@@ -20,8 +20,8 @@
        meshes read these too (via Helix3D.tsx themeColours()).
    • LOADER splash ............ banner "LOADER"  → .loader,
        .loader-welcome, .loader-caption, .loader-skip, .loader-corner
-   • CUSTOM CURSOR ............ banner "CURSOR"  → .cursor-dot,
-       .cursor-ring (.is-active = over interactive)
+   • CUSTOM CURSOR ............ banner "CURSOR"  → --cursor-dot (native
+       cursor image), .cursor-ring (.is-active = over interactive)
    • SOUND/SILENT GATE ........ banner "GATE"    → .gate, .gate-mark,
        .gate-tag, .gate-choices, .gate-btn
    • TOP MARQUEE strip ........ banner "MARQUEE / NAV" → .marquee,
@@ -70,6 +70,9 @@
   --ink:          #2F0147;
   --plum:         #3F0247;
   --crimson:      #A30B37;
+  /* The cursor dot IS the native cursor (drawn by the OS, so it never
+     lags the mouse however busy the page is); the ring trails it. */
+  --cursor-dot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='5' cy='5' r='3' fill='%23A30B37'/%3E%3C/svg%3E") 5 5, auto;
   --grape:        #9C528B;
 
   --bg-soft:      rgba(47, 1, 71, 0.04);
@@ -111,6 +114,9 @@
   --ink:          #FFECE1;
   --plum:         #2A0B3A;
   --crimson:      #D63158;
+  /* The cursor dot IS the native cursor (drawn by the OS, so it never
+     lags the mouse however busy the page is); the ring trails it. */
+  --cursor-dot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Ccircle cx='5' cy='5' r='3' fill='%23D63158'/%3E%3C/svg%3E") 5 5, auto;
   --grape:        #C589B5;
 
   --bg-soft:      rgba(255, 236, 225, 0.04);
@@ -171,11 +177,11 @@
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
-  cursor: none;
+  cursor: var(--cursor-dot);
   transition: background-color 0.4s var(--ease-out), color 0.4s var(--ease-out);
 }
 .helix3d-root a,
-.helix3d-root button { cursor: none; background: none; border: none; }
+.helix3d-root button { cursor: var(--cursor-dot); background: none; border: none; }
 
 /* ====== LOADER ====== */
 .helix3d-root .loader {
@@ -376,9 +382,7 @@
 }
 
 /* ====== CURSOR ====== */
-.helix3d-root .cursor-dot,
-.helix3d-root .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; }
-.helix3d-root .cursor-dot { width: 6px; height: 6px; background: var(--crimson); border-radius: 50%; transform: translate(-50%, -50%); }
+.helix3d-root .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform; }
 .helix3d-root .cursor-ring {
   width: 36px; height: 36px; border: 1px solid var(--ink);
   border-radius: 50%; transform: translate(-50%, -50%);
@@ -388,7 +392,7 @@
 @media (max-width: 720px) {
   .helix3d-root { cursor: auto; }
   .helix3d-root a, .helix3d-root button { cursor: auto; }
-  .helix3d-root .cursor-dot, .helix3d-root .cursor-ring { display: none; }
+  .helix3d-root .cursor-ring { display: none; }
 }
 
 /* ====== GATE ====== */
@@ -654,8 +658,9 @@
   position: relative;
   transition: color 0.2s;
   padding: 0.18rem 0.45rem;
-  background: rgba(var(--fog-color), 0.85);
-  backdrop-filter: blur(2px);
+  /* No backdrop blur: these chips move every frame over the WebGL
+     canvas, and re-blurring behind them each frame is very costly. */
+  background: rgba(var(--fog-color), 0.93);
   /* Cream (--white) border in both themes for clearer separation
      of the chip from the scene behind it. */
   border: 1px solid var(--white);
@@ -930,7 +935,7 @@
   /* not scrollable — the panel shows in full (overflow clipped by
      the scene if it ever exceeds the viewport). */
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
-  cursor: none;
+  cursor: var(--cursor-dot);
 }
 
 /* ====== STRAND WINDOW — movable / resizable chrome ======
@@ -957,7 +962,7 @@
   user-select: none; touch-action: none;
 }
 .helix3d-root .strand-win.is-free .strand-win-bar,
-.helix3d-root .strand-win.is-dock .strand-win-bar { cursor: none; }
+.helix3d-root .strand-win.is-dock .strand-win-bar { cursor: var(--cursor-dot); }
 .helix3d-root .strand-win-title { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .helix3d-root .strand-win-ctrls { display: flex; align-items: stretch; gap: 2px; flex: none; }
 .helix3d-root .strand-win-ctrls button {
@@ -1057,7 +1062,7 @@
   position: absolute; top: 0; right: 0;
   display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 0.6rem;
   width: 100%; padding: 0.45rem 0.6rem;
-  background: var(--fog-color); backdrop-filter: blur(2px);
+  background: var(--fog-color);
   border: 1px solid var(--ink-soft); border-radius: 2px;
   color: var(--ink); text-align: left;
   font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
@@ -1079,7 +1084,7 @@
 /* Plasmid node labels — off the helix, so set in grape italic. */
 .helix3d-root .node-label-name,
 .helix3d-root .node-label-sub { white-space: nowrap; }
-.helix3d-root .node-label-sub { background: rgba(var(--fog-color), 0.85); backdrop-filter: blur(2px); border-radius: 2px; padding: 1px 6px; }
+.helix3d-root .node-label-sub { background: rgba(var(--fog-color), 0.93); border-radius: 2px; padding: 1px 6px; }
 .helix3d-root .node-label-text { width: max-content; }
 /* Cropped header: one crimson registration L-mark straddling the
    name capsule's top-left corner (the Frame motif). */
@@ -1277,7 +1282,7 @@
 }
 .helix3d-root .node-label.is-below .node-label-name { border: 0; background: none; padding: 0; font-size: 1.15rem; }
 .helix3d-root .node-label.is-below .node-label-name::before { display: none; }
-.helix3d-root .node-label.is-below .node-label-sub { background: none; padding: 0; backdrop-filter: none; }
+.helix3d-root .node-label.is-below .node-label-sub { background: none; padding: 0; }
 .helix3d-root .cube-cap {
   position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none;
   display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
