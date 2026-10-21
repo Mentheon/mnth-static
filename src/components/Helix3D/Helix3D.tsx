@@ -215,7 +215,8 @@ function CategoryPeek({ s }: { s: Strand }) {
             // No public page yet: listed in its strand, padlocked, not linked.
             return isOpen(o) ? (
               <a key={o.id} className="cp-project" href={`#output/${o.id}`}
-                onMouseEnter={() => { peekHover.id = o.id }} onMouseLeave={() => { peekHover.id = null }}
+                onPointerEnter={(e) => { if (e.pointerType === 'mouse') peekHover.id = o.id }}
+                onPointerLeave={() => { peekHover.id = null }}
                 onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
                 {body}
                 <span className="cp-arrow" aria-hidden="true">→</span>
@@ -287,6 +288,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     setPanelStrand(null)
     closePanelRef.current()
   }
+  // A row's cube highlight (peekHover) must not outlive the window:
+  // taps never send a "leave", and rows unmount without blurring.
+  useEffect(() => { if (!panelStrand) peekHover.id = null }, [panelStrand])
   // Phones: the window is a bottom sheet — swipe its bar down to close.
   const winSwipe = useSwipeDown(handlePanelClose)
 
