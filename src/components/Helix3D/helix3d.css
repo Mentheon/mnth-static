@@ -1443,7 +1443,7 @@
     max-height: calc(100dvh - 64px); z-index: 600;
     animation: helixSheetRise 0.35s var(--ease-out);
   }
-  .helix3d-root .strand-win-crop { left: 6px; top: -10px; }
+  .helix3d-root .strand-win-crop { display: none; }   /* no corner mark on a phone sheet */
   .helix3d-root .strand-win-bar { position: relative; height: 52px; border-radius: 6px 6px 0 0; cursor: default; border-left: none; border-right: none; touch-action: none; }
   .helix3d-root .strand-win-grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
   .helix3d-root .strand-win-ctrls button:not(.strand-win-close) { display: none; }

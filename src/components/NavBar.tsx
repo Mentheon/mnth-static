@@ -21,6 +21,7 @@ import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './NavBar.module.css';
 import { CONTACT_EMAIL } from '../data/people';
 import { useSwipeDown } from '../lib/useSwipeDown';
+import { isIntroDone, onIntroDone } from '../lib/introGate';
 
 type Theme = 'light' | 'dark';
 const THEME_KEY = 'mnth:theme';
@@ -57,6 +58,9 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const barRef = useRef<HTMLElement>(null);
   const menuSwipe = useSwipeDown(() => setMenuOpen(false)); // swipe the top row down to close
+  // 3d view: the switch waits for the intro to finish (it sat over it).
+  const [introDone, setIntroDone] = useState(isIntroDone);
+  useEffect(() => onIntroDone(() => setIntroDone(true)), []);
 
   // Apply the theme globally (on <html>) so every token-driven page
   // flips, and persist it to the shared key.
@@ -160,7 +164,7 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
 
       {/* Phones: 3d | list, centred on its own row just below the bar
           (fixed with it over the 3D view). */}
-      {view && (
+      {view && (view !== '3d' || introDone) && (
         <div className={`${styles.viewRow}${view === '3d' ? ` ${styles.viewRowOver}` : ''}`}>
           <nav className={styles.viewSwitch} aria-label="View">
             <a href={VIEW_HREF['3d']} aria-current={view === '3d' ? 'page' : undefined}>3d</a>
