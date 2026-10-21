@@ -9,7 +9,7 @@
   /* One control height for the whole bar (logo, A− A A+, theme, menu),
      in px so it doesn't change with the text-size setting. Heights
      below are outer heights (borders included). */
-  --ctl-h: 34px;
+  --ctl-h: 38px;
   position: sticky;
   top: 0;
   z-index: 60;
@@ -260,33 +260,33 @@
     display: flex; justify-content: center; padding: 8px 0;
     background: var(--bg); border-bottom: 1px solid var(--line);
   }
-  .bar { --ctl-h: 36px; }   /* phones: every bar control 36px, matching the switch below */
+  .bar { --ctl-h: 40px; }   /* phones: every bar control 40px, matching the switch below */
   /* Room to breathe on phones: tighter edges, a square icon-only menu
      button (aria-label keeps "Open menu"), small gap on the right. */
   .bar { padding: 0.6rem 0.75rem; }
   .controls { gap: 6px; }
   .menuBtn { width: var(--ctl-h); padding: 0; gap: 0; justify-content: center; font-size: 0; letter-spacing: 0; }
-  .viewSwitch { display: flex; box-sizing: border-box; height: 36px; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
+  .viewSwitch { display: flex; box-sizing: border-box; height: 40px; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
   .viewSwitch a {
-    width: 64px; height: 100%; display: flex; align-items: center; justify-content: center;
+    width: 69px; height: 100%; display: flex; align-items: center; justify-content: center;
     color: var(--ink); text-decoration: none;
     font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
   }
   .viewSwitch a[aria-current='page'] { background: var(--ink); color: var(--bg); }
 
   /* A− · A · A+ centred in the bar, directly above 3d | list and the
-     same width (3 × 43 ≈ 2 × 64), logo left, theme + menu right. */
+     same width (3 × 46 = 2 × 69), logo left, theme + menu right. */
   .textSize { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-  .textSize button { width: 43px; min-width: 0; padding: 0; }
+  .textSize button { width: 46px; min-width: 0; padding: 0; }
 }
 /* Over the 3D staff view: bar + switch row fixed above the scene. */
 .barOver { position: fixed; left: 0; right: 0; top: 0; }
 .viewRowOver { position: fixed; left: 0; right: 0; }
 
 /* Very small phones: narrow the centred pair together so they still
-   line up (3 × 36 = 2 × 54) and clear the logo and right controls. */
+   line up (3 × 38 = 2 × 57) and clear the logo and right controls. */
 @media (max-width: 360px) {
   .bar { padding: 0.55rem 0.6rem; }
-  .textSize button { width: 36px; }
-  .viewSwitch a { width: 54px; }
+  .textSize button { width: 38px; }
+  .viewSwitch a { width: 57px; }
 }
