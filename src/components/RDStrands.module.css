@@ -69,9 +69,9 @@
   opacity: 0.4;
 }
 
-.rdGroup.dimmed:hover {
+@media (hover: hover) { .rdGroup.dimmed:hover {
   opacity: 1;
-}
+} }
 
 .rdLink {
   background: none;
@@ -95,9 +95,9 @@
   overflow: visible;
 }
 
-.rdLink:hover .svgDisc {
+@media (hover: hover) { .rdLink:hover .svgDisc {
   transform: scale(var(--strand-hover-scale, 1.12));
-}
+} }
 
 .label {
   margin-top: 0.6rem;

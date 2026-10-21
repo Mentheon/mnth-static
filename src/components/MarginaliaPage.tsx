@@ -20,8 +20,9 @@
 import { useState, useEffect } from 'react';
 import Marginalia from './Marginalia';
 import type { MarginaliaProps } from './Marginalia/types';
-import { adjustTextScale, TEXT_STEP } from '../lib/textScale';
+import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './MarginaliaPage.module.css';
+import { CONTACT_EMAIL } from '../data/people';
 
 type Theme = 'light' | 'dark';
 // Shared with the Helix3D page so light/dark is preserved across
@@ -89,6 +90,9 @@ export default function MarginaliaPage({ slug, strandFilter = null }: Marginalia
           <div className={styles.textSize} role="group" aria-label="Text size">
             <button type="button" aria-label="Decrease text size" onClick={() => adjustTextScale(-TEXT_STEP)}>
               A&minus;
+            </button>
+            <button type="button" aria-label="Default text size" title="Default size" onClick={() => applyTextScale(1)}>
+              A
             </button>
             <button type="button" aria-label="Increase text size" onClick={() => adjustTextScale(TEXT_STEP)}>
               A+
@@ -159,7 +163,7 @@ export default function MarginaliaPage({ slug, strandFilter = null }: Marginalia
           <span>
             <a href="#">linkedin</a>
             <a href="#">github</a>
-            <a href="#">contact</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>contact</a>
           </span>
         </div>
       </div>

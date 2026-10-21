@@ -1,0 +1,103 @@
+/* Phone home — strand list + strand sheet. Global tokens (themes with
+   NavBar's data-theme). Mirrors the Claude Design "Mentheon Mobile"
+   canvas: Home · strand list with logos / Home · Plasmids sheet open. */
+
+.home { padding: 1.25rem 1rem 6.5rem; color: var(--ink); font-family: 'Lato', sans-serif; }
+
+.head {
+  display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.4rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.head b { font-family: 'JetBrains Mono', monospace; color: var(--crimson); letter-spacing: 0.14em; }
+.head i { flex: 1; height: 1px; background: var(--ink-soft); }
+.head span { font-family: 'JetBrains Mono', monospace; font-weight: 400; color: var(--ink-quiet); letter-spacing: 0.14em; }
+
+/* The staff: a vertical rod through every strand tile. */
+.staff { position: relative; }
+.staff::before { content: ''; position: absolute; left: 27px; top: 2.2rem; bottom: 3rem; width: 2px; background: var(--ink); }
+.strand { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); padding: 1rem 0 0.75rem; border-bottom: 1px solid var(--ink-soft); }
+.markBtn { justify-self: center; align-self: start; padding: 0; border: none; background: none; cursor: pointer; position: relative; z-index: 1; }
+.mark { width: 44px; height: 44px; box-shadow: 0 0 0 4px var(--bg); }
+.strandBody { min-width: 0; padding-right: 0.25rem; }
+.strandHead {
+  display: grid; grid-template-columns: minmax(0, 1fr) 24px; gap: 0.5rem; align-items: start; width: 100%;
+  padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.name { display: block; margin-top: 3px; font-weight: 900; font-size: 1.45rem; line-height: 1.1; letter-spacing: -0.01em; }
+.sub { display: block; margin-top: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--crimson); }
+.purpose { display: block; margin-top: 0.3rem; font-size: 0.9rem; line-height: 1.4; opacity: 0.8; }
+.arrow { color: var(--crimson); font-size: 1.2rem; text-align: right; padding-top: 0.6rem; }
+
+/* Project rows (list + sheet). */
+.rows { margin-top: 0.6rem; }
+.row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; min-height: 52px; padding: 0.4rem 0; border-top: 1px dashed var(--ink-soft); color: inherit; text-decoration: none; }
+.rowOpen { margin: 0 -0.5rem; padding: 0.4rem 0.5rem; background: var(--bg-soft); }
+.rowOpen .arrow { padding-top: 0; font-size: 1rem; }
+.rowLocked .rowText { opacity: 0.6; }
+.rowText { min-width: 0; }
+.rowName { display: block; font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
+.rowSub { display: block; margin-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-quiet); }
+.live { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); }
+.live i { width: 6px; height: 6px; border-radius: 50%; background: var(--crimson); }
+.lock { display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-quiet); }
+.empty { margin: 0.6rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
+
+/* Product tiles from productTileHTML: product marks (.ptile) and the
+   code tiles for untitled outputs (.logo-tile). */
+.tile { display: block; width: 36px; height: 36px; }
+.tile :global(.ptile) { width: 36px; height: 36px; }
+.tile :global(.logo-tile) {
+  display: flex; flex-direction: column; justify-content: flex-start; position: relative;
+  width: 36px; height: 36px; padding: 5px 0 0 5px; box-sizing: border-box;
+  background: var(--ink); color: var(--bg); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 8.5px; line-height: 1.1;
+}
+.tile :global(.logo-tile i) { position: absolute; right: 3px; bottom: 1px; font-style: normal; font-size: 9px; color: var(--crimson); }
+
+.ghost {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 48px; margin-top: 1.75rem;
+  border: 1.5px solid var(--ink); border-radius: 2px; color: var(--ink); text-decoration: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.foot { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-quiet); }
+.foot a { color: inherit; }
+
+/* ---- Strand sheet ---- */
+.scrim { position: fixed; inset: 0; z-index: 590; background: rgba(15, 1, 24, 0.38); animation: fade 0.3s ease-out; }
+.sheet {
+  position: fixed; z-index: 600; left: 0; right: 0; bottom: 0; max-height: 86dvh;
+  display: flex; flex-direction: column; color: var(--ink); font-family: 'Lato', sans-serif;
+  filter: drop-shadow(0 -8px 24px rgba(0, 0, 0, 0.3));
+  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.crop { position: absolute; top: -10px; left: 6px; width: 20px; height: 20px; border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson); z-index: 2; }
+.bar {
+  position: relative; flex: none; height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 0.25rem 0 1rem; background: var(--ink); color: var(--bg); border-radius: 6px 6px 0 0; touch-action: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.grab { position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
+.ctrls { display: flex; }
+.ctrls button { width: 44px; height: 44px; padding: 0; border: none; background: none; color: var(--bg); font-family: 'Lato', sans-serif; font-size: 1.15rem; cursor: pointer; }
+.ctrls button:disabled { opacity: 0.35; cursor: default; }
+.ctrls .x { font-size: 1.6rem; }
+.sheetBody { overflow: auto; background: var(--bg); padding: 1.3rem 1rem 1.6rem; }
+.kick { margin: 0 0 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--crimson); }
+.sheetHead { display: flex; align-items: center; gap: 0.9rem; }
+.sheetMark { width: 56px; height: 56px; }
+.sheetName { margin: 0; font-weight: 900; font-size: 1.85rem; line-height: 1.05; letter-spacing: -0.015em; }
+.verb { font-weight: 900; font-size: 1.15rem; color: var(--crimson); }
+.sheetPurpose { margin: 0.7rem 0 0; font-style: italic; font-size: 0.95rem; line-height: 1.5; opacity: 0.78; }
+.fields { margin: 1rem 0 0; border-top: 1px dashed var(--ink-soft); }
+.fields div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px dashed var(--ink-soft); }
+.fields dt { flex: none; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
+.fields dd { margin: 0; font-weight: 700; font-size: 0.88rem; line-height: 1.35; text-align: right; }
+.cta {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 48px; margin-top: 1.3rem;
+  background: var(--crimson); color: #FFECE1; border-radius: 2px; text-decoration: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .scrim, .sheet { animation: none; } }

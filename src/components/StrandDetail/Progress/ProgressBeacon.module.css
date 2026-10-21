@@ -13,10 +13,10 @@
   color: inherit;
 }
 
-.beacon:hover {
+@media (hover: hover) { .beacon:hover {
   border-color: rgba(47, 1, 71, 0.15);
   background: rgba(47, 1, 71, 0.04);
-}
+} }
 
 .beacon:focus-visible {
   outline: 2px solid #A30B37;

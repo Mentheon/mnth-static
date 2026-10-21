@@ -77,6 +77,14 @@ export default function MarginaliaList({ articles, activeStrand }: MarginaliaLis
           </p>
         </header>
 
+        {articles.length === 0 ? (
+          // Nothing published yet — skip search + strand chips, which
+          // would only show zeros. Drop a .md into src/content/marginalia/
+          // and the full list view comes back.
+          <p className={styles.empty}>
+            Nothing here yet &mdash; the first pieces are being written.
+          </p>
+        ) : (<>
         <div className={styles.search} role="search">
           <label className={styles.searchLabel} htmlFor="marginalia-search">
             <span className={styles.searchStar} aria-hidden="true">✲</span>search
@@ -113,7 +121,7 @@ export default function MarginaliaList({ articles, activeStrand }: MarginaliaLis
               ? `No articles match “${query.trim()}”${activeStrandLabel ? ` in ${activeStrandLabel}` : ''}.`
               : activeStrandLabel
               ? `No articles tagged with ${activeStrandLabel} yet.`
-              : 'No articles yet. Check back soon.'}
+              : 'No articles yet.'}
           </p>
         ) : (
           <div className={styles.grid}>
@@ -122,6 +130,7 @@ export default function MarginaliaList({ articles, activeStrand }: MarginaliaLis
             ))}
           </div>
         )}
+        </>)}
       </article>
     </main>
   )

@@ -25,16 +25,16 @@
   pointer-events: none;
 }
 
-.card:hover {
+@media (hover: hover) { .card:hover {
   border-color: var(--crimson);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm, 0 2px 6px rgba(47, 1, 71, 0.12));
-}
+} }
 
-.card:hover .cornerTick {
+@media (hover: hover) { .card:hover .cornerTick {
   border-top-color: var(--crimson);
   border-left-color: var(--crimson);
-}
+} }
 
 .title {
   font-family: 'Lato', sans-serif;
@@ -78,16 +78,16 @@
   transition: color 0.2s ease, gap 0.2s ease;
 }
 
-.card:hover .cta {
+@media (hover: hover) { .card:hover .cta {
   color: var(--crimson);
   gap: 0.6rem;
-}
+} }
 
 .arrow {
   display: inline-block;
   transition: transform 0.2s ease;
 }
 
-.card:hover .arrow {
+@media (hover: hover) { .card:hover .arrow {
   transform: translateX(2px);
-}
+} }

@@ -17,8 +17,10 @@
  * keeps working, exactly as the old Header did.
  */
 import { useState, useEffect, useRef } from 'react';
-import { adjustTextScale, TEXT_STEP } from '../lib/textScale';
+import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './NavBar.module.css';
+import { CONTACT_EMAIL } from '../data/people';
+import { useSwipeDown } from '../lib/useSwipeDown';
 
 type Theme = 'light' | 'dark';
 const THEME_KEY = 'mnth:theme';
@@ -44,10 +46,17 @@ function readTheme(): Theme {
   }
 }
 
-export default function NavBar() {
+/* Phones: 3d | list switch on a row just below the bar. `view` says
+   which is showing; 3d (the staff) is the default home, list is the
+   condensed strand list. No intro replay either way. On `3d` bar + row
+   are fixed over the scene. */
+const VIEW_HREF = { '3d': '#helix3d?skipIntro=true', list: '#helix3d?view=list&skipIntro=true' } as const;
+
+export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [menuOpen, setMenuOpen] = useState(false);
   const barRef = useRef<HTMLElement>(null);
+  const menuSwipe = useSwipeDown(() => setMenuOpen(false)); // swipe the top row down to close
 
   // Apply the theme globally (on <html>) so every token-driven page
   // flips, and persist it to the shared key.
@@ -58,6 +67,8 @@ export default function NavBar() {
     } catch {
       /* storage unavailable (private mode) — theme still applies */
     }
+    // The 3D scene keeps its own theme on its root: tell it.
+    window.dispatchEvent(new CustomEvent('mnth:theme', { detail: theme }));
   }, [theme]);
 
   // Republish the bar's height as --header-h (ConceptView/HomeMashup
@@ -88,7 +99,7 @@ export default function NavBar() {
 
   return (
     <>
-      <header className={styles.bar} ref={barRef}>
+      <header className={`${styles.bar}${view === '3d' ? ` ${styles.barOver}` : ''}`} ref={barRef}>
         <a href="#helix3d?skipIntro=true" className={styles.mark} aria-label="Mentheon — home">
           <img
             className={`${styles.markLogo} ${styles.markLogoLight}`}
@@ -106,6 +117,9 @@ export default function NavBar() {
           <div className={styles.textSize} role="group" aria-label="Text size">
             <button type="button" aria-label="Decrease text size" onClick={() => adjustTextScale(-TEXT_STEP)}>
               A&minus;
+            </button>
+            <button type="button" aria-label="Default text size" title="Default size" onClick={() => applyTextScale(1)}>
+              A
             </button>
             <button type="button" aria-label="Increase text size" onClick={() => adjustTextScale(TEXT_STEP)}>
               A+
@@ -144,11 +158,23 @@ export default function NavBar() {
         </div>
       </header>
 
+      {/* Phones: 3d | list, centred on its own row just below the bar
+          (fixed with it over the 3D view). */}
+      {view && (
+        <div className={`${styles.viewRow}${view === '3d' ? ` ${styles.viewRowOver}` : ''}`}>
+          <nav className={styles.viewSwitch} aria-label="View">
+            <a href={VIEW_HREF['3d']} aria-current={view === '3d' ? 'page' : undefined}>3d</a>
+            <a href={VIEW_HREF.list} aria-current={view === 'list' ? 'page' : undefined}>list</a>
+          </nav>
+        </div>
+      )}
+
       <div
         className={`${styles.menuOverlay}${menuOpen ? ` ${styles.isOpen}` : ''}`}
         aria-hidden={!menuOpen}
+        style={menuSwipe.style}
       >
-        <div className={styles.menuTop}>
+        <div className={styles.menuTop} {...menuSwipe.handlers}>
           <span className={styles.menuKicker}>index &#10034; mentheon</span>
           <button type="button" className={styles.menuClose} onClick={() => setMenuOpen(false)}>
             close <span className={styles.menuCloseX} />
@@ -174,7 +200,7 @@ export default function NavBar() {
           <span>
             <a href="#">linkedin</a>
             <a href="#">github</a>
-            <a href="#">contact</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>contact</a>
           </span>
         </div>
       </div>

@@ -266,15 +266,15 @@ section.helix {
 
 .project-bead { cursor: pointer; transition: opacity 0.3s, transform 0.2s; transform-box: fill-box; transform-origin: center; }
 .project-bead-shape { stroke-width: 3; transition: fill 0.25s, stroke 0.25s, stroke-width 0.25s; }
-.project-bead:hover { transform: scale(1.15); }
+@media (hover: hover) { .project-bead:hover { transform: scale(1.15); } }
 .project-bead.is-active .project-bead-shape { stroke: var(--crimson); stroke-width: 4; }
 .project-bead.is-dim { opacity: 0.28; }
 
 .project-bridge { cursor: pointer; transition: opacity 0.3s; }
 .project-bridge-line { stroke-width: 9; stroke-linecap: round; transition: stroke-width 0.2s, opacity 0.25s; }
 .project-bridge-cap { stroke-width: 3; transition: r 0.2s, stroke-width 0.2s; }
-.project-bridge:hover .project-bridge-line { stroke-width: 11; }
-.project-bridge:hover .project-bridge-cap  { stroke-width: 4; }
+@media (hover: hover) { .project-bridge:hover .project-bridge-line { stroke-width: 11; } }
+@media (hover: hover) { .project-bridge:hover .project-bridge-cap { stroke-width: 4; } }
 .project-bridge.is-active .project-bridge-line { stroke-width: 11; }
 .project-bridge.is-active .project-bridge-cap  { stroke: var(--crimson) !important; stroke-width: 4; }
 .project-bridge.is-dim { opacity: 0.28; }
@@ -380,7 +380,7 @@ section.helix {
   padding: 4px 10px;
   transition: color 0.2s, transform 0.2s;
 }
-.helix .closeButton:hover { color: #A30B37; transform: scale(1.1); }
+@media (hover: hover) { .helix .closeButton:hover { color: #A30B37; transform: scale(1.1); } }
 
 .helix .panelHeader {
   display: flex;
@@ -449,11 +449,11 @@ section.helix {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.helix .themeCard:hover {
+@media (hover: hover) { .helix .themeCard:hover {
   background-color: rgba(163, 11, 55, 0.06);
   border-left-color: #A30B37;
   transform: translateX(2px);
-}
+} }
 .helix .themeNumber {
   font-size: 0.75rem;
   font-weight: 700;
@@ -461,7 +461,7 @@ section.helix {
   color: #9C528B;
   margin-bottom: 0.5rem;
 }
-.helix .themeCard:hover .themeNumber { color: #A30B37; }
+@media (hover: hover) { .helix .themeCard:hover .themeNumber { color: #A30B37; } }
 .helix .themeTitle {
   font-size: 1.15rem;
   font-weight: 700;
@@ -491,9 +491,9 @@ section.helix {
   border-radius: 2px;
   transition: background-color 0.2s, gap 0.2s;
 }
-.helix .ctaLink:hover { background-color: #2F0147; gap: 1rem; }
+@media (hover: hover) { .helix .ctaLink:hover { background-color: #2F0147; gap: 1rem; } }
 .helix .ctaArrow { display: inline-block; transition: transform 0.2s; }
-.helix .ctaLink:hover .ctaArrow { transform: translateX(3px); }
+@media (hover: hover) { .helix .ctaLink:hover .ctaArrow { transform: translateX(3px); } }
 
 @media (max-width: 640px) {
   .helix .panelInner { padding: 2rem 1.5rem 1.5rem; }

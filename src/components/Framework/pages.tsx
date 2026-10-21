@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { productTileHTML, AUF_ID, essenIcon } from '../ProductMark'
+import Padlock from '../Padlock'
+import BetaSeats from './BetaSeats'
+import PersonAvatar from '../PersonAvatar'
+import PersonWindow from '../PersonWindow'
+import { PEOPLE } from '../../data/people'
 import {
-  PageShell, Section, Fields, Pathway, StageLine, BranchTrack, OutputRows, Pager, styles as s, cx,
+  PageShell, Section, Fields, Pathway, StageLine, BranchTrack, MobileTrack, OutputRows, Pager, styles as s, cx,
   HOME_HREF, catHref, outHref, TRACK_COLS,
 } from './shared'
 import {
   CATEGORIES, HELIX_CATEGORIES, OUTPUT_TYPES, OUTPUTS, BOUNDARIES, PLASMID_METAPHOR, TRACK_NOTES,
   FIELDS, INFRASTRUCTURE, REG_CLASSES, categoryById, outputById, outputsIn, categoryStatus, typeById,
-  stageLabel, outputName, affiliationLabel, pad2, isSoftware, LINK_LABEL,
-  type CategoryId, type OutputTypeId, type Output,
+  stageLabel, outputName, affiliationLabel, pad2, isSoftware, LINK_LABEL, isOpen,
+  type CategoryId, type OutputTypeId, type Output, type Contact,
 } from '../../data/framework'
 
 const star = <span className={s.star} aria-hidden="true">✲</span>
@@ -247,14 +252,89 @@ function OutputMarks({ o }: { o: Output }) {
   )
 }
 const pending = (what: string) => <p className={s.empty}>{what} · to be written</p>
+/* Contact cards. A contact tied to a person (data/people) shows their
+   photo, and "profile" opens their window over this page (no
+   navigation); Esc closes it before PageShell's Esc-back fires. */
+function Contacts({ contacts, subject }: { contacts: Contact[]; subject: string }) {
+  const [openId, setOpenId] = useState<string | null>(null)
+  const cardRefs = useRef(new Map<string, HTMLDivElement>())
+  useEffect(() => {
+    if (!openId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopImmediatePropagation()
+      setOpenId(null)
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
+  }, [openId])
+  const idx = PEOPLE.findIndex((p) => p.id === openId)
+  const open = idx >= 0 ? PEOPLE[idx] : null
+  return (
+    <div className={s.people}>
+      {contacts.map((c) => {
+        const person = PEOPLE.find((p) => p.id === c.person)
+        return (
+          <div key={c.name} className={s.card}
+            ref={(el) => { if (el && person) cardRefs.current.set(person.id, el) }}>
+            {person && <PersonAvatar person={person} color="var(--grape)" className={s.personPhoto} />}
+            <span className={s.personName}>{c.name}</span>
+            <span className={s.personRole}>{c.role}</span>
+            <span className={s.personInst}>{c.institution}</span>
+            {(person || c.email) && (
+              <span className={s.personLinks}>
+                {person && (
+                  <button type="button" className={cx(s.personMail, s.personBtn)} aria-haspopup="dialog"
+                    onClick={() => setOpenId(person.id)}>profile →</button>
+                )}
+                {c.email && <a className={s.personMail} href={`mailto:${c.email}?subject=${encodeURIComponent(subject)}`}>email →</a>}
+              </span>
+            )}
+          </div>
+        )
+      })}
+      {open && (
+        <PersonWindow key={open.id} person={open} index={idx} total={PEOPLE.length}
+          title="contact author" anchor={cardRefs.current.get(open.id) ?? null} onClose={() => setOpenId(null)} />
+      )}
+    </div>
+  )
+}
+
+/* Link to another output, or plain text + padlock if its page isn't public. */
+const outRef = (x: Output) => isOpen(x)
+  ? <a className={s.link} href={outHref(x)}>{x.code} · {outputName(x)}</a>
+  : <span>{x.code} · {outputName(x)} <Padlock /></span>
+
+/* #output/<id> for a project without a public page yet: say so and
+   point back to its category, where it's still listed. */
+export function LockedOutputPage({ o }: { o: Output }) {
+  const c = categoryById(o.category)!
+  return (
+    <PageShell
+      back={{ label: c.label.toLowerCase(), href: catHref(o.category) }}
+      crumbs={[pathwayCrumb, { label: c.label.toLowerCase(), href: catHref(o.category) }, { label: o.code.toLowerCase() }]}
+      kicker={<>{o.code.toLowerCase()} {star} {c.label.toLowerCase()} {star} not public yet</>}
+      title={outputName(o)}
+      tagline="This project's page isn't public yet."
+    >
+      <p className={s.prose}>
+        <Padlock /> Details open here once the work is cleared to be shown.
+        It's listed in <a className={s.link} href={catHref(o.category)}>{c.label} →</a>
+      </p>
+    </PageShell>
+  )
+}
 
 export function OutputPage({ o }: { o: Output }) {
   const c = categoryById(o.category)!
   const t = typeById(o.type)
   const src = o.source ? outputById(o.source) : undefined
   const derived = OUTPUTS.filter((x) => x.source === o.id)
-  const idx = OUTPUTS.indexOf(o)
-  const prev = OUTPUTS[idx - 1], next = OUTPUTS[idx + 1]
+  // Prev / next step through public project pages only.
+  const pub = OUTPUTS.filter(isOpen)
+  const idx = pub.indexOf(o)
+  const prev = pub[idx - 1], next = pub[idx + 1]
   const backHref = catHref(o.category)
   const sw = isSoftware(o)
   let n = 0
@@ -276,22 +356,14 @@ export function OutputPage({ o }: { o: Output }) {
       )}
 
       <Section num={num()} title={sw ? "Contact · authors" : "Contact · researchers and affiliates"}>
-        {o.contacts?.length ? (
-          <div className={s.people}>
-            {o.contacts.map((p) => (
-              <div key={p.name + p.email} className={s.card}>
-                <span className={s.personName}>{p.name}</span>
-                <span className={s.personRole}>{p.role}</span>
-                <span className={s.personInst}>{p.institution}</span>
-                <a className={s.personMail} href={`mailto:${p.email}?subject=${encodeURIComponent(o.code + ' · ' + o.title)}`}>email →</a>
-              </div>
-            ))}
-          </div>
-        ) : pending('contacts')}
+        {o.contacts?.length
+          ? <Contacts contacts={o.contacts} subject={`${o.code} · ${o.title}`} />
+          : pending('contacts')}
       </Section>
 
       {sw && (
         <Section num={num()} title="Beta testers">
+          {o.beta ? <BetaSeats o={o} author={o.contacts?.[0]?.name} /> : (
           <div className={s.intake}>
             {stageLabel(o) === 'Beta testing' ? (
               <>
@@ -305,11 +377,13 @@ export function OutputPage({ o }: { o: Output }) {
               </>
             )}
           </div>
+          )}
         </Section>
       )}
 
       <Section num={num()} title="Stage">
         <BranchTrack o={o} />
+        <MobileTrack o={o} />
         <div className={s.trackLegend}>
           <span><i className={s.legSolid} />recorded exit</span>
           <span><i className={s.legSw} />software project</span>
@@ -325,8 +399,8 @@ export function OutputPage({ o }: { o: Output }) {
           { label: 'regulatory class', value: o.samdClass ? `${o.regClass} · SaMD ${o.samdClass}` : o.regClass },
           { label: 'affiliation', value: affiliationLabel(o) },
         ]} />
-        {src && <p className={s.note}>source <strong>·</strong> <a className={s.link} href={outHref(src)}>{src.code} · {outputName(src)}</a> <strong>·</strong> category inherited</p>}
-        {derived.map((d) => <p key={d.id} className={s.note}>released as <strong>·</strong> <a className={s.link} href={outHref(d)}>{d.code} · {outputName(d)}</a></p>)}
+        {src && <p className={s.note}>source <strong>·</strong> {outRef(src)} <strong>·</strong> category inherited</p>}
+        {derived.map((d) => <p key={d.id} className={s.note}>released as <strong>·</strong> {outRef(d)}</p>)}
         {o.affiliation.kind === 'affiliated' && (
           <p className={s.prose} style={{ marginTop: '1.25rem' }}>IP or authorship for this work sits with {o.affiliation.partner}. It is presented within what that agreement allows.</p>
         )}

@@ -30,17 +30,21 @@
     color 0.18s ease;
 }
 
-.chip:hover {
+@media (hover: hover) { .chip:hover {
   background: var(--bg-soft);
   border-color: var(--ink);
-}
+} }
 
-.chipActive,
-.chipActive:hover {
+.chipActive {
   background: var(--crimson);
   border-color: var(--crimson);
   color: var(--bg);
 }
+@media (hover: hover) { .chipActive:hover {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: var(--bg);
+} }
 
 .label { line-height: 1; }
 

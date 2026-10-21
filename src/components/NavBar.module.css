@@ -74,11 +74,13 @@
   letter-spacing: 0.04em;
 }
 .textSize button:first-child {
-  border-right: 1px solid var(--line);
   font-size: 0.78rem;
 }
 .textSize button:last-child { font-size: 0.92rem; }
-.textSize button:hover { background: var(--ink); color: var(--bg); }
+/* A divider before every button but the first (A− | A | A+). */
+.textSize button + button { border-left: 1px solid var(--line); }
+.textSize button:not(:first-child):not(:last-child) { font-size: 0.85rem; }
+@media (hover: hover) { .textSize button:hover { background: var(--ink); color: var(--bg); } }
 
 .brightness {
   display: inline-flex;
@@ -89,7 +91,7 @@
   padding: 0;
   transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-.brightness:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .brightness:hover { transform: rotate(20deg); border-color: var(--crimson); color: var(--crimson); } }
 .brightness svg {
   width: 16px;
   height: 16px;
@@ -114,7 +116,7 @@
   text-transform: uppercase;
   transition: color 0.2s ease, border-color 0.2s ease;
 }
-.menuBtn:hover { border-color: var(--crimson); color: var(--crimson); }
+@media (hover: hover) { .menuBtn:hover { border-color: var(--crimson); color: var(--crimson); } }
 .menuBtnLines {
   display: inline-flex;
   flex-direction: column;
@@ -204,7 +206,7 @@
   text-decoration: none;
   transition: color 0.2s ease, transform 0.2s ease;
 }
-.menuItem:hover { color: var(--crimson); transform: translateX(20px); }
+@media (hover: hover) { .menuItem:hover { color: var(--crimson); transform: translateX(20px); } }
 .menuItemNum {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
@@ -230,7 +232,7 @@
   margin-left: 1.5rem;
   transition: opacity 0.2s ease;
 }
-.menuBottom a:hover { opacity: 1; }
+@media (hover: hover) { .menuBottom a:hover { opacity: 1; } }
 
 @media (max-width: 640px) {
   .bar { padding: 0.8rem 1rem; }
@@ -241,3 +243,31 @@
 
 /* Controls aren't highlightable. */
 .bar, :global(button) { -webkit-user-select: none; user-select: none; }
+
+/* Swipe the top row down to close the menu (NavBar useSwipeDown). */
+.menuTop { touch-action: none; }
+
+/* ---- list | staff switch (phones): its own centred row below the bar ---- */
+.viewRow { display: none; }
+@media (max-width: 720px) {
+  .viewRow {
+    position: sticky; top: var(--header-h, 58px); z-index: 59;
+    display: flex; justify-content: center; padding: 8px 0;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .viewSwitch { display: flex; border: 1.5px solid var(--ink); border-radius: 2px; overflow: hidden; }
+  .viewSwitch a {
+    width: 64px; min-height: 36px; display: flex; align-items: center; justify-content: center;
+    color: var(--ink); text-decoration: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .viewSwitch a[aria-current='page'] { background: var(--ink); color: var(--bg); }
+
+  /* A− · A · A+ centred in the bar, directly above 3d | list and the
+     same width (3 × 43 ≈ 2 × 64), logo left, theme + menu right. */
+  .textSize { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .textSize button { width: 43px; height: 36px; min-width: 0; padding: 0; }   /* same height as the switch */
+}
+/* Over the 3D staff view: bar + switch row fixed above the scene. */
+.barOver { position: fixed; left: 0; right: 0; top: 0; }
+.viewRowOver { position: fixed; left: 0; right: 0; }

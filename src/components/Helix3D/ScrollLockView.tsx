@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { animate } from 'animejs'
 import './helix3d.css'
+import { CONTACT_EMAIL } from '../../data/people'
 
 /* =================================================================
    Mentheon — ScrollLockView (Rod of Asclepius + coiled serpent)
@@ -1228,11 +1229,11 @@ export default function ScrollLockView() {
           <a className="menu-item" href="#"><span className="menu-item-num">02</span>subsidiaries</a>
           <a className="menu-item" href="#"><span className="menu-item-num">03</span>publications</a>
           <a className="menu-item" href="#"><span className="menu-item-num">04</span>about</a>
-          <a className="menu-item" href="#"><span className="menu-item-num">05</span>contact</a>
+          <a className="menu-item" href={`mailto:${CONTACT_EMAIL}`}><span className="menu-item-num">05</span>contact</a>
         </div>
         <div className="menu-bottom">
           <span>mentheon ltd · companies house 15974246</span>
-          <span><a href="#">linkedin</a><a href="#">github</a><a href="#">contact</a></span>
+          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a></span>
         </div>
       </div>
 

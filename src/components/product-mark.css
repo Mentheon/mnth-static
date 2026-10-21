@@ -19,3 +19,15 @@
 /* Aufdröselung pair: plum (light) / cream (dark), matching Essen's icon. */
 .ptile.is-pair { background: #2F0147; color: #FFECE1; }
 :root[data-theme="dark"] .ptile.is-pair, .helix3d-root[data-theme="dark"] .ptile.is-pair { background: #FFECE1; color: #2F0147; }
+
+/* Strand logo tile (StrandMark) — the Helix3D section-cube face as DOM:
+   ink ground (cream in dark), crimson when selected. */
+.smark {
+  position: relative; display: block; width: 44px; height: 44px; flex: none;
+  background: #2F0147; color: #FFECE1;
+  transition: background-color 0.2s, color 0.2s;
+}
+:root[data-theme="dark"] .smark { background: #FFECE1; color: #2F0147; }
+.smark.is-selected, :root[data-theme="dark"] .smark.is-selected { background: var(--crimson); color: #FFECE1; }
+.smark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.smark text { fill: currentColor; font-family: 'Lato', sans-serif; font-weight: 900; }
