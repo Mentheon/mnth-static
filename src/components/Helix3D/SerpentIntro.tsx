@@ -108,11 +108,28 @@ const ROD = { radius: 0.05, knobR: 0.1 };
 const BODY = { R: 0.085, segs: 220, rad: 8 };
 const NODE = { orbR: 0.16, ring1: 0.22, ring2: 0.3 };
 
+// The slice of the 1920×1080 stage the viewport actually shows (it is
+// cover-scaled, so a portrait phone sees a ~500-unit-wide strip). The
+// canvas covers only that slice and the camera renders it via
+// setViewOffset — same framing, a fraction of the pixels.
+function stageView(scale) {
+  const w = Math.min(W, Math.ceil(window.innerWidth / scale) + 2), h = Math.min(H, Math.ceil(window.innerHeight / scale) + 2);
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h,
+    // Buffer px per stage unit: the screen's own density, capped at 1.5.
+    pr: Math.min(1.5, (window.devicePixelRatio || 1) * scale) };
+}
+function fitView(S, v) {
+  S.renderer.setPixelRatio(v.pr);
+  S.renderer.setSize(v.w, v.h, false);
+  S.camera.setViewOffset(W, H, v.x, v.y, v.w, v.h);
+  Object.assign(S.renderer.domElement.style, { left: v.x + 'px', top: v.y + 'px', width: v.w + 'px', height: v.h + 'px' });
+  S.view = v;
+}
+
 function buildScene(C, cubes, dark) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  // DPR capped at 1.5: ~44% fewer pixels than 2× on retina, visually the same here.
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-  renderer.setSize(W, H, false);
+  // No MSAA: at stage scale the edges are already sub-pixel, and on
+  // phones it doubled the buffer memory alongside Helix3D's canvas.
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
   renderer.setClearColor(0x000000, 0);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 100);
@@ -502,7 +519,7 @@ function basisQ(fwd) {
   return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xA, yA, fwd));
 }
 
-function LogoIntro({ T, CUES, theme, nodeStyle }) {
+function LogoIntro({ T, CUES, theme, nodeStyle, scale, lite }) {
   const tw = { theme };
   const C = PALETTE[tw.theme === 'dark' ? 'dark' : 'light'];
   const [ready, setReady] = useState(!!(THREE && MARK));
@@ -512,12 +529,23 @@ function LogoIntro({ T, CUES, theme, nodeStyle }) {
   useEffect(() => { Promise.all([threeReady, markReady, productMarksReady]).then(() => setReady(true)); }, []);
   useEffect(() => {
     if (!ready || !holder.current) return;
-    S.current = buildScene(C, nodeStyle === 'embedded', tw.theme === 'dark');
-    const cv = S.current.renderer.domElement;
-    cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block';
+    const s = buildScene(C, nodeStyle === 'embedded', tw.theme === 'dark');
+    S.current = s;
+    const cv = s.renderer.domElement;
+    cv.style.cssText = 'position:absolute;display:block';
+    fitView(s, stageView(scale));
     holder.current.appendChild(cv);
-    return () => { S.current.renderer.dispose(); cv.remove(); S.current = null; };
+    // Compile every shader now (skinned body + real head included), so
+    // the first solid frame mid-intro doesn't stall on compilation.
+    const hidden = [s.solidBody, ...s.realHead].filter((o) => !o.visible);
+    hidden.forEach((o) => { o.visible = true; });
+    s.renderer.compile(s.scene, s.camera);
+    hidden.forEach((o) => { o.visible = false; });
+    // forceContextLoss frees the GPU context now rather than at GC —
+    // phones can't hold it alongside Helix3D's (blank-scene bug).
+    return () => { s.renderer.dispose(); s.renderer.forceContextLoss(); cv.remove(); S.current = null; };
   }, [ready, tw.theme]);
+  useEffect(() => { if (S.current) fitView(S.current, stageView(scale)); }, [scale]);
 
   // ---- choreography (all from T) ----
   const t0 = CUES.Sketch, tI = CUES.Ink, tR = CUES.Release, tL = CUES.Lift, tRe = CUES.Rear, tH = CUES.Hiss, tC = CUES.Coil,
@@ -690,7 +718,7 @@ function LogoIntro({ T, CUES, theme, nodeStyle }) {
       n.ring2.material.opacity = 0.55 * (1 - phase2) * 0.18 * pop * op;
       n.ring1.lookAt(s.camera.position); n.ring2.lookAt(s.camera.position);
       const w = n.orb.getWorldPosition(new THREE.Vector3()).project(s.camera);
-      const lx = (w.x * 0.5 + 0.5) * W, ly = (-w.y * 0.5 + 0.5) * H;
+      const v = s.view, lx = v.x + (w.x * 0.5 + 0.5) * v.w, ly = v.y + (-w.y * 0.5 + 0.5) * v.h;
       labels.push({ x: lx, y: ly, left: lx <= W / 2, o: MOTION.enter(T, tN + i * 0.17 + 0.15, tN + i * 0.17 + 0.6) * (1 - allOut) });
     });
   }
@@ -716,7 +744,7 @@ function LogoIntro({ T, CUES, theme, nodeStyle }) {
       {/* Graph paper under the draft: grape hairlines, 19px minor / 95px major,
           aligned so the tile edges land on major lines. */}
       {paper > 0 && (
-        <div style={{ position: 'absolute', left: W / 2, top: H / 2, width: 950, height: 950, transform: 'translate(-50%, -50%)', opacity: paper,
+        <div style={{ position: 'absolute', left: W / 2, top: H / 2, width: 950, height: 950, transform: 'translate(-50%, -50%)', opacity: paper, willChange: 'opacity',
           backgroundImage: `linear-gradient(${C.grape}55 1px, transparent 1px), linear-gradient(90deg, ${C.grape}55 1px, transparent 1px), linear-gradient(${C.grape}26 1px, transparent 1px), linear-gradient(90deg, ${C.grape}26 1px, transparent 1px)`,
           backgroundSize: '95px 95px, 95px 95px, 19px 19px, 19px 19px', backgroundPosition: '0 0',
           WebkitMaskImage: 'radial-gradient(closest-side, #000 55%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 55%, transparent 100%)' }}></div>
@@ -730,10 +758,12 @@ function LogoIntro({ T, CUES, theme, nodeStyle }) {
         }}>
           <defs>
             <clipPath id="inkWipe3"><rect x="-60" y="-60" width="320" height={inkWipe * 320}></rect></clipPath>
-            <filter id="pencil3" x="-10%" y="-10%" width="120%" height="120%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed={boil + 1}></feTurbulence>
-              <feDisplacementMap in="SourceGraphic" scale="1.3"></feDisplacementMap>
-            </filter>
+            {!lite && (
+              <filter id="pencil3" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="1" seed={boil + 1}></feTurbulence>
+                <feDisplacementMap in="SourceGraphic" scale="1.3"></feDisplacementMap>
+              </filter>
+            )}
           </defs>
           <g clipPath="url(#inkWipe3)">
           <rect x={bx} y={by} width={bs} height={bs} rx={brad} fill={TILE_INK} opacity={1 - tileGone}></rect>
@@ -742,7 +772,7 @@ function LogoIntro({ T, CUES, theme, nodeStyle }) {
           <g fill={TILE_MARK} opacity={theonIn * (1 - theonOut)} transform={`translate(0 ${theonOut * 16})`} dangerouslySetInnerHTML={{ __html: MARK.theon }}></g>
           </g>
           {skOut > 0 && T < tR && (
-            <g filter="url(#pencil3)" opacity={skOut} fill="none" stroke={C.ink} strokeLinecap="round" strokeLinejoin="round">
+            <g filter={lite ? undefined : 'url(#pencil3)'} opacity={skOut} fill="none" stroke={C.ink} strokeLinecap="round" strokeLinejoin="round">
               <g strokeWidth="0.6" strokeDasharray="1" strokeDashoffset={1 - frame1}>
                 <path pathLength="1" d="M-9 0H204"></path><path pathLength="1" d="M195 -9V204"></path>
                 <path pathLength="1" d="M204 195H-9"></path><path pathLength="1" d="M0 204V-9"></path>
@@ -841,7 +871,10 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
   const endAt = nodeStyle === 'embedded' ? END_CUBES : END
   const [T, setT] = useState(0)
   const [fading, setFading] = useState(false)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(() => Math.max(window.innerWidth / W, window.innerHeight / H))
+  // Phones (same test as Helix3D's isPhone): lighter sketch, and the
+  // skip controls move to a thumb-sized bottom bar.
+  const [phone, setPhone] = useState(() => Math.min(window.innerWidth, window.innerHeight) <= 720)
   const doneRef = useRef(false)
   const finish = () => {
     if (doneRef.current) return
@@ -866,13 +899,18 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
     return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey) }
   }, [])
   useLayoutEffect(() => {
-    const fit = () => setScale(Math.max(window.innerWidth / W, window.innerHeight / H))
+    const fit = () => {
+      setScale(Math.max(window.innerWidth / W, window.innerHeight / H))
+      setPhone(Math.min(window.innerWidth, window.innerHeight) <= 720)
+    }
     fit()
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
   }, [])
   const [skipHover, setSkipHover] = useState(false)
   const [skipAlways, setSkipAlways] = useState(skipIntroAlways)
+  const toggleAlways = (on: boolean) => { setSkipAlways(on); setSkipIntroAlways(on) }
+  const controlsOpacity = MOTION.fade(T, CUES.Sketch + 0.4, CUES.Sketch + 0.9) * (1 - MOTION.fade(T, CUES.Settle - 0.4, CUES.Settle))
   const C = PALETTE[theme === 'dark' ? 'dark' : 'light']
   const bg = C.bg
   return (
@@ -882,14 +920,15 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
       transition: 'opacity 600ms cubic-bezier(0.65,0,0.35,1)',
     }}>
       <div style={{ position: 'absolute', left: '50%', top: '50%', width: W, height: H, transform: `translate(-50%, -50%) scale(${scale})` }}>
-        <LogoIntro T={T} CUES={CUES} theme={theme} nodeStyle={nodeStyle}></LogoIntro>
+        <LogoIntro T={T} CUES={CUES} theme={theme} nodeStyle={nodeStyle} scale={scale}
+          lite={phone || window.matchMedia('(pointer: coarse)').matches}></LogoIntro>
       </div>
       {/* Skip intro — pinned to the viewport's bottom-right, outside the
           cover-scaled 1920×1080 stage. Inside the stage it was cropped
           off-screen on any non-16:9 window. Offsets and size still follow
           `scale` so it reads the same as the stage at 16:9. Jumps to the
           settled staff; hidden once that point is reached. */}
-      {T < CUES.Settle && (
+      {!phone && T < CUES.Settle && (
         <button type="button"
           onClick={finish}
           onPointerEnter={(e) => { if (e.pointerType === 'mouse') setSkipHover(true) }} onPointerLeave={() => setSkipHover(false)}
@@ -898,23 +937,49 @@ export default function SerpentIntro({ theme, onDone, onGone, nodeStyle = 'class
             fontFamily: "'JetBrains Mono', monospace", fontSize: 19, fontWeight: 500, letterSpacing: '0.22em', textTransform: 'uppercase',
             color: skipHover ? C.crimson : C.ink, background: 'transparent', cursor: 'pointer',
             border: `1px solid ${skipHover ? C.crimson : C.quiet}`, borderRadius: 2, padding: '16px 26px',
-            opacity: MOTION.fade(T, CUES.Sketch + 0.4, CUES.Sketch + 0.9) * (1 - MOTION.fade(T, CUES.Settle - 0.4, CUES.Settle)),
+            opacity: controlsOpacity,
             transition: 'color 200ms cubic-bezier(0.22,1,0.36,1), border-color 200ms cubic-bezier(0.22,1,0.36,1), gap 200ms cubic-bezier(0.22,1,0.36,1)' }}>
           <span>skip intro</span><span aria-hidden="true">↦</span>
         </button>
       )}
       {/* "skip always" — sits above the skip button, same scaling and fade.
           Saved per browser (introGate); Helix3D won't mount the intro again. */}
-      {T < CUES.Settle && (
+      {!phone && T < CUES.Settle && (
         <label style={{ position: 'absolute', right: 64 * scale, bottom: (56 + 78) * scale, transform: `scale(${scale})`, transformOrigin: 'bottom right',
           display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap', cursor: 'pointer',
           fontFamily: "'JetBrains Mono', monospace", fontSize: 16, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.ink,
-          opacity: MOTION.fade(T, CUES.Sketch + 0.4, CUES.Sketch + 0.9) * (1 - MOTION.fade(T, CUES.Settle - 0.4, CUES.Settle)) }}>
+          opacity: controlsOpacity }}>
           <input type="checkbox" checked={skipAlways}
-            onChange={(e) => { setSkipAlways(e.target.checked); setSkipIntroAlways(e.target.checked) }}
+            onChange={(e) => toggleAlways(e.target.checked)}
             style={{ width: 22, height: 22, margin: 0, accentColor: C.crimson, cursor: 'pointer' }} />
           skip always
         </label>
+      )}
+      {phone && T < CUES.Settle && (
+        // Phones: one bottom bar, unscaled — a 48px tickbox row on the
+        // left, skip on the right, clear of the home indicator.
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          padding: '0 16px max(16px, env(safe-area-inset-bottom))', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', color: C.ink,
+          opacity: controlsOpacity }}>
+          <label style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '0 8px 0 0', cursor: 'pointer',
+            fontSize: 12, letterSpacing: '0.18em', whiteSpace: 'nowrap', WebkitUserSelect: 'none', userSelect: 'none' }}>
+            <input type="checkbox" checked={skipAlways} onChange={(e) => toggleAlways(e.target.checked)}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', margin: 0, opacity: 0, cursor: 'pointer' }} />
+            <span aria-hidden="true" style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 24, height: 24, borderRadius: 3,
+              border: `1.5px solid ${skipAlways ? C.crimson : C.quiet}`, background: skipAlways ? C.crimson : 'transparent',
+              transition: 'background 150ms ease, border-color 150ms ease' }}>
+              {skipAlways && (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke={C.bg} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 7.5l3 3 6-7" /></svg>
+              )}
+            </span>
+            skip always
+          </label>
+          <button type="button" onClick={finish} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '0 18px',
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 500, letterSpacing: '0.2em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+            color: C.ink, background: 'transparent', border: `1px solid ${C.quiet}`, borderRadius: 2, cursor: 'pointer' }}>
+            <span>skip intro</span><span aria-hidden="true">↦</span>
+          </button>
+        </div>
       )}
     </div>
   )

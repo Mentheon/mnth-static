@@ -780,7 +780,24 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dom.addEventListener('pointermove', onDragMove)
       dom.addEventListener('pointerup', onDragUp)
       dom.addEventListener('pointercancel', onDragCancel)
+      /* WebGL context loss (phones under GPU-memory pressure, e.g. while
+         the intro's own canvas is alive) blanks the canvas for good if
+         the browser never restores it. Three restores what it can; if
+         nothing comes back within 1.2s, App remounts the scene. */
+      let lostTimer = 0
+      const onLost = () => {
+        window.clearTimeout(lostTimer)
+        lostTimer = window.setTimeout(() => {
+          if (!destroyed) window.dispatchEvent(new CustomEvent('mnth:helix-reset'))
+        }, 1200)
+      }
+      const onRestored = () => { window.clearTimeout(lostTimer); onResize() }
+      dom.addEventListener('webglcontextlost', onLost)
+      dom.addEventListener('webglcontextrestored', onRestored)
       cleanups.push(() => {
+        window.clearTimeout(lostTimer)
+        dom.removeEventListener('webglcontextlost', onLost)
+        dom.removeEventListener('webglcontextrestored', onRestored)
         window.removeEventListener('resize', onResize)
         dom.removeEventListener('pointermove', onPointerMove)
         dom.removeEventListener('pointerleave', onLeave)
@@ -2657,6 +2674,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        pulse phase starts at 0) and begins rendering. */
     function startScene() {
       if (destroyed) return
+      // The viewport may have changed under the intro (iOS toolbar
+      // collapse, rotation): resync the canvas before the first frame.
+      onResize()
       animationActive = true
       lastT = performance.now()
       startT = lastT
