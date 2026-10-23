@@ -597,8 +597,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
          stay clear in the middle. */
       tileFrac: 0.17, tileDepth: 1, tileGap: 0.03, ease: 6 }
     const tileMix: number[] = []
-    /* Advisory cubes' orbit speed around their node (rad/s), unfocused. */
-    const ADV_ORBIT = 0.35
+    /* Slot order: 9, 3, 12 and 6 o'clock first (so four cubes, e.g.
+       Advisory's services, sit in a fixed cross around their node). */
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -1790,14 +1790,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const offCube = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
-        // Advisory's four services orbit their node (a slow turn of the
-        // slot cross); focusing it eases them back into the fixed tiles.
-        let ox = sx, oy = sy
-        if (isAdvisory(l.o) && m < 1) {
-          const a0 = Math.atan2(sy, sx), a = a0 + (performance.now() / 1000) * ADV_ORBIT * (1 - m)
-          ox = THREE.MathUtils.lerp(Math.cos(a), sx, m); oy = THREE.MathUtils.lerp(Math.sin(a), sy, m)
-        }
-        _wp.copy(_np).addScaledVector(_right, ox * off).addScaledVector(_camUp, oy * off)
+        _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
         l.sprite.scale.set(s, s, s * THREE.MathUtils.lerp(1, LOGO.tileDepth, m))
@@ -3035,7 +3028,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         'research programme · 2024–26', '✲',
         'detection · monitoring · forecasting · therapeutics · perception', '✲',
         'five categories · one pathway', '✲',
-        'plasmids · head of the staff', '✲',
+        'advisory · head of the staff', '✲',
         'rendered with three.js · r184', '✲',
       ]
       const block = phrases.map((p) =>
@@ -3314,11 +3307,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           by buildList(). Clicking a node opens the StrandPanel
           modal (rendered below, outside .stage). */}
       <main className="stage">
-        <div className="stage-readout">
-          <div>programme<strong>research · 2024–26</strong></div>
-          <div>categories<strong>{pad2(STRANDS.length)}</strong></div>
-          <div>projects<strong>{pad2(OUTPUTS.length)}</strong></div>
-        </div>
 
         <div className="helix3d" id="helix3d" />{/* ← WebGL canvas mounts here */}
         <div className="helix-fog" id="helix-fog" />{/* edge vignette over canvas */}
@@ -3327,6 +3315,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
           <h1 className="title">A new era of <br/><span className="accent" id="helix-accent">Digital Health</span><span className="helix-caret" id="helix-caret" aria-hidden="true" /></h1>
+          {/* Ledger (was the top-centre readout, which sat on the snake).
+              The programme line is the kicker above, so it isn't repeated. */}
+          <dl className="helix-ledger">
+            <div><dt>strands</dt><dd>{pad2(STRANDS.length)}</dd></div>
+            <div><dt>projects</dt><dd>{pad2(OUTPUTS.length)}</dd></div>
+            <div><dt>services</dt><dd>{pad2(outputsIn('advisory').length)}</dd></div>
+            <div><dt>est</dt><dd>09.2024</dd></div>
+          </dl>
         </div>
 
         <div className="node-labels" id="node-labels" />

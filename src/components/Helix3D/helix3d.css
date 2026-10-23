@@ -743,6 +743,19 @@
   line-height: 1.1; margin: 0; color: var(--ink);
 }
 .helix3d-root .helix-center-label .title .accent { color: var(--crimson); }
+/* Ledger under the headline: label · dot leader · value, ruled rows. */
+.helix3d-root .helix-ledger {
+  width: 15rem; margin: 1.3rem 0 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.helix3d-root .helix-ledger div {
+  display: flex; align-items: baseline; gap: 0.5rem; padding: 0.38rem 0;
+  border-bottom: 1px solid var(--ink-soft);
+}
+.helix3d-root .helix-ledger div:first-child { border-top: 1px solid var(--ink-soft); }
+.helix3d-root .helix-ledger dt { color: var(--ink-quiet); }
+.helix3d-root .helix-ledger div::after { content: ''; order: 1; flex: 1; border-bottom: 1px dotted var(--ink-quiet); opacity: 0.6; transform: translateY(-0.2em); }
+.helix3d-root .helix-ledger dd { order: 2; margin: 0; font-weight: 700; color: var(--ink); letter-spacing: 0.08em; }
 /* Console-style caret — sits after the typed accent and blinks
    forever (steps(1) = hard on/off, no fade). */
 .helix3d-root .helix-caret {
