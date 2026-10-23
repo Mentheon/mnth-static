@@ -607,10 +607,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     const tileMix: number[] = []
     /* Slot order: 9, 3, 12 and 6 o'clock first (so four cubes, e.g.
        Advisory's services, sit in a fixed cross around their node). */
-    /* Advisory's four services take the CORNERS of their node (top-left,
-       top-right, bottom-right, bottom-left), close in: a compact square
-       that reaches neither sideways nor up/down into other strands. */
-    const CORNER_SLOTS: [number, number][] = [[-1, 1], [1, 1], [1, -1], [-1, -1]]
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -1793,9 +1789,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const hov = hoveredOutput === l.o.id ? (m > 0.5 ? 1.06 : 1.2) : 1
         const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * hov * portraitFit
         let s = frac * 2 * d * tanH                          // edge, world units
-        const slots = isAdvisory(l.o) ? CORNER_SLOTS : SLOTS
-        const [sx, sy] = slots[k % slots.length]
-        const ring = k >= slots.length ? 1 + Math.floor(k / slots.length) : 1
+        const [sx, sy] = SLOTS[k % SLOTS.length]
+        const ring = k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
         const ne = nodeEdge[l.node] ?? 0          // section cube edge (embedded style)
         // Portrait phones: all three (cube · strand · cube) must fit the
         // width. Cap a side cube's edge to the room left beside the strand
@@ -1813,8 +1808,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         // Cubes above/below a node (Advisory's 12 and 6 o'clock) hug it
         // instead of clearing the pulse ring, so they stay out of the
         // neighbouring strands' rows.
+        // Advisory's four (12/3/6/9 o'clock) all sit close in, just clear of
+        // the gold cube, so its cross stays compact.
         const offCube = portrait ? ne * 0.5 + s * 0.95
-          : sx !== 0 && sy !== 0 ? ne * 0.5 + s * 0.58          // corners: hug the node's corner
+          : isAdvisory(l.o) ? ne * 0.5 + s * 0.6
           : sx === 0 ? ne * 0.5 + s * 0.7
           : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
