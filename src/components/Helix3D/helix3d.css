@@ -1120,6 +1120,11 @@
   border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson);
 }
 
+/* Decluttered (declutterLabels): a label that would overlap another,
+   or the focused strand's cube row, fades out until it's clear. */
+.helix3d-root .node-label { transition: opacity 0.18s ease; }
+.helix3d-root .node-label.is-occluded { opacity: 0 !important; pointer-events: none; }
+
 /* Advisory node (gold, head of the staff): gold pip + corner mark. */
 .helix3d-root .node-label.is-advisory .node-label-pip { background: #E0A526; }
 .helix3d-root .node-label.is-advisory .node-label-name { border-color: #E0A526; }

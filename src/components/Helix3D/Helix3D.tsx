@@ -2590,16 +2590,61 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     const labelEls = new Map<string, HTMLElement>()
     let labelsElCached: HTMLElement | null = null
     const _lp = new THREE.Vector3(), _lo = new THREE.Vector3()
+    /* Labels never sit on top of one another, nor over the focused
+       strand's cube row (e.g. Plasmids' name over Advisory's cubes).
+       Priority: focused, then hovered, then nearest the camera; a label
+       that would overlap one already placed fades out until it's clear. */
+    const _dv = new THREE.Vector3()
+    function screenBox(o: THREE.Object3D, w: number, h: number) {
+      const half = o.scale.y * 0.5
+      const c = o.getWorldPosition(_dv).project(camera)
+      const cx = (c.x * 0.5 + 0.5) * w, cy = (-c.y * 0.5 + 0.5) * h
+      const e = o.getWorldPosition(_dv).addScaledVector(_camUp, half).project(camera)
+      const r = Math.abs((-e.y * 0.5 + 0.5) * h - cy)
+      return { l: cx - r, t: cy - r, r: cx + r, b: cy + r }
+    }
+    function declutterLabels(depth: number[], shown: boolean[], w: number, h: number) {
+      const PAD = 6
+      const host = labelsElCached!.getBoundingClientRect()
+      const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
+      const order = nodes.map((_, ni) => ni).filter((ni) => shown[ni]).sort((a, b) => {
+        const pa = a === focusIndex && isFocused() ? 0 : a === hovered ? 1 : 2
+        const pb = b === focusIndex && isFocused() ? 0 : b === hovered ? 1 : 2
+        return pa - pb || depth[a] - depth[b]
+      })
+      const placed: { l: number; t: number; r: number; b: number }[] = []
+      const hits = (bx: { l: number; t: number; r: number; b: number }) =>
+        placed.some((p) => bx.l < p.r + PAD && bx.r > p.l - PAD && bx.t < p.b + PAD && bx.b > p.t - PAD)
+      order.forEach((ni, k) => {
+        const label = labelEls.get(nodes[ni].strand.id)
+        const text = label?.querySelector('.node-label-text') as HTMLElement | null
+        if (!label || !text) return
+        const r = text.getBoundingClientRect()
+        const box = { l: r.left - host.left, t: r.top - host.top, r: r.right - host.left, b: r.bottom - host.top }
+        const clash = k > 0 && hits(box)
+        label.classList.toggle('is-occluded', clash)
+        if (!clash) placed.push(box)
+        // The focused strand's cubes + their captions are obstacles too.
+        if (k === 0 && ni === focusIndex && isFocused()) {
+          placed.push(screenBox(nodes[ni].orb, w, h))
+          logos.forEach((l) => { if (l.node === ni && l.sprite.visible) { const b = screenBox(l.sprite, w, h); b.b += CAP_GAP + 48; placed.push(b) } })
+        }
+      })
+      nodes.forEach((n, ni) => { if (!shown[ni]) labelEls.get(n.strand.id)?.classList.remove('is-occluded') })
+    }
+
     function updateLabels() {
       const labelsEl = labelsElCached ?? (labelsElCached = $('#node-labels')!)
       const w = labelsEl.clientWidth
       const h = labelsEl.clientHeight
       const phone = isPhone()
       _camUp.setFromMatrixColumn(camera.matrixWorld, 1)
+      const depth: number[] = [], shown: boolean[] = []
 
       nodes.forEach((n, ni) => {
         // project() → normalised device coords (-1..1); remap to px.
         const projP = n.orb.getWorldPosition(_lp).project(camera)
+        depth[ni] = projP.z
         const px = (projP.x * 0.5 + 0.5) * w
         const py = (-projP.y * 0.5 + 0.5) * h
         let label = labelEls.get(n.strand.id)
@@ -2641,7 +2686,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const hideHere = phone && isFocused() && ni !== focusIndex
         label.style.opacity = hideHere ? '0' : '1'
         label.style.visibility = hideHere ? 'hidden' : ''          // no fade-out ghost mid-swipe
+        shown[ni] = !hideHere
       })
+      declutterLabels(depth, shown, w, h)
 
 
       // Project captions — focused section only: a boxed name + type
