@@ -651,9 +651,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       ring1: THREE.Mesh
       ring2: THREE.Mesh
       orbPos: THREE.Vector3     // rest position (rotor-local)
-      hit?: THREE.Mesh          // invisible pick sphere, follows the orb
-      tOff?: number             // collision-avoidance slide along the coil (t units)
-      avoidDir?: number         // its committed slide direction while threatened (±1, 0 = none)
+      swing?: number            // collision avoidance: its sub-cubes' rotation round it (rad)
+      swingDir?: number         // committed swing direction while threatened (±1, 0 = none)
     }
     const nodes: NodeRec[] = []
     const nodePickables: THREE.Object3D[] = []
@@ -1214,8 +1213,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           })
         }
 
-        const rec: NodeRec = { strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone(), tOff: 0 }
-        nodes.push(rec)
+        nodes.push({ strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone(), swing: 0 })
         nodePickables.push(orb)
         // Invisible hit sphere spanning the pulse rings, so a click
         // anywhere on the node (orb, rings, halo) registers.
@@ -1225,7 +1223,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         )
         hit.position.copy(orbPos)
         hit.userData.strandId = STRANDS[i].id
-        rec.hit = hit
         rotor.add(hit)
         nodePickables.push(hit)
       }
@@ -1765,11 +1762,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         n.orb.scale.setScalar(s)
         // Centred on the body; drawn on top of it (see nodeCubeMaterials)
         // so the coil never obscures it as the staff turns.
-        // Live position: the rest point, slid along the coil while it
-        // steps aside from a neighbour (avoidClusters → tOff).
-        if (n.tOff) serpentCurve.getPoint(THREE.MathUtils.clamp(n.t + n.tOff, AVOID.tMin, AVOID.tMax), n.orb.position)
-        else n.orb.position.copy(n.orbPos)
-        n.hit?.position.copy(n.orb.position)
+        n.orb.position.copy(n.orbPos)
         n.ring1.position.copy(n.orb.position)
         n.ring2.position.copy(n.orb.position)
         _q.copy(camera.quaternion)
@@ -1819,7 +1812,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
-        _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
+        // Collision avoidance (avoidClusters): the node's sub-cubes rotate
+        // round it as one ring, by n.swing; tiles (focused) sit square.
+        const sw = (n.swing ?? 0) * (1 - m), cs = Math.cos(sw), sn = Math.sin(sw)
+        const ox = sx * cs - sy * sn, oy = sx * sn + sy * cs
+        _wp.copy(_np).addScaledVector(_right, ox * off).addScaledVector(_camUp, oy * off)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
         l.sprite.scale.set(s, s, s * THREE.MathUtils.lerp(1, LOGO.tileDepth, m))
@@ -2633,89 +2630,81 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const r = Math.abs((-e.y * 0.5 + 0.5) * h - cy)
       return { l: cx - r, t: cy - r, r: cx + r, b: cy + r }
     }
-    /* Collision avoidance: before two strands' clusters meet on screen,
-       the lower-priority one (not focused / hovered, farther away) slides
-       along the coil — clockwise or anticlockwise round the staff,
-       whichever opens the gap — and eases back to its place once its rest
-       spot is clear again. Nothing is ever hidden for it. */
-    /* margin/back = px sideways clearance to start sliding / to return;
-       my = px vertical clearance that counts as touching; look = s
-       of look-ahead at the staff's spin; rate = t/s slide speed (≈ 3 turns
-       × 360° per t, so 0.45 ≈ 490°/s); max = furthest slide (≈ 130°). */
-    const AVOID = { margin: 70, back: 96, my: 6, look: 0.6, rate: 0.45, max: 0.12, ease: 2, tMin: 0.015, tMax: 0.88 }
-    const _av = new THREE.Vector3()
-    const screenX = (t: number, w: number) => {
-      serpentCurve.getPoint(THREE.MathUtils.clamp(t, AVOID.tMin, AVOID.tMax), _av)
-      rotor.localToWorld(_av).project(camera)
-      return (_av.x * 0.5 + 0.5) * w
-    }
+    /* Collision avoidance: strands stay where they are on the coil. When
+       any of a strand's project sub-cubes is about to meet another
+       strand's cubes (now, or AVOID.look s ahead at the staff's spin),
+       its sub-cubes rotate round their own section cube as one ring —
+       clockwise or anticlockwise, whichever opens more room — and swing
+       back once their rest spots are clear. Higher priority (focused,
+       hovered, nearer) holds still; nothing is hidden. */
+    const AVOID = { margin: 34, back: 52, my: 6, look: 0.45, rate: 3.2, max: 1.35, ease: 2.5 }
     type Box = { l: number; t: number; r: number; b: number }
-    const shiftBox = (b: Box, dx: number): Box => ({ l: b.l + dx, r: b.r + dx, t: b.t, b: b.b })
-    // Early warning is horizontal (the spin brings strands together
-    // sideways); vertically only a near-touch counts, or every pair of
-    // neighbours on the coil would always look threatened.
+    const shiftBox = (b: Box, dx: number, dy = 0): Box => ({ l: b.l + dx, r: b.r + dx, t: b.t + dy, b: b.b + dy })
+    // Early warning is sideways (the spin brings strands together
+    // sideways); vertically only a near-touch counts.
     const nearBox = (a: Box, p: Box, m: number) => a.l < p.r + m && a.r > p.l - m && a.t < p.b + AVOID.my && a.b > p.t - AVOID.my
+    const _av = new THREE.Vector3()
     function avoidClusters(dt: number) {
       const w = container.clientWidth, h = container.clientHeight
       const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
-      // Every cube on its own (the section cube AND each project sub-cube),
-      // so the check reacts as soon as any sub-cube nears another strand's.
-      const cubes: Box[][] = nodes.map((n, ni) => {
-        if (!n.orb.userData.cube) return []
-        const list = [screenBox(n.orb, w, h)]
-        logos.forEach((l) => { if (l.node === ni && l.sprite.visible) list.push(screenBox(l.sprite, w, h)) })
-        return list
-      })
-      // Look ahead: where each strand will be in AVOID.look seconds at the
-      // staff's current turning speed (smV), as a screen-x shift.
-      const a = THREE.MathUtils.clamp(smV * AVOID.look, -1.4, 1.4), ca = Math.cos(a), sa = Math.sin(a)
+      const core: (Box | null)[] = nodes.map((n) => (n.orb.userData.cube ? screenBox(n.orb, w, h) : null))
+      const subs: Box[][] = nodes.map((_, ni) => logos.filter((l) => l.node === ni && l.sprite.visible).map((l) => screenBox(l.sprite, w, h)))
+      // Look ahead: each strand's screen-x shift AVOID.look s from now.
+      const a = THREE.MathUtils.clamp(smV * AVOID.look, -1.2, 1.2), ca = Math.cos(a), sa = Math.sin(a)
       const ahead = nodes.map((n) => {
         n.orb.getWorldPosition(_dv)
-        const x0 = (_dv.clone().project(camera).x * 0.5 + 0.5) * w
+        const x0 = (_av.copy(_dv).project(camera).x * 0.5 + 0.5) * w
         _av.set(_dv.x * ca + _dv.z * sa, _dv.y, -_dv.x * sa + _dv.z * ca).project(camera)
         return (_av.x * 0.5 + 0.5) * w - x0
       })
       const z = nodes.map((n) => n.orb.getWorldPosition(_dv).project(camera).z)
       const rank = (i: number) => (i === focusIndex && isFocused() ? 0 : i === hovered ? 1 : 2)
-      const order = nodes.map((_, ni) => ni).filter((ni) => cubes[ni].length).sort((x, y) => rank(x) - rank(y) || z[x] - z[y])
-      // Any cube of `ni` (optionally moved by dx) within `m` of any cube of
-      // `pi`, now or at the look-ahead.
-      const clash = (ni: number, pi: number, m: number, dx = 0) =>
-        cubes[ni].some((c) => cubes[pi].some((p) =>
-          nearBox(shiftBox(c, dx), p, m) || nearBox(shiftBox(c, dx + ahead[ni]), shiftBox(p, ahead[pi]), m)))
-      const placed: number[] = []
+      const order = nodes.map((_, ni) => ni).filter((ni) => core[ni]).sort((x, y) => rank(x) - rank(y) || z[x] - z[y])
+      // A strand's sub-cubes rotated by `d` (screen px, about its centre).
+      const rotated = (ni: number, d: number) => {
+        const c = core[ni]!, cx = (c.l + c.r) / 2, cy = (c.t + c.b) / 2, k = Math.cos(d), q = Math.sin(d)
+        return subs[ni].map((b) => {
+          const bx = (b.l + b.r) / 2 - cx, by = cy - (b.t + b.b) / 2          // y up
+          const rx = bx * k - by * q, ry = bx * q + by * k
+          return shiftBox(b, cx + rx - (b.l + b.r) / 2, cy - ry - (b.t + b.b) / 2)
+        })
+      }
+      // Everything already placed (higher priority): their cores + sub-cubes.
+      const placedBoxes: { b: Box; ni: number }[] = []
+      const threatened = (ni: number, mine: Box[], m: number) =>
+        mine.some((c) => placedBoxes.some(({ b, ni: pi }) =>
+          nearBox(c, b, m) || nearBox(shiftBox(c, ahead[ni]), shiftBox(b, ahead[pi]), m)))
+      const room = (mine: Box[]) => {           // closest approach to anything placed
+        let best = Infinity
+        mine.forEach((c) => placedBoxes.forEach(({ b }) => {
+          const dx = Math.max(b.l - c.r, c.l - b.r, 0), dy = Math.max(b.t - c.b, c.t - b.b, 0)
+          best = Math.min(best, Math.hypot(dx, dy))
+        }))
+        return best
+      }
       order.forEach((ni) => {
         const n = nodes[ni]
-        const off = n.tOff ?? 0
-        // The focused / hovered strand never moves (it's being looked at).
-        if (rank(ni) < 2) { n.tOff = off + (0 - off) * Math.min(1, dt * AVOID.ease * 3); n.avoidDir = 0; placed.push(ni); return }
-        const threat = placed.find((pi) => clash(ni, pi, AVOID.margin))
-        if (threat !== undefined) {
-          // Pick a way once (whichever widens the gap to the other strand),
-          // then keep it until clear, so it never dithers.
-          if (!n.avoidDir) {
-            const pc = (cubes[threat][0].l + cubes[threat][0].r) / 2 + ahead[threat]
-            const t0 = n.t + off, eps = 0.012
-            n.avoidDir = Math.abs(screenX(t0 + eps, w) - pc) >= Math.abs(screenX(t0 - eps, w) - pc) ? 1 : -1
-          }
-          let next = off + n.avoidDir * AVOID.rate * dt
-          // Hit the end of its travel: try the other way instead.
-          if (Math.abs(next) > AVOID.max) { n.avoidDir = -n.avoidDir; next = THREE.MathUtils.clamp(next, -AVOID.max, AVOID.max) }
-          n.tOff = next
+        const sw = n.swing ?? 0
+        if (rank(ni) < 2 || !subs[ni].length) {
+          // Focused / hovered (being looked at) or no sub-cubes: hold still.
+          n.swing = sw + (0 - sw) * Math.min(1, dt * AVOID.ease * 2); n.swingDir = 0
+        } else if (threatened(ni, subs[ni], AVOID.margin)) {
+          // Pick a way once (whichever leaves more room), keep it until clear.
+          if (!n.swingDir) n.swingDir = room(rotated(ni, 0.25)) >= room(rotated(ni, -0.25)) ? 1 : -1
+          let next = sw + n.swingDir * AVOID.rate * dt
+          if (Math.abs(next) > AVOID.max) { n.swingDir = -n.swingDir; next = THREE.MathUtils.clamp(next, -AVOID.max, AVOID.max) }
+          n.swing = next
         } else {
-          n.avoidDir = 0
-          if (off !== 0) {
-            // Clear: head home once the rest spot itself is clear, with a
-            // wider margin (now and ahead), so it doesn't bounce back.
-            const dx = screenX(n.t, w) - screenX(n.t + off, w)
-            if (!placed.some((pi) => clash(ni, pi, AVOID.back, dx))) {
-              let nOff = off + (0 - off) * Math.min(1, dt * AVOID.ease)
-              if (Math.abs(nOff) < 0.0008) nOff = 0
-              n.tOff = nOff
-            }
+          n.swingDir = 0
+          // Clear: swing home once the rest positions are clear (wider margin).
+          if (sw !== 0 && !threatened(ni, rotated(ni, -sw), AVOID.back)) {
+            let nx = sw + (0 - sw) * Math.min(1, dt * AVOID.ease)
+            if (Math.abs(nx) < 0.002) nx = 0
+            n.swing = nx
           }
         }
-        placed.push(ni)
+        placedBoxes.push({ b: core[ni]!, ni })
+        subs[ni].forEach((b) => placedBoxes.push({ b, ni }))
       })
     }
     function declutterLabels(depth: number[], shown: boolean[], w: number, h: number) {
