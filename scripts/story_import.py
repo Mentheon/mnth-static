@@ -226,6 +226,14 @@ def main():
             entry["heic"] = f"story/{sid}.heic"
         entries.append(entry)
         print(f"  {f.name}: {kind}{'' if depth is not None else ' (no depth map)'} -> public/story/{sid}.jpg")
+    # Tidy up: files from a previous import whose photo has left story-src/.
+    keep = {Path(e[k]).name for e in entries for k in ("photo", "depth", "heic") if k in e}
+    if GEN.exists():
+        old = re.findall(r'"(?:photo|depth|heic)": "story/([^"]+)"', GEN.read_text())
+        for name in old:
+            if name not in keep and (OUT / name).exists():
+                (OUT / name).unlink()
+                print(f"  removed public/story/{name} (no longer in {src.name}/)")
     GEN.write_text(
         "/* Written by scripts/story_import.py: the imported photos, in file-name\n"
         "   order. Re-running the script replaces this file; set captions here or\n"
