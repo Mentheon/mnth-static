@@ -607,6 +607,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     const tileMix: number[] = []
     /* Slot order: 9, 3, 12 and 6 o'clock first (so four cubes, e.g.
        Advisory's services, sit in a fixed cross around their node). */
+    /* Advisory's services: expanded cross (Research left, Design up,
+       Development down, Consultancy right); at rest they sit in one row,
+       outer cubes ADV_ROW_STEP cube-widths beyond the inner ones. */
+    const ADV_CROSS: [number, number][] = [[-1, 0], [0, 1], [0, -1], [1, 0]]
+    const ADV_ROW_STEP = 1.3
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -1789,8 +1794,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const hov = hoveredOutput === l.o.id ? (m > 0.5 ? 1.06 : 1.2) : 1
         const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * hov * portraitFit
         let s = frac * 2 * d * tanH                          // edge, world units
-        const [sx, sy] = SLOTS[k % SLOTS.length]
-        const ring = k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
+        const adv = isAdvisory(l.o)
+        // Advisory: expanded, a cross — outer pair (Research, Consultancy)
+        // left/right, inner pair (Design, Development) up/down.
+        const [sx, sy] = adv ? ADV_CROSS[k % 4] : SLOTS[k % SLOTS.length]
+        const ring = !adv && k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
         const ne = nodeEdge[l.node] ?? 0          // section cube edge (embedded style)
         // Portrait phones: all three (cube · strand · cube) must fit the
         // width. Cap a side cube's edge to the room left beside the strand
@@ -1805,22 +1813,28 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         l.sprite.visible = fade > 0.03
         s *= fade
         // Phones: neighbour strands' cubes hug their strand cube (not the ring).
-        // Cubes above/below a node (Advisory's 12 and 6 o'clock) hug it
-        // instead of clearing the pulse ring, so they stay out of the
-        // neighbouring strands' rows.
-        // Advisory's four (12/3/6/9 o'clock) all sit close in, just clear of
-        // the gold cube, so its cross stays compact.
-        const offCube = portrait ? ne * 0.5 + s * 0.95
-          : isAdvisory(l.o) ? ne * 0.5 + s * 0.6
-          : sx === 0 ? ne * 0.5 + s * 0.7
-          : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        // Cubes above/below a node hug it instead of clearing the pulse ring,
+        // so they stay out of the neighbouring strands' rows.
+        const sideOff = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        const offCube = sx === 0 && !portrait ? ne * 0.5 + s * 0.7 : sideOff
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
+        // Offset from the node (camera right/up, world units).
+        let vx = sx * off, vy = sy * off
+        if (adv) {
+          // Advisory at rest: one row, usual spacing —
+          // [Research][Design] (node) [Development][Consultancy] — easing
+          // into the cross as it's focused.
+          const side = k % 4 < 2 ? -1 : 1, outer = k % 4 === 0 || k % 4 === 3
+          const rowD = sideOff + (outer ? s * ADV_ROW_STEP : 0)
+          vx = THREE.MathUtils.lerp(side * rowD, sx * offTile, m)
+          vy = THREE.MathUtils.lerp(0, sy * offTile, m)
+        }
         // Collision avoidance (avoidClusters): the node's sub-cubes rotate
         // round it as one ring, by n.swing; tiles (focused) sit square.
         const sw = (n.swing ?? 0) * (1 - m), cs = Math.cos(sw), sn = Math.sin(sw)
-        const ox = sx * cs - sy * sn, oy = sx * sn + sy * cs
-        _wp.copy(_np).addScaledVector(_right, ox * off).addScaledVector(_camUp, oy * off)
+        const ox = vx * cs - vy * sn, oy = vx * sn + vy * cs
+        _wp.copy(_np).addScaledVector(_right, ox).addScaledVector(_camUp, oy)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
         l.sprite.scale.set(s, s, s * THREE.MathUtils.lerp(1, LOGO.tileDepth, m))
