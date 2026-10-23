@@ -239,7 +239,7 @@ def main():
         for name in old:
             if name not in keep and (OUT / name).exists():
                 (OUT / name).unlink()
-                print(f"  removed public/story/{name} (no longer in {src.name}/)")
+                print(f"  removed public/story/{name} (not part of this import)")
     GEN.write_text(
         "/* Written by scripts/story_import.py: the imported photos, in file-name\n"
         "   order. Re-running the script replaces this file; set captions here or\n"
