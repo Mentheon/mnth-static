@@ -62,3 +62,8 @@ const DEMO: StoryChapter[] = [
 ]
 
 export const STORY: StoryChapter[] = IMPORTED.length || MANUAL.length ? [...IMPORTED, ...MANUAL] : DEMO
+
+/* #story1 — a page of its own for one photo (IMG_0508), same controls. Falls
+   back to the test scene if that photo hasn't been imported here. */
+const ONE = [...IMPORTED, ...MANUAL].filter((c) => c.id === 'img-0508')
+export const STORY1: StoryChapter[] = ONE.length ? ONE : DEMO

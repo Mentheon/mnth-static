@@ -194,7 +194,10 @@ function loadTex(ch: StoryChapter, src: DepthSrc, onReady: () => void): Tex {
   return out
 }
 
-export default function StoryPage() {
+/* `chapters`: which photos this page tells (default: the whole STORY);
+   `title`: its intro heading. #story1 etc. pass their own. */
+export default function StoryPage({ chapters = STORY, title = 'Depth, as you scroll' }: { chapters?: StoryChapter[]; title?: string } = {}) {
+  const STORY = chapters
   const holder = useRef<HTMLDivElement>(null)
   const chaptersRef = useRef<HTMLDivElement>(null)
   const meterRef = useRef<HTMLSpanElement>(null)
@@ -366,7 +369,7 @@ export default function StoryPage() {
       <section className={st.intro}>
         <div className={st.card}>
           <p className={st.kick}>story <span className={st.star}>✲</span> experimental</p>
-          <h1 className={st.title}>Depth, as you scroll</h1>
+          <h1 className={st.title}>{title}</h1>
           <p className={st.lede}>
             Each photo starts flat and gains depth as you move through it, then hands over to the next.
             Built from a photo and its depth map; add your own in <code>src/data/story.ts</code>.
