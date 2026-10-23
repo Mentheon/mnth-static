@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Import iPhone spatial photos (.HEIC) into the #story page.
 
-For each HEIC in the input folder (default: story-src/):
+Portrait-mode HEICs (one image + the iPhone's own depth map inside) use
+that embedded depth instead. For each spatial HEIC in the input folder
+(default: story-src/):
   1. Split it into its left and right eye images: `spatial export` on
      macOS, or pillow-heif (reads both images in the HEIC) anywhere else.
   2. OpenCV stereo matching (SGBM) measures how far each point shifts
@@ -129,6 +131,36 @@ def stereo_depth(L, R):
     return np.clip(d, 0, 1)
 
 
+def embedded_depth(path: Path, photo):
+    """Depth map an iPhone stores inside Portrait-mode (and some other)
+    HEICs, from its dual cameras / LiDAR -> 0..1, 1 = near. Upscaled to the
+    photo and edge-aligned to it with a guided filter."""
+    if path.suffix.lower() != ".heic":
+        return None
+    try:
+        import pillow_heif
+    except ImportError:
+        return None
+    im = pillow_heif.open_heif(str(path), convert_hdr_to_8bit=True)[0]
+    deps = im.info.get("depth_images") or []
+    if not deps:
+        return None
+    d = np.asarray(deps[0].to_pillow()).astype(np.float32)
+    if d.ndim == 3:
+        d = d[..., 0]
+    h, w = photo.shape[:2]
+    d = cv2.resize(d, (w, h), interpolation=cv2.INTER_CUBIC)
+    lo, hi = np.percentile(d, 1), np.percentile(d, 99)
+    d = np.clip((d - lo) / max(hi - lo, 1e-6), 0, 1)        # stored bright = near
+    try:
+        guide = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
+        g = cv2.ximgproc.guidedFilter(guide, d.astype(np.float32), max(4, w // 200), 1e-3)
+        d = np.where(np.isfinite(g), g, d)                   # the filter can leave NaNs at borders
+    except AttributeError:
+        d = cv2.GaussianBlur(d, (0, 0), 2)
+    return np.clip(d, 0, 1)
+
+
 def ai_depth(img):
     """Depth Anything V2 (optional) for ordinary photos -> 0..1, 1 = near."""
     try:
@@ -178,14 +210,16 @@ def main():
                 photo = read_any(f, tmp)
                 if photo is None:
                     print(f"  skip {f.name}: can't read it"); continue
-                depth, kind = (ai_depth(photo) if a.ai else None), "flat"
+                depth, kind = embedded_depth(f, photo), "portrait"
+                if depth is None:
+                    depth, kind = (ai_depth(photo) if a.ai else None), "flat"
         photo = resize_long(photo, PHOTO_EDGE)
         cv2.imwrite(str(OUT / f"{sid}.jpg"), photo, [cv2.IMWRITE_JPEG_QUALITY, 88])
         entry = {"id": sid, "title": f.stem.replace("_", " ").replace("-", " "), "caption": "", "photo": f"story/{sid}.jpg"}
         if depth is not None:
             ph, pw = photo.shape[:2]
             dmap = cv2.resize(depth, (DEPTH_W, round(DEPTH_W * ph / pw)), interpolation=cv2.INTER_AREA)
-            cv2.imwrite(str(OUT / f"{sid}-depth.png"), (dmap * 255).astype(np.uint8))
+            cv2.imwrite(str(OUT / f"{sid}-depth.png"), (np.nan_to_num(np.clip(dmap, 0, 1)) * 255).astype(np.uint8))
             entry["depth"] = f"story/{sid}-depth.png"
         if kind == "spatial":
             shutil.copyfile(f, OUT / f"{sid}.heic")
