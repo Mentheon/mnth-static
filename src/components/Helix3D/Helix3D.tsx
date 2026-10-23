@@ -1918,9 +1918,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         _q.multiply(_spinQ.setFromAxisAngle(_Y, momSpin(l.sprite, 0.8 + 0.4 * ((l.node * 7 + (slotOf.get(l.node) ?? 0) * 3) % 5) / 4, dt)))
         l.sprite.quaternion.copy(_inv).multiply(_q)
         updateOutline(l.sprite)
-        if (sy === 0) {
-          const px = ((off + s * 0.75) / (2 * d * tanH)) * hpx
-          const arr = sx < 0 ? reachL : reachR
+        // How far this node's cubes reach sideways (px), from where the cube
+        // actually sits (Advisory's outer row cubes, swung cubes): any cube
+        // level with the node pushes its label out beyond it.
+        if (Math.abs(oy) < s && Math.abs(ox) > 1e-4) {
+          const px = ((Math.abs(ox) + s * 0.75) / (2 * d * tanH)) * hpx
+          const arr = ox < 0 ? reachL : reachR
           arr[l.node] = Math.max(arr[l.node] ?? 0, px)
         }
       })
