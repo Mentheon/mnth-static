@@ -43,6 +43,10 @@
 .ctl input[type='range'] { width: 90px; accent-color: var(--crimson); }
 .ctl input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--crimson); }
 
+/* Sketch mode snap stops (html gets scroll-snap-type while it's on). */
+.snap { position: absolute; left: 0; width: 1px; height: 1px; scroll-snap-align: start; pointer-events: none; }
+.intro, .outro { scroll-snap-align: start; }
+
 /* Layout switch (full | left | right). */
 .seg { display: inline-flex; border: 1px solid var(--ink-soft); }
 .seg button {
