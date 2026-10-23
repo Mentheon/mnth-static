@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import SerpentIntro from './SerpentIntro'
+import AdvisoryOrbit from './AdvisoryOrbit'
 import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
@@ -277,6 +278,31 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     try { return sessionStorage.getItem('mnth:helixIntroSeen') !== '1' } catch { return true }
   })
   const introDoneRef = useRef<() => void>(() => {})
+
+  /* Consultancy & advisory window (AdvisoryOrbit) over the scene.
+     Driven by `&advisory=1` on the hash, so the site menu (phones) and
+     other pages can deep-link it and browser Back closes it. The scene's
+     wheel/swipe/key handlers stand down while it's open. */
+  const readAdvisory = () => new URLSearchParams(window.location.hash.split('?')[1] || '').get('advisory') === '1'
+  const [advisoryOpen, setAdvisoryOpen] = useState(readAdvisory)
+  const advisoryOpenRef = useRef(advisoryOpen)
+  advisoryOpenRef.current = advisoryOpen
+  useEffect(() => {
+    const onHash = () => {
+      const on = readAdvisory()
+      setAdvisoryOpen(on)
+      // Opened from the in-scene menu: close the menu under it.
+      const menu = rootRef.current?.querySelector('#menu-overlay')
+      if (on && menu?.classList.contains('is-open')) rootRef.current?.querySelector<HTMLButtonElement>('#menu-close')?.click()
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  const openAdvisory = () => { window.location.hash = '#helix3d?skipIntro=true&advisory=1' }
+  const closeAdvisory = useCallback(() => {
+    history.replaceState(null, '', '#helix3d?skipIntro=true')
+    setAdvisoryOpen(false)
+  }, [])
 
   /* StrandPanel modal lives in React state (the imperative scene
      can't render JSX). The effect opens it via setPanelStrand;
@@ -2139,7 +2165,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       setPanelStrand(toDataStrand(nodes[next].strand))
     }
     const onKey = (e: KeyboardEvent) => {
-      if (!animationActive) return
+      if (!animationActive || advisoryOpenRef.current) return   // advisory window has its own keys
       // Menu open: Esc closes it; every other key is ignored.
       if ($('#menu-overlay')?.classList.contains('is-open')) {
         if (e.key === 'Escape') { e.preventDefault(); onMenuClose() }
@@ -2227,8 +2253,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
          also traverse nodes. */
       const WHEEL_IMPULSE = DRAG_SENS * -Math.log(SPIN_DECAY)
       let lastSideT = 0
+      // Overlays rendered inside the root (advisory window) scroll on their own.
+      const overlayEvent = (e: Event) => advisoryOpenRef.current || !!(e.target as Element | null)?.closest?.('[data-scene-ignore]')
       const onWheel = (e: WheelEvent) => {
-        if (panelOpen || listview.classList.contains('is-visible')) return
+        if (panelOpen || listview.classList.contains('is-visible') || overlayEvent(e)) return
         e.preventDefault()
         const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerWidth : 1
         const now = performance.now()
@@ -2297,7 +2325,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       let touchY = 0
       const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
       const onTouchEnd = (e: TouchEvent) => {
-        if (panelOpen || listview.classList.contains('is-visible')) return
+        if (panelOpen || listview.classList.contains('is-visible') || overlayEvent(e)) return
         if ($('#menu-overlay')?.classList.contains('is-open')) return   // menu's own swipe
         const dy = (e.changedTouches[0]?.clientY ?? touchY) - touchY
         if (Math.abs(dy) < 40) return
@@ -3141,6 +3169,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         />
       )}
 
+      {advisoryOpen && <AdvisoryOrbit onClose={closeAdvisory} />}
+
       {/* CURSOR — custom pointer (hidden ≤720px); driven by initCursor */}
       <div className="cursor-ring" id="cursor-ring" />
 
@@ -3178,6 +3208,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           />
         </a>
         <div className="nav-controls">
+          <button type="button" className={`render-toggle${advisoryOpen ? ' is-active' : ''}`}
+            onClick={openAdvisory} aria-haspopup="dialog" aria-expanded={advisoryOpen}>advisory</button>
           <div className="view-toggle" id="view-toggle" role="tablist" aria-label="View mode">
             <button className="is-active" data-view="helix" role="tab" aria-selected="true">staff</button>
             <button data-view="list" role="tab" aria-selected="false">list</button>
@@ -3280,7 +3312,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <button className="menu-close" id="menu-close" title="Close (esc)" aria-label="Close menu (Esc)">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services']].map(([label, href], i) => (
+          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services'], ['advisory', '#helix3d?skipIntro=true&advisory=1']].map(([label, href], i) => (
             <a key={href} className="menu-item" href={href}><span className="menu-item-num">{pad2(i + 1)}</span>{label}</a>
           ))}
         </div>
