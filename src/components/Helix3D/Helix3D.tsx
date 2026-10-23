@@ -1802,7 +1802,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         l.sprite.visible = fade > 0.03
         s *= fade
         // Phones: neighbour strands' cubes hug their strand cube (not the ring).
-        const offCube = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        // Cubes above/below a node (Advisory's 12 and 6 o'clock) hug it
+        // instead of clearing the pulse ring, so they stay out of the
+        // neighbouring strands' rows.
+        const offCube = portrait ? ne * 0.5 + s * 0.95
+          : sx === 0 ? ne * 0.5 + s * 0.7
+          : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
         _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
@@ -2057,7 +2062,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       // A project cube anywhere along the ray wins over the strand's hit
       // sphere (on phones the side cubes sit inside that sphere).
       let tapped = raycaster.intersectObjects(nodePickables, false)
-        .find((h) => h.object.userData.outputId)?.object.userData.outputId as string | undefined
+        .find((h) => h.object.userData.outputId && fadeOf(h.object) > 0.5)?.object.userData.outputId as string | undefined
       // Phones: forgiving taps — the focused strand's nearest project cube
       // within ~70px of the tap counts.
       if (!tapped && isPhone() && isFocused()) {
@@ -2076,7 +2081,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       // back to the focused node, so it can't tell a click on the node
       // from a click on open space. Open space → leave the focus.
       raycaster.setFromCamera(pointer, camera)
-      const hit = raycaster.intersectObjects(nodePickables, false)[0]
+      const hit = raycaster.intersectObjects(nodePickables, false).find((x) => fadeOf(x.object) > 0.5)
       const hitId = hit ? (hit.object.userData.strandId as string | undefined) : undefined
       if (!hitId) {
         if (isFocused() && !isPhone()) exitToDefault()   // phones stay locked on the strand
@@ -2553,7 +2558,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         setLabelHover(null)
       } else if (pointer.x > -2 && !sceneHidden) {
         raycaster.setFromCamera(pointer, camera)
-        const hits = raycaster.intersectObjects(nodePickables, false)
+        const hits = raycaster.intersectObjects(nodePickables, false).filter((x) => fadeOf(x.object) > 0.5)
         if (hits.length) {
           const top = hits.find((h) => h.object.userData.outputId) ?? hits[0]   // project cubes first
           const id = top.object.userData.strandId as string
@@ -2584,6 +2589,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       })
       reachL.length = 0; reachR.length = 0
       updateLogos(dt)
+      declutterClusters(dt)
       // 5 & 6. Sync the HTML labels (this also places a window opened in
       // list view), then draw the frame — skipped while the list view
       // hides the canvas, which is the bulk of the per-frame cost.
@@ -2618,6 +2624,64 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const r = Math.abs((-e.y * 0.5 + 0.5) * h - cy)
       return { l: cx - r, t: cy - r, r: cx + r, b: cy + r }
     }
+    /* No cube ever sits on another strand's cubes: each strand's cluster
+       (section cube + its project cubes) is a screen box; in priority
+       order (focused, hovered, nearest) a cluster that would overlap one
+       already placed fades out (and can't be picked) until it's clear —
+       e.g. a strand passing behind another as the staff turns. */
+    const clusterFade: number[] = []
+    const fadeOf = (o: THREE.Object3D) => {
+      const i = nodes.findIndex((x) => x.strand.id === o.userData.strandId)
+      return i < 0 ? 1 : clusterFade[i] ?? 1
+    }
+    function setClusterOpacity(objs: THREE.Object3D[], f: number) {
+      objs.forEach((o) => o.traverse((c) => {
+        const mat = (c as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined
+        if (!mat) return
+        ;(Array.isArray(mat) ? mat : [mat]).forEach((m) => {
+          if (m.userData.baseOp === undefined) m.userData.baseOp = m.opacity
+          m.opacity = (m.userData.baseOp as number) * f
+        })
+      }))
+    }
+    function declutterClusters(dt: number) {
+      const w = container.clientWidth, h = container.clientHeight
+      const PAD = 4
+      const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
+      const boxes = nodes.map((n, ni) => {
+        if (!n.orb.userData.cube) return null
+        const b = screenBox(n.orb, w, h)
+        logos.forEach((l) => {
+          if (l.node !== ni || !l.sprite.visible) return
+          const c = screenBox(l.sprite, w, h)
+          b.l = Math.min(b.l, c.l); b.t = Math.min(b.t, c.t); b.r = Math.max(b.r, c.r); b.b = Math.max(b.b, c.b)
+        })
+        return b
+      })
+      const z = nodes.map((n) => n.orb.getWorldPosition(_dv).project(camera).z)
+      const order = nodes.map((_, ni) => ni).filter((ni) => boxes[ni]).sort((a, b) => {
+        const pa = a === focusIndex && isFocused() ? 0 : a === hovered ? 1 : 2
+        const pb = b === focusIndex && isFocused() ? 0 : b === hovered ? 1 : 2
+        return pa - pb || z[a] - z[b]
+      })
+      const placed: { l: number; t: number; r: number; b: number }[] = []
+      order.forEach((ni) => {
+        const bx = boxes[ni]!
+        const clash = placed.some((p) => bx.l < p.r + PAD && bx.r > p.l - PAD && bx.t < p.b + PAD && bx.b > p.t - PAD)
+        if (!clash) placed.push(bx)
+        const want = clash ? 0 : 1, f0 = clusterFade[ni] ?? 1
+        let f = f0 + (want - f0) * Math.min(1, dt * 10)
+        if (Math.abs(want - f) < 0.01) f = want
+        clusterFade[ni] = f
+        const objs: THREE.Object3D[] = [nodes[ni].orb, ...logos.filter((l) => l.node === ni).map((l) => l.sprite)]
+        setClusterOpacity(objs, f)
+        if (essen && logos.some((l) => l.node === ni && l.o.id === AUF_ID)) {
+          ;(essen.material as THREE.SpriteMaterial).opacity = f
+          if (essen3d) essen3d.visible = essen3d.visible && f > 0.5
+        }
+      })
+    }
+
     function declutterLabels(depth: number[], shown: boolean[], w: number, h: number) {
       const PAD = 6
       const host = labelsElCached!.getBoundingClientRect()
@@ -2645,7 +2709,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           logos.forEach((l) => { if (l.node === ni && l.sprite.visible) { const b = screenBox(l.sprite, w, h); b.b += CAP_GAP + 48; placed.push(b) } })
         }
       })
-      nodes.forEach((n, ni) => { if (!shown[ni]) labelEls.get(n.strand.id)?.classList.remove('is-occluded') })
+      nodes.forEach((n, ni) => { if (!shown[ni] && (clusterFade[ni] ?? 1) >= 0.5) labelEls.get(n.strand.id)?.classList.remove('is-occluded') })
     }
 
     function updateLabels() {
@@ -2702,6 +2766,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         label.style.opacity = hideHere ? '0' : '1'
         label.style.visibility = hideHere ? 'hidden' : ''          // no fade-out ghost mid-swipe
         shown[ni] = !hideHere
+        // Its cubes faded behind another strand's: so does its name.
+        label.classList.toggle('is-occluded', (clusterFade[ni] ?? 1) < 0.5)
+        if ((clusterFade[ni] ?? 1) < 0.5) shown[ni] = false
       })
       declutterLabels(depth, shown, w, h)
 
@@ -2722,8 +2789,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         }
         const on = !!nodes[l.node]?.orb.userData.cube && (tileMix[l.node] ?? 0) > 0.6 && !panelOpen
           && (!phone || l.node === focusIndex)                       // phones: the focused strand's only, at once
+          && (clusterFade[l.node] ?? 1) > 0.5
         cap.classList.toggle('is-visible', on)
-        if (!on) return
+        // Keep tracking the cube even while hidden: a caption that stopped
+        // being positioned froze in place for its 0.25s fade-out, so it
+        // hung behind as its cube moved on (the "lingering" labels).
         // Desktop: under the cube. Phones: ABOVE it, no wider than the
         // cube — the strand's own label owns the band below the row.
         const half = l.sprite.scale.y * 0.5
@@ -3079,24 +3149,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       serpentPoly.visible = sketchMode && polyMode
     }
 
-    /* ---- MARQUEE — the scrolling top strip ----
-       The strip text is NOT in the JSX — edit this `phrases` array.
-       The block is duplicated (block + block) so the CSS
-       translateX(-50%) loop is seamless. '✲' renders as the accent
-       star; anything else as a plain segment. */
-    function buildMarquee() {
-      const track = $('#marquee-track')!
-      const phrases = [
-        'research programme · 2024–26', '✲',
-        'detection · monitoring · forecasting · therapeutics · perception', '✲',
-        'five categories · one pathway', '✲',
-        'advisory · head of the staff', '✲',
-        'rendered with three.js · r184', '✲',
-      ]
-      const block = phrases.map((p) =>
-        p === '✲' ? `<span class="star">${p}</span>` : `<span>${p}</span>`).join('')
-      track.innerHTML = block + block
-    }
 
     /* ---- CURSOR — native dot + trailing ring ----
        The dot is the OS cursor itself (--cursor-dot in helix3d.css), so
@@ -3200,7 +3252,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        behind the loader), then run the intro gates in sequence before
        starting the render loop. The `destroyed` guards bail if the
        component unmounts mid-intro. */
-    buildMarquee()
     buildList()
     initThree()
     initCursor()
@@ -3276,7 +3327,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
      gate → loader, with the StrandPanel modal (z 600) above all.
 
      EDITING TEXT: all static copy is literal here, EXCEPT the
-     marquee (buildMarquee `phrases`) and the list view (buildList
+     list view (buildList
      from STRANDS). The clicked card is the real StrandPanel, fed
      adapted concept data via toDataStrand.
      MOVING THINGS: change the element's rule in helix3d.css — don't
@@ -3308,10 +3359,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       <span className="corner-crop corner-crop--bl" />
       <span className="corner-crop corner-crop--br" />
 
-      {/* MARQUEE — track is filled by buildMarquee(); edit phrases there */}
-      <div className="marquee">
-        <div className="marquee-track" id="marquee-track" />
-      </div>
 
       {/* NAV — wordmark + view toggle (#view-toggle) + theme button
           (#theme-switch) + menu button (#menu-open). All wired in the

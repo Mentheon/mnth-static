@@ -433,7 +433,7 @@
 @media (hover: hover) { .helix3d-root .gate-btn:hover { background: var(--gate-fg); color: var(--gate-bg); border-color: var(--gate-fg); } }
 .helix3d-root .gate-btn-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
-/* ====== MARQUEE / NAV ====== */
+/* ====== NAV ====== (the scrolling marquee strip above it was removed) */
 .helix3d-root .marquee {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   background: var(--bg); border-bottom: 1px solid var(--ink-soft);
@@ -452,7 +452,7 @@
 @keyframes helix3dMarquee { to { transform: translateX(-50%); } }
 
 .helix3d-root .nav {
-  position: fixed; top: 36px; left: 0; right: 0; z-index: 40;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
   padding: 1.4rem 2rem;
   /* flex-start (not center): a taller brand logo extends DOWNWARD
      instead of growing the row and dragging the right-hand controls
@@ -578,12 +578,11 @@
 /* ====== STAGE ====== */
 .helix3d-root .stage {
   position: relative; width: 100vw; height: 100vh;
-  padding-top: 36px;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 .helix3d-root .stage-readout {
-  position: absolute; top: calc(36px + 5rem); left: 50%;
+  position: absolute; top: calc(5rem); left: 50%;
   transform: translateX(-50%);
   display: flex; gap: 2rem;
   font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
@@ -802,7 +801,7 @@
 /* ====== LIST VIEW ====== */
 .helix3d-root .listview {
   position: absolute; inset: 0;
-  padding: calc(36px + 8rem) 2rem 4rem;
+  padding: calc(8rem) 2rem 4rem;
   display: flex; align-items: flex-start; justify-content: center;
   opacity: 0; pointer-events: none;
   transition: opacity 0.5s var(--ease-out);
@@ -1022,7 +1021,7 @@
 .helix3d-root .strand-win.is-max .strand-win-body > div > div { min-height: 100%; }
 .helix3d-root .strand-win.is-max {
   transform: none !important;
-  left: 2rem; right: 2rem; top: calc(36px + 4.6rem); bottom: 4.2rem;
+  left: 2rem; right: 2rem; top: calc(4.6rem); bottom: 4.2rem;
   width: auto; height: auto;
 }
 .helix3d-root .strand-win-grip {
@@ -1041,7 +1040,7 @@
    md shadow) with the crimson corner crop. Keys are mono caps. */
 .helix3d-root .helix-help {
   position: absolute; z-index: 45;
-  top: calc(36px + 4.4rem); right: 2rem;
+  top: calc(4.4rem); right: 2rem;
   width: 300px; padding: 0.75rem 1rem 0.8rem;
   background: var(--bg); color: var(--ink);
   border: 1px solid var(--ink-soft); border-radius: 2px;
@@ -1308,8 +1307,8 @@
 }
 @media (max-width: 720px) {
   .helix3d-root .band-rail { display: none; }
-  .helix3d-root .helix-help { top: calc(36px + 4.4rem); left: 1rem; right: 1rem; width: auto; }
-  .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(36px + 3.6rem); bottom: 3.6rem; }
+  .helix3d-root .helix-help { top: calc(4.4rem); left: 1rem; right: 1rem; width: auto; }
+  .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(3.6rem); bottom: 3.6rem; }
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
   .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: 44px; }
