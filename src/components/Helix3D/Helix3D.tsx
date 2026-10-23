@@ -554,7 +554,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* The central staff. `height` deliberately exceeds the visible
        frame so the rod runs off top & bottom; `knobR` is the crimson
        sphere capping the top. */
-    const ROD = { radius: 0.05, height: 5.2, knobR: 0.10 }
+    /* Experiment levers (URL, e.g. #helix3d?skipIntro=true&coilR=1.1&pitch=1.3):
+       coilR = coil radius (default 0.8); pitch = coil height × (default 1,
+       more vertical room between neighbouring nodes). Not shown in the UI;
+       the intro still lands on the default coil. */
+    const coilQ = new URLSearchParams(window.location.hash.split('?')[1] || '')
+    const COIL_R = THREE.MathUtils.clamp(Number(coilQ.get('coilR')) || 0.8, 0.5, 2)
+    const PITCH = THREE.MathUtils.clamp(Number(coilQ.get('pitch')) || 1, 0.6, 2)
+    const ROD = { radius: 0.05, height: 5.2 * PITCH, knobR: 0.10 }
 
     /* The coil. radius = how far it wraps out from the rod;
        turns = revolutions over its height (more turns / less height
@@ -562,7 +569,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        mesh smoothness vs. cost. Kept tight (0.8 × 3.6) so all six
        nodes stay on-screen across aspect ratios. */
     const SERPENT = {
-      radius: 0.8, height: 3.6, turns: 3,
+      radius: COIL_R, height: 3.6 * PITCH, turns: 3,
       bodyR: 0.085, tubeSegs: 220, radialSegs: 14,
     }
 
