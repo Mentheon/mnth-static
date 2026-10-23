@@ -743,19 +743,21 @@
   line-height: 1.1; margin: 0; color: var(--ink);
 }
 .helix3d-root .helix-center-label .title .accent { color: var(--crimson); }
-/* Ledger under the headline: label · dot leader · value, ruled rows. */
-.helix3d-root .helix-ledger {
-  width: 15rem; margin: 1.3rem 0 0;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
-}
+/* Ledger under the headline: a row of four square tiles. */
+.helix3d-root .helix-ledger { display: flex; gap: 0.5rem; margin: 1.4rem 0 0; }
 .helix3d-root .helix-ledger div {
-  display: flex; align-items: baseline; gap: 0.5rem; padding: 0.38rem 0;
-  border-bottom: 1px solid var(--ink-soft);
+  width: 4.4rem; height: 4.4rem; box-sizing: border-box; padding: 0.5rem;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: #2F0147; color: #FFECE1;
 }
-.helix3d-root .helix-ledger div:first-child { border-top: 1px solid var(--ink-soft); }
-.helix3d-root .helix-ledger dt { color: var(--ink-quiet); }
-.helix3d-root .helix-ledger div::after { content: ''; order: 1; flex: 1; border-bottom: 1px dotted var(--ink-quiet); opacity: 0.6; transform: translateY(-0.2em); }
-.helix3d-root .helix-ledger dd { order: 2; margin: 0; font-weight: 700; color: var(--ink); letter-spacing: 0.08em; }
+.helix3d-root .helix-ledger dt { font-family: 'JetBrains Mono', monospace; font-size: 0.53rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.helix3d-root .helix-ledger dd { margin: 0; font-family: 'Lato', sans-serif; font-weight: 900; font-size: 1.6rem; line-height: 1; }
+.helix3d-root .helix-ledger .hl-projects { background: #9C528B; }
+.helix3d-root .helix-ledger .hl-services { background: #E0A526; color: #2F0147; }
+.helix3d-root .helix-ledger .hl-est { background: none; color: var(--ink); border: 1.5px solid var(--ink); }
+.helix3d-root .helix-ledger .hl-est dd { font-size: 0.95rem; }
+/* Dark: the ink tile inverts to cream, like the strand cubes. */
+.helix3d-root[data-theme="dark"] .helix-ledger .hl-strands { background: #FFECE1; color: #2F0147; }
 /* Console-style caret — sits after the typed accent and blinks
    forever (steps(1) = hard on/off, no fade). */
 .helix3d-root .helix-caret {

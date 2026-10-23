@@ -3362,13 +3362,15 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
           <h1 className="title">A new era of <br/><span className="accent" id="helix-accent">Digital Health</span><span className="helix-caret" id="helix-caret" aria-hidden="true" /></h1>
-          {/* Ledger (was the top-centre readout, which sat on the snake).
-              The programme line is the kicker above, so it isn't repeated. */}
+          {/* Ledger tile row (was the top-centre readout, which sat on the
+              snake): strands in ink, projects in grape, services in the
+              Advisory gold, est outlined. The programme line is the kicker
+              above, so it isn't repeated. */}
           <dl className="helix-ledger">
-            <div><dt>strands</dt><dd>{pad2(STRANDS.length)}</dd></div>
-            <div><dt>projects</dt><dd>{pad2(OUTPUTS.length)}</dd></div>
-            <div><dt>services</dt><dd>{pad2(outputsIn('advisory').length)}</dd></div>
-            <div><dt>est</dt><dd>09.2024</dd></div>
+            <div className="hl-strands"><dt>strands</dt><dd>{pad2(STRANDS.length)}</dd></div>
+            <div className="hl-projects"><dt>projects</dt><dd>{pad2(OUTPUTS.length)}</dd></div>
+            <div className="hl-services"><dt>services</dt><dd>{pad2(outputsIn('advisory').length)}</dd></div>
+            <div className="hl-est"><dt>est</dt><dd>09.2024</dd></div>
           </dl>
         </div>
 
