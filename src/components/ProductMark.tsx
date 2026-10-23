@@ -53,7 +53,7 @@ export function productTileHTML(o: Output, selected = false) {
   const sub = `<text x="${L.right + PT.GAP}" y="178" class="pt-ink pt-initial" font-size="${PT.SUB}">${L.s}</text>`
   const hdr = `<text x="12" y="${12 + L.hdr * 0.74}" class="pt-ink pt-plate" font-size="${L.hdr}" letter-spacing="${PT.HDR_TRACK * L.hdr}">${o.product.toUpperCase()}</text>`
   const mask = `url(${import.meta.env.BASE_URL}emblem-cream.svg)`
-  return `<span class="ptile${selected ? ' is-selected' : ''}" aria-hidden="true"><span class="ptile-emblem" style="-webkit-mask-image:${mask};mask-image:${mask}"></span>`
+  return `<span class="ptile${selected ? ' is-selected' : ''}${o.category === 'advisory' ? ' is-advisory' : ''}" aria-hidden="true"><span class="ptile-emblem" style="-webkit-mask-image:${mask};mask-image:${mask}"></span>`
     + `<svg viewBox="0 0 195 195">${hdr}${big}${sub}</svg></span>`
 }
 

@@ -164,12 +164,13 @@ export default function App() {
           (() => {
             const id = hashPath.slice('#category/'.length)
             const c = categoryById(id)
-            return !c ? <NotFoundPage what="category" /> : c.id === 'plasmids' ? <PlasmidsPage /> : <CategoryPage key={c.id} id={c.id as CategoryId} />
+            // Advisory has no pages (its node's window + email only).
+            return !c || c.id === 'advisory' ? <NotFoundPage what="category" /> : c.id === 'plasmids' ? <PlasmidsPage /> : <CategoryPage key={c.id} id={c.id as CategoryId} />
           })()
         ) : page === 'output' ? (
           (() => {
             const o = outputById(hashPath.slice('#output/'.length))
-            return !o ? <NotFoundPage what="output" />
+            return !o || o.category === 'advisory' ? <NotFoundPage what="output" />
               : isOpen(o) ? <OutputPage key={o.id} o={o} />
               : <LockedOutputPage key={o.id} o={o} />
           })()

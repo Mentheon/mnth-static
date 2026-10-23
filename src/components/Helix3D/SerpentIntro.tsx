@@ -17,6 +17,7 @@ import markSrc from './MentheonMark.tsx?raw'
 import { HELIX_CATEGORIES, categoryById, outputsIn, pad2 } from '../../data/framework'
 import { emblemImg, productMarksReady } from '../ProductMark'
 import { skipIntroAlways, setSkipIntroAlways } from '../../lib/introGate'
+import { ADVISORY_GOLD, ADVISORY_INK } from '../../data/advisory'
 
 /* Local copies of the easing/clamp helpers the prototype used. */
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
@@ -34,26 +35,28 @@ const PALETTE = {
     quiet: 'rgba(255,236,225,0.55)', bp: 'rgba(255,236,225,0.05)', bpStrong: 'rgba(255,236,225,0.09)', fog: '26,2,38', chipBorder: '#FFECE1' },
 };
 const TILE_INK = '#2F0147', TILE_MARK = '#FFECE1';
-// The six staff sections, as on the live page: Plasmids at the head,
-// then the five care-pathway categories.
-const STAFF_CATS = [categoryById('plasmids'), ...HELIX_CATEGORIES];
+// The staff sections, as on the live page: Advisory (gold) at the head,
+// then Plasmids and the five care-pathway categories.
+const STAFF_CATS = [categoryById('advisory'), categoryById('plasmids'), ...HELIX_CATEGORIES];
 const STRANDS = STAFF_CATS.map((c) => {
   const n = outputsIn(c.id).length;
-  return { name: c.label, sub: `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(n)} project${n === 1 ? '' : 's'}`, cat: c.id };
+  return { name: c.label, sub: c.id === 'advisory' ? `consultancy · ${pad2(n)} services`
+    : `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(n)} project${n === 1 ? '' : 's'}`, cat: c.id };
 });
 // Node t-range on the coil, matching Helix3D's SNAKE.tStart/tEnd, and the
 // rotor's resting drop, so the intro lands on the live staff's layout.
 const NODE_T = { start: 0.03, end: 0.84 }, ROTOR_DROP = 0.5;
 /* Section cube faces (Strand Logos tile), as on the live page. */
 const STRAND_SPLITS = { therapeutics: ['LENI', 'TUDO'], detection: ['AEV', 'ORIX'], monitoring: ['VIT', 'RIX'],
-  forecasting: ['ACU', 'MENTRA'], perception: ['KIND', 'REON'], plasmids: ['PLAS', 'MIDS'] };
+  forecasting: ['ACU', 'MENTRA'], perception: ['KIND', 'REON'], plasmids: ['PLAS', 'MIDS'], advisory: ['ADVI', 'SORY'] };
 let _lctx = null;
 const latoW = (t) => { if (!_lctx) _lctx = document.createElement('canvas').getContext('2d'); _lctx.font = '900 100px Lato, sans-serif'; return _lctx.measureText(t).width / 100; };
 function strandTexture(cat, dark) {
   const S = 512, k = S / 195;
   const cv = document.createElement('canvas'); cv.width = cv.height = S;
   const g = cv.getContext('2d');
-  const ground = dark ? '#FFECE1' : '#2F0147', ink = dark ? '#2F0147' : '#FFECE1';
+  const adv = cat === 'advisory';   // gold, as on the live staff
+  const ground = adv ? ADVISORY_GOLD : dark ? '#FFECE1' : '#2F0147', ink = adv ? ADVISORY_INK : dark ? '#2F0147' : '#FFECE1';
   g.fillStyle = ground; g.fillRect(0, 0, S, S);
   if (emblemImg.complete && emblemImg.naturalWidth) {
     const t = document.createElement('canvas'); t.width = t.height = S;
@@ -302,7 +305,7 @@ function buildScene(C, cubes, dark) {
     let orb;
     if (cubes) {
       // Section cube: lit sides, strand-logo face, drawn over the coil.
-      const side = new THREE.MeshLambertMaterial({ color: dark ? 0xFFECE1 : 0x6A2A7E, transparent: true });
+      const side = new THREE.MeshLambertMaterial({ color: st.cat === 'advisory' ? ADVISORY_GOLD : dark ? 0xFFECE1 : 0x6A2A7E, transparent: true });
       side.emissive.copy(side.color).multiplyScalar(0.28);
       const face = new THREE.MeshBasicMaterial({ map: strandTexture(st.cat, dark), transparent: true });
       const mats = [side, side, side, side, face, face];

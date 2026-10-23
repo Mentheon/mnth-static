@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import SerpentIntro from './SerpentIntro'
-import AdvisoryOrbit from './AdvisoryOrbit'
 import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
 import {
   OUTPUTS, CATEGORIES, HELIX_CATEGORIES, categoryById, typeById, stageLabel, outputName, affiliationLabel,
   categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
+  outputById, isAdvisory, advisoryFor,
 } from '../../data/framework'
+import { ADVISORY_GOLD, ADVISORY_INK } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
 import './helix3d.css'
 import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID } from '../ProductMark'
@@ -77,21 +78,23 @@ interface Strand {
   icon: string
   accent: string         // centre-headline accent
   category: string
-  band: number           // position on the staff, 0 = head (Plasmids)
+  band: number           // position on the staff, 0 = head (Advisory), 1 = Plasmids
   outputs: Output[]
 }
 const ICON_BY_CAT: Record<string, string> = {
-  detection: 'pulse', monitoring: 'wave', forecasting: 'trend', therapeutics: 'rings', perception: 'spark', plasmids: 'loop',
+  detection: 'pulse', monitoring: 'wave', forecasting: 'trend', therapeutics: 'rings', perception: 'spark', plasmids: 'loop', advisory: 'grid',
 }
-const STAFF_CATS = [categoryById('plasmids')!, ...HELIX_CATEGORIES]
+/* Advisory (gold, consultancy services) heads the staff, above Plasmids. */
+const STAFF_CATS = [categoryById('advisory')!, categoryById('plasmids')!, ...HELIX_CATEGORIES]
 const STRANDS: Strand[] = STAFF_CATS.map((c, i) => {
   const os = outputsIn(c.id)
   return {
     id: c.id, name: c.label,
-    subsidiary: `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(os.length)} project${os.length === 1 ? '' : 's'}`,
+    subsidiary: c.id === 'advisory' ? `consultancy · ${pad2(os.length)} services`
+      : `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(os.length)} project${os.length === 1 ? '' : 's'}`,
     tag: c.purpose, synopsis: c.purpose, icon: ICON_BY_CAT[c.id], category: c.id, band: i, outputs: os,
     // Headline reads "A new era of <accent>"; Plasmids gets its own phrase.
-    accent: c.id === 'plasmids' ? 'Novel Software' : c.label,
+    accent: c.id === 'plasmids' ? 'Novel Software' : c.id === 'advisory' ? 'Expert Advisory' : c.label,
   }
 })
 const PROJECT_PREFIX = 'out:'
@@ -133,6 +136,7 @@ function toDataStrand(s: Strand): DataStrand {
 /* Window body for a focused output: kicker, title, synopsis, the
    classification fields, a compact stage line and links out. */
 function OutputPeek({ o }: { o: Output }) {
+  if (isAdvisory(o)) return <ServicePeek o={o} />
   const c = categoryById(o.category)!
   const t = typeById(o.type)
   return (
@@ -184,13 +188,76 @@ function LogoTile({ o, selected = false }: { o: Output; selected?: boolean }) {
 const peekHover: { id: string | null } = { id: null }
 /* Aufdröselung (PLA-01): its software logo + Essen, its character. */
 
+/* Calls into the imperative scene from window content (set in the
+   scene effect): open a project's / service's window in place. */
+const sceneApi = { openProject: (_id: string) => {} }
+const advisoryMail = (topic?: string) =>
+  `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(topic ? `Advisory enquiry: ${topic}` : 'Advisory enquiry')}`
+
+/* Advisory service window (one of the gold cubes): its boilerplate,
+   what it covers, and the only action — email. No page behind it. */
+function ServicePeek({ o }: { o: Output }) {
+  const a = advisoryFor(o)!
+  return (
+    <div className="output-peek adv-peek">
+      <p className="op-kicker">ad · advisory <span className="op-star">✲</span> {a.num} of {pad2(outputsIn('advisory').length)}</p>
+      <div className="op-title-row">
+        <div className="op-marks"><figure className="op-mark"><LogoTile o={o} /></figure></div>
+        <h2 className="op-title">{a.label}</h2>
+      </div>
+      <p className="op-synopsis">{a.lede}</p>
+      {a.body.map((p, i) => <p key={i} className="adv-text">{p}</p>)}
+      <ul className="adv-covers">{a.covers.map((c) => <li key={c}>{c}</li>)}</ul>
+      <p className="adv-more">For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a></p>
+      <div className="op-actions">
+        <a className="op-cta" href={advisoryMail(a.label)}>email about {a.short.toLowerCase()} <span aria-hidden="true">↦</span></a>
+      </div>
+    </div>
+  )
+}
+
+/* Advisory node window: what it is, its four services (each opens its
+   service window in place), and email. */
+function AdvisoryPeek({ s }: { s: Strand }) {
+  return (
+    <div className="output-peek adv-peek">
+      <p className="op-kicker">ad · head of the staff · consultancy <span className="op-star">✲</span> by enquiry</p>
+      <div className="cp-head">
+        <h2 className="op-title">Advisory</h2>
+        <span className="cp-verb adv-verb">Advise.</span>
+      </div>
+      <p className="op-synopsis">Consultancy and advisory services across research, design and development. Choose a field for details.</p>
+      <div className="cp-projects">
+        {s.outputs.map((o) => (
+          <button key={o.id} type="button" className="cp-project" onClick={() => sceneApi.openProject(o.id)}
+            onPointerEnter={(e) => { if (e.pointerType === 'mouse') peekHover.id = o.id }}
+            onPointerLeave={() => { peekHover.id = null }}
+            onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
+            <LogoTile o={o} />
+            <span className="cp-project-text">
+              <span className="cp-project-name">{o.title}</span>
+              <span className="cp-project-sub">{o.synopsis}</span>
+            </span>
+            <span className="cp-arrow" aria-hidden="true">→</span>
+          </button>
+        ))}
+      </div>
+      <p className="adv-more">For more details, email <a href={advisoryMail()}>{CONTACT_EMAIL}</a></p>
+      <div className="op-actions">
+        <a className="op-cta" href={advisoryMail()}>email nicholas <span aria-hidden="true">↦</span></a>
+      </div>
+    </div>
+  )
+}
+
 /* Window body for a focused category: verb, purpose, derived status
    and its projects (each opens its summary page). */
 function CategoryPeek({ s }: { s: Strand }) {
+  if (s.category === 'advisory') return <AdvisoryPeek s={s} />
   const c = categoryById(s.category)!
   return (
     <div className="output-peek">
-      <p className="op-kicker">{c.num} · {c.id === 'plasmids' ? 'head of the staff · software' : 'care pathway'} <span className="op-star">✲</span> {categoryStatus(c.id)}</p>
+      <p className="op-kicker">{c.num} · {c.id === 'plasmids' ? 'experimental software' : 'care pathway'} <span className="op-star">✲</span> {categoryStatus(c.id)}</p>
       <div className="cp-head">
         <h2 className="op-title">{c.label}</h2>
         <span className="cp-verb">{c.verb}.</span>
@@ -279,31 +346,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
   })
   const introDoneRef = useRef<() => void>(() => {})
 
-  /* Consultancy & advisory window (AdvisoryOrbit) over the scene.
-     Driven by `&advisory=1` on the hash, so the site menu (phones) and
-     other pages can deep-link it and browser Back closes it. The scene's
-     wheel/swipe/key handlers stand down while it's open. */
-  const readAdvisory = () => new URLSearchParams(window.location.hash.split('?')[1] || '').get('advisory') === '1'
-  const [advisoryOpen, setAdvisoryOpen] = useState(readAdvisory)
-  const advisoryOpenRef = useRef(advisoryOpen)
-  advisoryOpenRef.current = advisoryOpen
-  useEffect(() => {
-    const onHash = () => {
-      const on = readAdvisory()
-      setAdvisoryOpen(on)
-      // Opened from the in-scene menu: close the menu under it.
-      const menu = rootRef.current?.querySelector('#menu-overlay')
-      if (on && menu?.classList.contains('is-open')) rootRef.current?.querySelector<HTMLButtonElement>('#menu-close')?.click()
-    }
-    window.addEventListener('hashchange', onHash)
-    return () => window.removeEventListener('hashchange', onHash)
-  }, [])
-  const openAdvisory = () => { window.location.hash = '#helix3d?skipIntro=true&advisory=1' }
-  const closeAdvisory = useCallback(() => {
-    history.replaceState(null, '', '#helix3d?skipIntro=true')
-    setAdvisoryOpen(false)
-  }, [])
-
   /* StrandPanel modal lives in React state (the imperative scene
      can't render JSX). The effect opens it via setPanelStrand;
      `closePanelRef` lets the React close handler call back into the
@@ -382,7 +424,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     else { preMaxRef.current = winModeRef.current; setWinMode('max') }
   }
   const panelIdx = panelStrand ? STRANDS.findIndex((x) => x.id === panelStrand.id) : -1
-  const panelOut = panelStrand?.id.startsWith(PROJECT_PREFIX) ? OUTPUTS.find((o) => PROJECT_PREFIX + o.id === panelStrand.id) ?? null : null
+  const panelOut = panelStrand?.id.startsWith(PROJECT_PREFIX) ? outputById(panelStrand.id.slice(PROJECT_PREFIX.length)) ?? null : null
   const panelS = panelOut ? STRANDS.find((x) => x.category === panelOut.category) ?? null : panelIdx >= 0 ? STRANDS[panelIdx] : null
   const panelCat = panelS ? categoryById(panelS.category)! : null
   const panelIdRef = useRef<string | null>(null)
@@ -555,6 +597,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
          stay clear in the middle. */
       tileFrac: 0.17, tileDepth: 1, tileGap: 0.03, ease: 6 }
     const tileMix: number[] = []
+    /* Advisory cubes' orbit speed around their node (rad/s), unfocused. */
+    const ADV_ORBIT = 0.35
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -1213,8 +1257,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const g = cv.getContext('2d')!
       const dark = root!.getAttribute('data-theme') === 'dark'
       const crim = cssVar('--crimson') || '#A30B37'
-      const ground = accent ? crim : dark ? '#FFECE1' : PT.GRAPE
-      const ink = accent ? '#FFECE1' : dark ? PT.GRAPE : '#FFECE1'
+      const adv = isAdvisory(o)          // gold in both themes
+      const ground = accent ? crim : adv ? ADVISORY_GOLD : dark ? '#FFECE1' : PT.GRAPE
+      const ink = accent ? '#FFECE1' : adv ? ADVISORY_INK : dark ? PT.GRAPE : '#FFECE1'
       g.fillStyle = ground; g.fillRect(0, 0, S, S)
       if (emblemImg.complete && emblemImg.naturalWidth) {
         const t = document.createElement('canvas'); t.width = t.height = S
@@ -1257,8 +1302,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const g = cv.getContext('2d')!
       const dark = darkOverride ?? root!.getAttribute('data-theme') === 'dark'
       const crim = accent && darkOverride !== null ? '#A30B37' : cssVar('--crimson') || '#A30B37'
-      const ground = accent ? crim : dark ? '#FFECE1' : '#2F0147'
-      const ink = accent ? '#FFECE1' : dark ? '#2F0147' : '#FFECE1'
+      const adv = cat === 'advisory'      // gold in both themes
+      const ground = accent ? crim : adv ? ADVISORY_GOLD : dark ? '#FFECE1' : '#2F0147'
+      const ink = accent ? '#FFECE1' : adv ? ADVISORY_INK : dark ? '#2F0147' : '#FFECE1'
       g.fillStyle = ground; g.fillRect(0, 0, S, S)
       if (emblemImg.complete && emblemImg.naturalWidth) {
         const t = document.createElement('canvas'); t.width = t.height = S
@@ -1374,7 +1420,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const dark = root!.getAttribute('data-theme') === 'dark'
       // Sides are LIT (scene key/fill/rim lights) so each plane takes a
       // different value as the cube turns; the logo faces stay unlit.
-      const sideMat = litSide(dark ? 0xFFECE1 : 0x6A2A7E)
+      const sideMat = litSide(cat === 'advisory' ? new THREE.Color(ADVISORY_GOLD) : dark ? 0xFFECE1 : 0x6A2A7E)
       const sides = [sideMat, sideMat, sideMat, sideMat] as THREE.MeshBasicMaterial[]
       const face = new THREE.MeshBasicMaterial({ map: strandTexture(cat, false) })
       face.userData.normal = face.map
@@ -1441,7 +1487,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const dark = root!.getAttribute('data-theme') === 'dark'
       // Sides match the front face's ground: grape for product marks,
       // ink for placeholder code tiles (cream for both in dark).
-      const side = litSide(new THREE.Color(dark ? 0xFFECE1 : o.product ? PT.GRAPE : 0x5A2370))
+      const side = litSide(new THREE.Color(isAdvisory(o) ? ADVISORY_GOLD : dark ? 0xFFECE1 : o.product ? PT.GRAPE : 0x5A2370))
       const front = new THREE.MeshBasicMaterial({ map: logoTexture(o) })
       front.userData.normal = front.map
       front.userData.accent = logoTexture(o, true)
@@ -1577,7 +1623,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         if (destroyed) return
         regenLogos()
         $$('.list-item').forEach((a) => {
-          const o = OUTPUTS.find((x) => x.id === (a as HTMLElement).dataset.out)
+          const o = outputById((a as HTMLElement).dataset.out || '')
           const cell = a.querySelector('.list-mark')
           if (o && cell) cell.innerHTML = productTileHTML(o)
         })
@@ -1744,7 +1790,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const offCube = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
-        _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
+        // Advisory's four services orbit their node (a slow turn of the
+        // slot cross); focusing it eases them back into the fixed tiles.
+        let ox = sx, oy = sy
+        if (isAdvisory(l.o) && m < 1) {
+          const a0 = Math.atan2(sy, sx), a = a0 + (performance.now() / 1000) * ADV_ORBIT * (1 - m)
+          ox = THREE.MathUtils.lerp(Math.cos(a), sx, m); oy = THREE.MathUtils.lerp(Math.sin(a), sy, m)
+        }
+        _wp.copy(_np).addScaledVector(_right, ox * off).addScaledVector(_camUp, oy * off)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
         l.sprite.scale.set(s, s, s * THREE.MathUtils.lerp(1, LOGO.tileDepth, m))
@@ -1842,7 +1895,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const labelsEl = $('#node-labels')!
       nodes.forEach((n) => {
         const label = document.createElement('div')
-        label.className = n.strand.category === 'plasmids' ? 'node-label is-plasmid' : 'node-label'
+        label.className = n.strand.category === 'plasmids' ? 'node-label is-plasmid' : n.strand.category === 'advisory' ? 'node-label is-advisory' : 'node-label'
         label.dataset.id = n.strand.id
         label.innerHTML = `
           <div class="node-label-pip"></div>
@@ -1853,10 +1906,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         `
         label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
         label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
+        // A strand's label (its title bar) opens its window straight
+        // away, as clicking the focused section cube does.
         label.addEventListener('click', (e) => {
           e.preventDefault()
           const idx = nodes.indexOf(n)
-          if (idx >= 0) onNodeClick(idx)
+          if (idx >= 0) openPanel(idx)
         })
         labelsEl.appendChild(label)
       })
@@ -2109,16 +2164,18 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     }
     /* Open a project's window: park on its category node first. */
     function openProject(outputId: string) {
-      const o = OUTPUTS.find((x) => x.id === outputId)
+      const o = outputById(outputId)
       if (!o) return
       const i = nodes.findIndex((x) => x.strand.category === o.category)
       if (i < 0) return
-      // No public page yet → show its strand's window instead.
-      if (!isOpen(o)) { openPanel(i); return }
+      // No public page yet → show its strand's window instead. Advisory
+      // services always open their own window (write-up + email only).
+      if (!isOpen(o) && !isAdvisory(o)) { openPanel(i); return }
       focusByIndex(i)
       panelOpen = true
-      setPanelStrand({ id: PROJECT_PREFIX + o.id, label: o.title, tagline: '', href: '#output/' + o.id, themes: [] })
+      setPanelStrand({ id: PROJECT_PREFIX + o.id, label: o.title, tagline: '', href: isAdvisory(o) ? '#' : '#output/' + o.id, themes: [] })
     }
+    sceneApi.openProject = openProject
 
     /* Invoked from the React close handler via closePanelRef (close
        button / backdrop / Esc). Returns to wherever you were: the
@@ -2165,7 +2222,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       setPanelStrand(toDataStrand(nodes[next].strand))
     }
     const onKey = (e: KeyboardEvent) => {
-      if (!animationActive || advisoryOpenRef.current) return   // advisory window has its own keys
+      if (!animationActive) return
       // Menu open: Esc closes it; every other key is ignored.
       if ($('#menu-overlay')?.classList.contains('is-open')) {
         if (e.key === 'Escape') { e.preventDefault(); onMenuClose() }
@@ -2253,10 +2310,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
          also traverse nodes. */
       const WHEEL_IMPULSE = DRAG_SENS * -Math.log(SPIN_DECAY)
       let lastSideT = 0
-      // Overlays rendered inside the root (advisory window) scroll on their own.
-      const overlayEvent = (e: Event) => advisoryOpenRef.current || !!(e.target as Element | null)?.closest?.('[data-scene-ignore]')
       const onWheel = (e: WheelEvent) => {
-        if (panelOpen || listview.classList.contains('is-visible') || overlayEvent(e)) return
+        if (panelOpen || listview.classList.contains('is-visible')) return
         e.preventDefault()
         const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerWidth : 1
         const now = performance.now()
@@ -2325,7 +2380,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       let touchY = 0
       const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0 }
       const onTouchEnd = (e: TouchEvent) => {
-        if (panelOpen || listview.classList.contains('is-visible') || overlayEvent(e)) return
+        if (panelOpen || listview.classList.contains('is-visible')) return
         if ($('#menu-overlay')?.classList.contains('is-open')) return   // menu's own swipe
         const dy = (e.changedTouches[0]?.clientY ?? touchY) - touchY
         if (Math.abs(dy) < 40) return
@@ -2659,11 +2714,13 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       // Strand drawer — tethered just under the focused node, so it
       // reads as "drawn out" from there. Clamped to stay on-screen;
       // max-height capped to the viewport (it scrolls internally).
-      if (panelOpen && isFocused() && winModeRef.current === 'dock') {
+      // No focused node to hang it on → centre it (it used to stay parked
+      // off-screen, leaving only the dim scrim).
+      if (panelOpen && winModeRef.current === 'dock') {
         const drawer = $('#strand-drawer') as HTMLDivElement | null
-        const n = nodes[focusIndex]
-        if (drawer && n) {
-          const dp = n.orb.getWorldPosition(_lp).project(camera)
+        const n = isFocused() ? nodes[focusIndex] : null
+        if (drawer) {
+          const dp = n ? n.orb.getWorldPosition(_lp).project(camera) : _lp.set(0, 0, 0)
           const dx = (dp.x * 0.5 + 0.5) * w
           const dy = (-dp.y * 0.5 + 0.5) * h
           // Pinned to the RIGHT of the node (its left edge sits just
@@ -2672,7 +2729,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           // (not scrollable).
           const dw = drawer.offsetWidth || 720
           // List view: dead centre of the page, independent of the coil.
-          const centred = listview.classList.contains('is-visible')
+          const centred = listview.classList.contains('is-visible') || !n
           const dh = drawer.offsetHeight || 400
           const left = centred ? Math.max(16, (w - dw) / 2) : Math.max(16, Math.min(dx + 32, w - dw - 16))
           const top = centred ? Math.max(56, (h - dh) / 2) : Math.max(56, Math.min(dy - 80, h - 220))
@@ -2720,6 +2777,19 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
       cleanups.push(() => window.clearTimeout(ht))
     }
+    /* Same `focus=` link while already here (e.g. the menu's "advisory"):
+       close the menu and park on that node. */
+    const onFocusHash = () => {
+      const fq = new URLSearchParams(window.location.hash.split('?')[1] || '').get('focus')
+      if (!fq || !animationActive) return
+      const fi = nodes.findIndex((x) => x.strand.id === fq || x.strand.category === fq)
+      if (fi < 0) return
+      if ($('#menu-overlay')?.classList.contains('is-open')) onMenuClose()
+      if (panelOpen) { panelOpen = false; setPanelStrand(null) }
+      focusByIndex(fi)
+    }
+    window.addEventListener('hashchange', onFocusHash)
+    cleanups.push(() => window.removeEventListener('hashchange', onFocusHash))
 
     /* Re-apply the current palette to every material. Called after
        the theme toggle flips data-theme on the root (which changes
@@ -2800,7 +2870,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <span class="list-band-name">${c.label}</span>
           <span class="list-band-verb">${c.verb}</span>
           <span class="list-band-status">${pad2(items.length)} · ${categoryStatus(c.id)}</span>
-          <a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>
+          ${c.id === 'advisory'
+            ? `<a class="list-band-link" href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory enquiry')}">email ↦</a>`
+            : `<a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>`}
         </div>
         ${items.length ? items.map((o) => {
           const body = `
@@ -2810,9 +2882,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
             <div class="list-title">${outputName(o)}</div>
             <div class="list-tag">${typeById(o.type).label.toLowerCase()} · ${stageLabel(o).toLowerCase()}</div>
           </div>`
-          // No public page yet: listed, padlocked, not linked.
-          return isOpen(o)
-            ? `<a class="list-item" href="#output/${o.id}" data-out="${o.id}">${body}<span class="list-arrow">→</span></a>`
+          // No public page yet: listed, padlocked, not linked. Advisory
+          // services open their window (write-up + email) in place.
+          return isOpen(o) || isAdvisory(o)
+            ? `<a class="list-item" href="${isAdvisory(o) ? '#' : '#output/' + o.id}" data-out="${o.id}">${body}<span class="list-arrow">→</span></a>`
             : `<div class="list-item is-locked" title="Details coming soon">${body}<span class="list-arrow">${LOCK_SVG}<span class="sr-only">details coming soon</span></span></div>`
         }).join('') : '<p class="list-empty">no projects yet</p>'}`
       }).join('')
@@ -3169,8 +3242,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         />
       )}
 
-      {advisoryOpen && <AdvisoryOrbit onClose={closeAdvisory} />}
-
       {/* CURSOR — custom pointer (hidden ≤720px); driven by initCursor */}
       <div className="cursor-ring" id="cursor-ring" />
 
@@ -3208,8 +3279,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           />
         </a>
         <div className="nav-controls">
-          <button type="button" className={`render-toggle${advisoryOpen ? ' is-active' : ''}`}
-            onClick={openAdvisory} aria-haspopup="dialog" aria-expanded={advisoryOpen}>advisory</button>
           <div className="view-toggle" id="view-toggle" role="tablist" aria-label="View mode">
             <button className="is-active" data-view="helix" role="tab" aria-selected="true">staff</button>
             <button data-view="list" role="tab" aria-selected="false">list</button>
@@ -3312,7 +3381,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <button className="menu-close" id="menu-close" title="Close (esc)" aria-label="Close menu (Esc)">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services'], ['advisory', '#helix3d?skipIntro=true&advisory=1']].map(([label, href], i) => (
+          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services'], ['advisory', '#helix3d?skipIntro=true&focus=advisory']].map(([label, href], i) => (
             <a key={href} className="menu-item" href={href}><span className="menu-item-num">{pad2(i + 1)}</span>{label}</a>
           ))}
         </div>
@@ -3350,7 +3419,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
             <div className="strand-win-bar" onPointerDown={onWinDragStart} onDoubleClick={onWinMax} {...winSwipe.handlers}>
               <span className="strand-win-grab" aria-hidden="true" />
               <span className="strand-win-title">
-                {panelOut && panelCat ? <>{panelOut.code.toLowerCase()} · {panelCat.label.toLowerCase()} · project</>
+                {panelOut && panelCat ? <>{panelOut.code.toLowerCase()} · {panelCat.label.toLowerCase()} · {isAdvisory(panelOut) ? 'service' : 'project'}</>
                   : panelS && panelCat ? <>{panelCat.num} · {panelCat.label.toLowerCase()} · {pad2(panelS.band + 1)} of {pad2(STRANDS.length)}</> : null}
               </span>
               <span className="strand-win-ctrls">

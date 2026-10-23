@@ -1107,6 +1107,31 @@
   border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson);
 }
 
+/* Advisory node (gold, head of the staff): gold pip + corner mark. */
+.helix3d-root .node-label.is-advisory .node-label-pip { background: #E0A526; }
+.helix3d-root .node-label.is-advisory .node-label-name { border-color: #E0A526; }
+.helix3d-root .node-label.is-advisory .node-label-name::before { border-color: #E0A526; }
+
+/* Project captions are tap/click targets while shown (open the cube's
+   window, same as clicking the cube). */
+.helix3d-root .cube-cap.is-visible { pointer-events: auto; cursor: var(--cursor-dot, pointer); }
+
+/* ====== Advisory windows (AdvisoryPeek / ServicePeek) ====== */
+.helix3d-root .adv-verb { color: #C98A0B; }
+.helix3d-root[data-theme="dark"] .adv-verb { color: #E0A526; }
+.helix3d-root .adv-peek button.cp-project {
+  width: 100%; border-top: 0; border-left: 0; border-right: 0; background: none;
+  font: inherit; text-align: left; cursor: var(--cursor-dot, pointer);
+}
+.helix3d-root .adv-text { margin: 0 0 0.7rem; font-size: 0.95rem; line-height: 1.55; opacity: 0.88; max-width: 62ch; }
+.helix3d-root .adv-covers { margin: 0.9rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.helix3d-root .adv-covers li {
+  padding: 0.3rem 0.55rem; border: 1px solid #E0A526;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+}
+.helix3d-root .adv-more { margin: 1.1rem 0 0; font-size: 0.92rem; line-height: 1.5; }
+.helix3d-root .adv-more a { color: var(--crimson); font-weight: 700; text-underline-offset: 2px; }
+
 /* ====== List view — grouped by category ====== */
 .helix3d-root .list-band {
   display: grid; grid-template-columns: 64px 56px auto 1fr auto auto; align-items: center; gap: 1.25rem;

@@ -36,7 +36,7 @@ const MENU = [
   { num: '06', label: 'framework', href: '#framework' },
   { num: '07', label: 'marginalia', href: '#marginalia' },
   { num: '08', label: 'who', href: '#who' },
-  { num: '09', label: 'advisory', href: '#helix3d?skipIntro=true&advisory=1' },
+  { num: '09', label: 'advisory', href: '#helix3d?skipIntro=true&focus=advisory' },
 ];
 
 function readTheme(): Theme {

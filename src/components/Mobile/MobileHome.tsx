@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   STAFF_ORDER, STRAND, categoryById, outputsIn, categoryStatus, outputName, typeById, stageLabel,
-  isOpen, pad2, OUTPUTS, type CategoryId, type Output,
+  isOpen, pad2, OUTPUTS, isAdvisory, advisoryFor, type CategoryId, type Output,
 } from '../../data/framework'
 import { productTileHTML, productMarksReady } from '../ProductMark'
 import StrandMark from '../StrandMark'
@@ -20,7 +20,8 @@ const catHref = (c: CategoryId) => (c === 'plasmids' ? '#plasmids' : `#category/
 
 function subtitle(cat: CategoryId) {
   const c = categoryById(cat)!
-  if (cat === 'plasmids') return '§ 00 · head of the staff · experiment'
+  if (cat === 'advisory') return '§ AD · head of the staff · consultancy'
+  if (cat === 'plasmids') return '§ 00 · experimental software'
   return `§ ${c.num} · ${c.label.toLowerCase()} · ${c.clinical ? c.verb.toLowerCase() : 'free end'}`
 }
 
@@ -31,7 +32,34 @@ function useMarksReady() {
   useEffect(() => { let live = true; productMarksReady.then(() => { if (live) setReady(true) }); return () => { live = false } }, [])
 }
 
+const advisoryMail = (topic?: string) =>
+  `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(topic ? `Advisory enquiry: ${topic}` : 'Advisory enquiry')}`
+
+/* Advisory service: no page — the row expands in place to its write-up
+   and an email link (everything else stays locked). */
+function ServiceRow({ o }: { o: Output }) {
+  const a = advisoryFor(o)!
+  return (
+    <details className={s.service}>
+      <summary className={`${s.row} ${s.rowOpen}`}>
+        <span className={s.tile} aria-hidden="true" dangerouslySetInnerHTML={{ __html: productTileHTML(o) }} />
+        <span className={s.rowText}>
+          <span className={s.rowName}>{a.label}</span>
+          <span className={s.rowSub}>{a.lede}</span>
+        </span>
+        <span className={s.chev} aria-hidden="true">+</span>
+      </summary>
+      <div className={s.serviceBody}>
+        {a.body.map((p, i) => <p key={i}>{p}</p>)}
+        <ul className={s.covers}>{a.covers.map((c) => <li key={c}>{c}</li>)}</ul>
+        <p className={s.more}>For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a></p>
+      </div>
+    </details>
+  )
+}
+
 function ProjectRow({ o }: { o: Output }) {
+  if (isAdvisory(o)) return <ServiceRow o={o} />
   const body = (
     <>
       <span className={s.tile} aria-hidden="true" dangerouslySetInnerHTML={{ __html: productTileHTML(o) }} />
@@ -154,14 +182,16 @@ function StrandSheet({ cat, onClose, onStep }: { cat: CategoryId; onClose: () =>
           </div>
           <p className={s.sheetPurpose}>{c.purpose}.</p>
           <dl className={s.fields}>
-            <div><dt>projects</dt><dd>{pad2(os.length)}</dd></div>
-            <div><dt>typical outputs</dt><dd>{c.typicalOutputs}</dd></div>
-            <div><dt>regulatory class</dt><dd>{c.typicalRegClass}</dd></div>
+            <div><dt>{cat === 'advisory' ? 'services' : 'projects'}</dt><dd>{pad2(os.length)}</dd></div>
+            <div><dt>{cat === 'advisory' ? 'covers' : 'typical outputs'}</dt><dd>{c.typicalOutputs}</dd></div>
+            {cat !== 'advisory' && <div><dt>regulatory class</dt><dd>{c.typicalRegClass}</dd></div>}
           </dl>
           <div className={s.rows}>
             {os.length ? os.map((o) => <ProjectRow key={o.id} o={o} />) : <p className={s.empty}>no projects yet</p>}
           </div>
-          <a className={s.cta} href={catHref(cat)}>View {c.label.toLowerCase()} <span aria-hidden="true">→</span></a>
+          {cat === 'advisory'
+            ? <a className={s.cta} href={advisoryMail()}>Email {CONTACT_EMAIL} <span aria-hidden="true">↦</span></a>
+            : <a className={s.cta} href={catHref(cat)}>View {c.label.toLowerCase()} <span aria-hidden="true">→</span></a>}
         </div>
       </section>
     </>,

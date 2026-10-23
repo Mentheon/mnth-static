@@ -42,6 +42,19 @@
 .lock { display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-quiet); }
 .empty { margin: 0.6rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
 
+/* Advisory services: rows expand in place (write-up + email only). */
+.service > summary { list-style: none; cursor: pointer; }
+.service > summary::-webkit-details-marker { display: none; }
+.service > summary .rowSub { text-transform: none; letter-spacing: 0.02em; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-style: italic; }
+.chev { width: 24px; text-align: center; color: var(--crimson); font-size: 1.2rem; font-weight: 700; transition: rotate 0.2s; }
+.service[open] .chev { rotate: 45deg; }
+.serviceBody { padding: 0.5rem 0 0.9rem 48px; font-size: 0.88rem; line-height: 1.5; }
+.serviceBody p { margin: 0 0 0.6rem; opacity: 0.88; }
+.covers { margin: 0.6rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.covers li { padding: 0.25rem 0.45rem; border: 1px solid #E0A526; font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.serviceBody .more { margin: 0.8rem 0 0; opacity: 1; }
+.more a { color: var(--crimson); font-weight: 700; word-break: break-all; }
+
 /* Product tiles from productTileHTML: product marks (.ptile) and the
    code tiles for untitled outputs (.logo-tile). */
 .tile { display: block; width: 36px; height: 36px; }
