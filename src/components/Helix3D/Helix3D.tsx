@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import SerpentIntro from './SerpentIntro'
+import { nodeT, NODE_T } from './staffLayout'
 import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
@@ -768,7 +769,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        SNAKE.drop so the head sits well inside the frame and the tail
        trails off the bottom; nodes ride higher on the coil (tStart →
        tEnd) so the last category stays in view above the trailing tail. */
-    const SNAKE = { drop: 0.5, tStart: 0.03, tEnd: 0.84 }
+    const SNAKE = { drop: 0.5, tEnd: NODE_T.end }       // node t's: ./staffLayout
     const yOnCoil = (t: number) => SERPENT.height / 2 - SERPENT.height * t - SNAKE.drop
     const CONTENT = { top: SERPENT.height / 2 + 0.34 - SNAKE.drop, bottom: yOnCoil(SNAKE.tEnd) - 0.42 }
     function fitRest() {
@@ -1144,7 +1145,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       for (let i = 0; i < NODE.count; i++) {
         const S = STRANDS[i]
         const isPlasmid = S.category === 'plasmids'
-        const t = SNAKE.tStart + (SNAKE.tEnd - SNAKE.tStart) * (i / (NODE.count - 1))
+        const t = nodeT(i, NODE.count)              // Advisory high at the head, rest evenly below
         const pos = serpentCurve.getPoint(t)
         const radialDir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
         const embedded = nodeStyle === 'embedded'

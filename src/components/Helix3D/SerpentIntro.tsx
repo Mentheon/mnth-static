@@ -18,6 +18,7 @@ import { HELIX_CATEGORIES, categoryById, outputsIn, pad2 } from '../../data/fram
 import { emblemImg, productMarksReady } from '../ProductMark'
 import { skipIntroAlways, setSkipIntroAlways } from '../../lib/introGate'
 import { ADVISORY_GOLD, ADVISORY_INK } from '../../data/advisory'
+import { nodeT } from './staffLayout'
 
 /* Local copies of the easing/clamp helpers the prototype used. */
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
@@ -43,9 +44,9 @@ const STRANDS = STAFF_CATS.map((c) => {
   return { name: c.label, sub: c.id === 'advisory' ? `consultancy · ${pad2(n)} services`
     : `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(n)} project${n === 1 ? '' : 's'}`, cat: c.id };
 });
-// Node t-range on the coil, matching Helix3D's SNAKE.tStart/tEnd, and the
-// rotor's resting drop, so the intro lands on the live staff's layout.
-const NODE_T = { start: 0.03, end: 0.84 }, ROTOR_DROP = 0.5;
+// Node positions on the coil come from ./staffLayout (shared with Helix3D),
+// plus the rotor's resting drop, so the intro lands on the live layout.
+const ROTOR_DROP = 0.5;
 /* Section cube faces (Strand Logos tile), as on the live page. */
 const STRAND_SPLITS = { therapeutics: ['LENI', 'TUDO'], detection: ['AEV', 'ORIX'], monitoring: ['VIT', 'RIX'],
   forecasting: ['ACU', 'MENTRA'], perception: ['KIND', 'REON'], plasmids: ['PLAS', 'MIDS'], advisory: ['ADVI', 'SORY'] };
@@ -696,7 +697,7 @@ function LogoIntro({ T, CUES, theme, nodeStyle, scale, lite }) {
     s.rotor.updateMatrixWorld(true);
     const rotInv = s.rotor.getWorldQuaternion(new THREE.Quaternion()).invert();
     s.nodes.forEach((n, i) => {
-      const t = NODE_T.start + (NODE_T.end - NODE_T.start) * (i / (STRANDS.length - 1));
+      const t = nodeT(i, STRANDS.length);
       const c = coilPoint(p, t, new THREE.Vector3());
       const rd = new THREE.Vector3(c.x, 0, c.z);
       if (rd.lengthSq() > 1e-6) rd.normalize();
