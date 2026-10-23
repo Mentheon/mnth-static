@@ -37,6 +37,10 @@ type Fit = 'fill' | 'fit'
    gradient); 'ai' = the Depth Anything estimate, where one was made. */
 type DepthSrc = 'original' | 'ai'
 const DEPTH_SRC_KEY = 'mnth:storyDepthSrc'
+/* Reverse: flips which way the depth goes with scroll (sketch: flat trace →
+   photo in depth; normal: full depth → flat). */
+const REVERSE_KEY = 'mnth:storyReverse'
+const readReverse = () => { try { return localStorage.getItem(REVERSE_KEY) === '1' } catch { return false } }
 const readDepthSrc = (): DepthSrc => { try { return localStorage.getItem(DEPTH_SRC_KEY) === 'ai' ? 'ai' : 'original' } catch { return 'original' } }
 const FIT_KEY = 'mnth:storyFit'
 const readFit = (): Fit => { try { return localStorage.getItem(FIT_KEY) === 'fit' ? 'fit' : 'fill' } catch { return 'fill' } }
@@ -203,6 +207,8 @@ export default function StoryPage() {
   const [depthSrc, setDepthSrcState] = useState<DepthSrc>(readDepthSrc)
   const setDepthSrc = (d: DepthSrc) => { setDepthSrcState(d); setNotes({}); try { localStorage.setItem(DEPTH_SRC_KEY, d) } catch { /* storage unavailable */ } }
   const hasAi = STORY.some((c) => c.aiDepth)
+  const [reverse, setReverseState] = useState(readReverse)
+  const setReverse = (on: boolean) => { setReverseState(on); try { localStorage.setItem(REVERSE_KEY, on ? '1' : '0') } catch { /* storage unavailable */ } }
   const setFit = (f: Fit) => { setFitState(f); try { localStorage.setItem(FIT_KEY, f) } catch { /* storage unavailable */ } }
   // Contained (whole photo in frame): fit, sketch, or a split half.
   const contained = fit === 'fit' || sketch || layout !== 'full'
@@ -217,8 +223,8 @@ export default function StoryPage() {
   const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const settings = useRef({ strength, showDepth, layout, sketch, trace, contained, depthSrc })
-  settings.current = { strength, showDepth, layout, sketch, trace, contained, depthSrc }
+  const settings = useRef({ strength, showDepth, layout, sketch, trace, contained, depthSrc, reverse })
+  settings.current = { strength, showDepth, layout, sketch, trace, contained, depthSrc, reverse }
 
   useEffect(() => {
     const el = holder.current, chaptersEl = chaptersRef.current
@@ -316,13 +322,18 @@ export default function StoryPage() {
       const p = y < 0 ? 0 : clamp01((y - i * secH) / secH)
       const sk = settings.current.sketch
       const fade = i < STORY.length - 1 && p > FADE ? ease((p - FADE) / (1 - FADE)) : 0
-      // Sketch: trace + open depth → full-definition flat photo, in one scroll.
+      // Sketch: trace + open depth → full-definition flat photo, in one
+      // scroll (reverse: flat trace → photo in depth). Normal: depth grows
+      // (reverse: full depth flattens).
+      const rev = settings.current.reverse
       const sp = ease(clamp01(p / SK_END))
       const fid = sk ? sp : 1
-      const s = sk ? 1 - sp : ease(clamp01(p / RAMP))
+      const grow = sk ? sp : ease(clamp01(p / RAMP))
+      const s = (sk ? !rev : rev) ? 1 - grow : grow
+      const s0 = (sk ? !rev : rev) ? 1 : 0             // a chapter's opening depth
       apply(cur, i, s, 1, fid)
       next.visible = fade > 0
-      if (fade > 0) apply(next, i + 1, sk ? 1 : 0, fade, sk ? 0 : 1)   // next chapter's opening state
+      if (fade > 0) apply(next, i + 1, s0, fade, sk ? 0 : 1)   // next chapter's opening state
       if (i + 1 < STORY.length) tex(i + 1)               // preload the next chapter
       if (i !== last) { last = i; setActive(i) }
       if (meterRef.current) meterRef.current.style.setProperty('--s', s.toFixed(3))
@@ -428,6 +439,10 @@ export default function StoryPage() {
             ))}
           </span>
         )}
+        <label className={st.ctl} title={sketch ? 'Start as a flat trace and open into depth' : 'Start in full depth and flatten as you scroll'}>
+          <input type="checkbox" checked={reverse} onChange={(e) => setReverse(e.target.checked)} />
+          reverse
+        </label>
         <label className={st.ctl}>
           <input type="checkbox" checked={showDepth} onChange={(e) => setShowDepth(e.target.checked)} />
           show depth map
