@@ -43,9 +43,9 @@
 .ctl input[type='range'] { width: 90px; accent-color: var(--crimson); }
 .ctl input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--crimson); }
 
-/* Sketch mode: a blueprint behind the photo in the site theme (28px
-   minor / 140px major grid in the ink colour, on the page colour). */
-.page[data-sketch='on'] .stage {
+/* Whole photo in frame (fit, sketch or split): a blueprint around it in
+   the site theme (28px minor / 140px major grid in the ink colour). */
+.page[data-contained='on'] .stage {
   background-color: var(--bg);
   background-image:
     linear-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px),
@@ -68,6 +68,7 @@
 }
 .seg button + button { border-left: 1px solid var(--ink-soft); }
 .seg button[aria-pressed='true'] { background: var(--ink); color: var(--bg); }
+.seg button:disabled { cursor: default; opacity: 0.6; }
 
 /* Split: the photo fills one half, so text moves to the other. */
 .page[data-layout='left'] .intro, .page[data-layout='left'] .outro, .page[data-layout='left'] .capWrap { padding-left: calc(50% + 2rem); }

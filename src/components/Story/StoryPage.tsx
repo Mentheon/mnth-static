@@ -30,6 +30,11 @@ const SK_END = 0.6, SK_SWAY = 0.2
 /* Trace style: 'detail' = every edge (photo + depth); 'outline' = only
    object outlines, bold (mostly depth edges, plus coarse photo edges). */
 type Trace = 'detail' | 'outline'
+/* Full layout: 'fill' = photo covers the page (cropped); 'fit' = the whole
+   photo centred on the blueprint, as sketch mode always shows it. */
+type Fit = 'fill' | 'fit'
+const FIT_KEY = 'mnth:storyFit'
+const readFit = (): Fit => { try { return localStorage.getItem(FIT_KEY) === 'fit' ? 'fit' : 'fill' } catch { return 'fill' } }
 const TRACE_KEY = 'mnth:storyTrace'
 const readTrace = (): Trace => { try { return localStorage.getItem(TRACE_KEY) === 'outline' ? 'outline' : 'detail' } catch { return 'detail' } }
 const SKETCH_KEY = 'mnth:storySketch'
@@ -187,6 +192,10 @@ export default function StoryPage() {
   const [layout, setLayoutState] = useState<Layout>(readLayout)
   const [sketch, setSketchState] = useState(readSketch)
   const [trace, setTraceState] = useState<Trace>(readTrace)
+  const [fit, setFitState] = useState<Fit>(readFit)
+  const setFit = (f: Fit) => { setFitState(f); try { localStorage.setItem(FIT_KEY, f) } catch { /* storage unavailable */ } }
+  // Contained (whole photo in frame): fit, sketch, or a split half.
+  const contained = fit === 'fit' || sketch || layout !== 'full'
   const setTrace = (t: Trace) => { setTraceState(t); try { localStorage.setItem(TRACE_KEY, t) } catch { /* storage unavailable */ } }
   const setSketch = (on: boolean) => { setSketchState(on); try { localStorage.setItem(SKETCH_KEY, on ? '1' : '0') } catch { /* storage unavailable */ } }
   // Sketch mode steps: each scroll lands on the next stage (trace → photo → zoom).
@@ -198,8 +207,8 @@ export default function StoryPage() {
   const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const settings = useRef({ strength, showDepth, layout, sketch, trace })
-  settings.current = { strength, showDepth, layout, sketch, trace }
+  const settings = useRef({ strength, showDepth, layout, sketch, trace, contained })
+  settings.current = { strength, showDepth, layout, sketch, trace, contained }
 
   useEffect(() => {
     const el = holder.current, chaptersEl = chaptersRef.current
@@ -235,7 +244,7 @@ export default function StoryPage() {
     const fit = (m: THREE.Mesh, aspect: number) => {
       const vh = 2 * DIST * Math.tan(THREE.MathUtils.degToRad(FOV / 2)), va = camera.aspect
       let h: number
-      if (settings.current.layout === 'full' && !settings.current.sketch) h = aspect > va ? vh * MARGIN : (vh * va * MARGIN) / aspect   // cover
+      if (!settings.current.contained) h = aspect > va ? vh * MARGIN : (vh * va * MARGIN) / aspect   // cover
       else h = aspect > va ? (vh * va * CONTAIN) / aspect : vh * CONTAIN                                    // contain
       m.scale.set(h * aspect, h, 1)
     }
@@ -328,7 +337,7 @@ export default function StoryPage() {
   }, [])
 
   return (
-    <div className={st.page} data-layout={layout} data-sketch={sketch ? 'on' : undefined}>
+    <div className={st.page} data-layout={layout} data-contained={contained ? 'on' : undefined}>
       <div ref={holder} className={st.stage} aria-hidden="true" />
 
       <section className={st.intro}>
@@ -382,6 +391,13 @@ export default function StoryPage() {
           depth
           <input type="range" min={0} max={2} step={0.05} value={strength} onChange={(e) => setStrength(Number(e.target.value))} />
         </label>
+        {layout === 'full' && (
+          <span className={st.seg} role="group" aria-label="Photo fit" title={sketch ? 'Sketch mode always fits the whole photo' : undefined}>
+            {(['fill', 'fit'] as const).map((f) => (
+              <button key={f} type="button" aria-pressed={(sketch ? 'fit' : fit) === f} disabled={sketch} onClick={() => setFit(f)}>{f}</button>
+            ))}
+          </span>
+        )}
         <label className={st.ctl} title="Each photo starts as a line trace in open depth on a blueprint; one scroll resolves it into the full photo as the depth settles flat">
           <input type="checkbox" checked={sketch} onChange={(e) => setSketch(e.target.checked)} />
           sketch
