@@ -14,7 +14,7 @@ import {
 import { ADVISORY_GOLD, ADVISORY_INK } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
 import './helix3d.css'
-import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID } from '../ProductMark'
+import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID, markWord, WORD } from '../ProductMark'
 import { markIntroDone, skipIntroAlways } from '../../lib/introGate'
 import { useSwipeDown } from '../../lib/useSwipeDown'
 import { CONTACT_EMAIL } from '../../data/people'
@@ -1270,11 +1270,19 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
       const L = layout3b(o.product!)
       g.save(); g.scale(k, k); g.fillStyle = ink
-      if (L.isA) {
-        g.save(); g.translate(12.35 + PT.INSET - L.k * 12.35, 178 - L.k * 178); g.scale(L.k, L.k)
-        g.fill(new Path2D(aufPath)); g.restore()
-      } else { g.font = `900 ${PT.BIG}px Lato, sans-serif`; g.fillText(L.l, L.x0, 178) }
-      g.font = `900 ${PT.SUB}px Lato, sans-serif`; g.fillText(L.s, L.right + PT.GAP, 178)
+      const word = markWord(o)
+      if (word) {
+        // Advisory services: three-letter word (res / des / dev / con).
+        g.font = `900 ${WORD.size}px Lato, sans-serif`
+        ;(g as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = `${WORD.track}px`
+        g.fillText(word, WORD.x, 178)
+      } else {
+        if (L.isA) {
+          g.save(); g.translate(12.35 + PT.INSET - L.k * 12.35, 178 - L.k * 178); g.scale(L.k, L.k)
+          g.fill(new Path2D(aufPath)); g.restore()
+        } else { g.font = `900 ${PT.BIG}px Lato, sans-serif`; g.fillText(L.l, L.x0, 178) }
+        g.font = `900 ${PT.SUB}px Lato, sans-serif`; g.fillText(L.s, L.right + PT.GAP, 178)
+      }
       g.font = `500 ${L.hdr}px "JetBrains Mono", monospace`
       ;(g as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = `${PT.HDR_TRACK * L.hdr}px`
       g.fillText(o.product!.toUpperCase(), 12, 12 + L.hdr * 0.74)
