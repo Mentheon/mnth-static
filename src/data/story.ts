@@ -44,6 +44,11 @@ export interface StoryChapter {
   strength?: number
   /** Built-in generated test scene (no files needed). */
   demo?: boolean
+  /** Stage overlays painted onto the photo one after another as you scroll
+      on (#story2): transparent PNGs under public/, covering the top
+      `overlayTop` of the image (0–1 of its height; default all of it). */
+  overlays?: { id: string; title: string; src: string }[]
+  overlayTop?: number
 }
 
 /* Hand-listed chapters (below) come after the imported ones. The test
@@ -67,3 +72,15 @@ export const STORY: StoryChapter[] = IMPORTED.length || MANUAL.length ? [...IMPO
    back to the test scene if that photo hasn't been imported here. */
 const ONE = [...IMPORTED, ...MANUAL].filter((c) => c.id === 'img-0508')
 export const STORY1: StoryChapter[] = ONE.length ? ONE : DEMO
+
+/* #story2 — IMG_0508 with the reminiscence-artefact stages (from the Claude
+   Design schematic) painted onto the depth photo: as it is → depth opens →
+   00 physical artefact → 01 digital representation → 02 data chunks →
+   03 JSON schema. The overlays cover the photo's top 3024 × 2875 (of 4032). */
+const ARTEFACT_STAGES = [
+  { id: '00', title: 'Physical artefact', src: 'story/overlays/img-0508-00.png' },
+  { id: '01', title: 'Physical → digital representation', src: 'story/overlays/img-0508-01.png' },
+  { id: '02', title: 'Conversion to data chunks', src: 'story/overlays/img-0508-02.png' },
+  { id: '03', title: 'Structured metadata schema (JSON)', src: 'story/overlays/img-0508-03.png' },
+]
+export const STORY2: StoryChapter[] = ONE.length ? ONE.map((c) => ({ ...c, overlays: ARTEFACT_STAGES, overlayTop: 2875 / 4032 })) : DEMO

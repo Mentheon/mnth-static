@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment, type ReactNode } from 'react'
 import NavBar from './components/NavBar'
 import WhoPage from './components/WhoPage'
 import StoryPage from './components/Story/StoryPage'
-import { STORY1 } from './data/story'
+import { STORY1, STORY2 } from './data/story'
 import ConceptView from './components/ConceptView'
 import Helix3D from './components/Helix3D/Helix3D'
 import ScrollLockView from './components/Helix3D/ScrollLockView'
@@ -65,6 +65,7 @@ export default function App() {
     hashPath === '#who' ? 'who'        : // ?person=<id> opens that profile
     hashPath === '#story' ? 'story'    : // experimental scroll-depth photo story
     hashPath === '#story1' ? 'story1'  : // the same, IMG_0508 only
+    hashPath === '#story2' ? 'story2'  : // IMG_0508 + the artefact stages on the depth photo
     hash === '#loaders' ? 'loaders'    :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
@@ -151,6 +152,9 @@ export default function App() {
           <StoryPage key="story" />
         ) : page === 'story1' ? (
           <StoryPage key="story1" chapters={STORY1} title="Story one" />
+        ) : page === 'story2' ? (
+          // Own settings; starts at full depth strength on the AI depth map.
+          <StoryPage key="story2" chapters={STORY2} title="Story two" storageKey="mnth:story2:" defaults={{ strength: 2, depthSrc: 'ai' }} />
         ) : page === 'loaders' ? (
           // #loaders — preview/cycle the loader variants (◀ ▶).
           <LoaderGallery />

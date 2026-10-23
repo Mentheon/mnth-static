@@ -17,6 +17,17 @@ const BASE = import.meta.env.BASE_URL
 const SEC_VH = 240                 // chapter length, % of viewport height
 const RAMP = 0.65                  // share of a chapter over which depth expands
 const FADE = 0.82                  // crossfade to the next chapter starts here
+/* Chapters with stage overlays (#story2): the usual chapter runs over the
+   first BASE_VH of scroll (depth fully open by its end), then each stage
+   gets STAGE_VH, fading in over its first STAGE_FADE. */
+const BASE_VH = 180, STAGE_VH = 90, STAGE_FADE = 0.4
+/* Snap stops (sketch mode), as fractions of the chapter. */
+const snapStops = (ch: StoryChapter) => {
+  const n = ch.overlays?.length ?? 0, total = chapterVH(ch)
+  if (!n) return [0, SK_END]
+  return [0, (SK_END * BASE_VH) / total, ...Array.from({ length: n }, (_, k) => (BASE_VH + (k + STAGE_FADE) * STAGE_VH) / total)]
+}
+const chapterVH = (ch: StoryChapter) => (ch.overlays?.length ? BASE_VH + ch.overlays.length * STAGE_VH : SEC_VH)
 const K = 0.55                     // max depth displacement (world units) at strength 1
 const FOV = 35, DIST = 3, MARGIN = 1.14
 const CONTAIN = 0.88               // split mode: the whole photo, with a little room round it
@@ -36,25 +47,23 @@ type Fit = 'fill' | 'fit'
 /* Depth source: 'original' = the photo's own (camera / two eyes; else the
    gradient); 'ai' = the Depth Anything estimate, where one was made. */
 type DepthSrc = 'original' | 'ai'
-const DEPTH_SRC_KEY = 'mnth:storyDepthSrc'
 /* Reverse: flips which way the depth goes with scroll (sketch: flat trace →
    photo in depth; normal: full depth → flat). */
-const REVERSE_KEY = 'mnth:storyReverse'
-const readReverse = () => { try { return localStorage.getItem(REVERSE_KEY) === '1' } catch { return false } }
-const readDepthSrc = (): DepthSrc => { try { return localStorage.getItem(DEPTH_SRC_KEY) === 'ai' ? 'ai' : 'original' } catch { return 'original' } }
-const FIT_KEY = 'mnth:storyFit'
-const readFit = (): Fit => { try { return localStorage.getItem(FIT_KEY) === 'fit' ? 'fit' : 'fill' } catch { return 'fill' } }
-const TRACE_KEY = 'mnth:storyTrace'
-const readTrace = (): Trace => { try { return localStorage.getItem(TRACE_KEY) === 'outline' ? 'outline' : 'detail' } catch { return 'detail' } }
-const SKETCH_KEY = 'mnth:storySketch'
-const readSketch = () => { try { return localStorage.getItem(SKETCH_KEY) === '1' } catch { return false } }
+/* Page settings are remembered per browser, under the page's own key prefix
+   (#story and #story1 share 'mnth:'; #story2 keeps its own). */
+function readPref<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
+  try { const v = localStorage.getItem(key) as T | null; return v !== null && allowed.includes(v) ? v : fallback } catch { return fallback }
+}
+const readFlag = (key: string, fallback: boolean) => { try { const v = localStorage.getItem(key); return v === null ? fallback : v === '1' } catch { return fallback } }
+const writePref = (key: string, v: string) => { try { localStorage.setItem(key, v) } catch { /* storage unavailable */ } }
 
 /* full = photo covers the page; left/right = the whole photo (uncropped)
    in that half, captions in the other — for viewing from a distance. */
 type Layout = 'full' | 'left' | 'right'
-const LAYOUT_KEY = 'mnth:storyLayout'
-const readLayout = (): Layout => {
-  try { const v = localStorage.getItem(LAYOUT_KEY); return v === 'left' || v === 'right' ? v : 'full' } catch { return 'full' }
+
+/* A page's starting values (before the viewer changes anything). */
+export interface StoryDefaults {
+  strength?: number; layout?: Layout; sketch?: boolean; trace?: Trace; fit?: Fit; depthSrc?: DepthSrc; reverse?: boolean
 }
 
 const VERT = /* glsl */ `
@@ -74,6 +83,8 @@ void main() {
 const FRAG = /* glsl */ `
 uniform sampler2D photo, depthMap;
 uniform float opacity, showDepth, fidelity, outlineOnly;
+uniform sampler2D ovA, ovB;
+uniform float ovMix, ovOn, ovTop;
 uniform vec2 texel;
 uniform vec3 ink, paper;
 varying vec2 vUv;
@@ -124,6 +135,13 @@ void main() {
     float reveal = smoothstep(0.0, 1.0, clamp(fidelity * 1.7 - (1.0 - d) * 0.7, 0.0, 1.0));
     c = mix(sketch, c, reveal);
   }
+  // Stage overlay, painted INTO the photo's texture so it rides the depth:
+  // it covers the top ovTop of the image (its own 0..1 there), A → B by ovMix.
+  if (ovOn > 0.5 && vUv.y >= 1.0 - ovTop) {
+    vec2 ouv = vec2(vUv.x, (vUv.y - (1.0 - ovTop)) / ovTop);
+    vec4 o = mix(texture2D(ovA, ouv), texture2D(ovB, ouv), ovMix);
+    c = mix(c, o.rgb, o.a);
+  }
   gl_FragColor = vec4(mix(c, vec3(d), showDepth), opacity);
   #include <colorspace_fragment>
 }`
@@ -132,7 +150,9 @@ const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 
 /* ---- textures ---- */
-type Tex = { photo: THREE.Texture; depth: THREE.Texture; aspect: number; note?: string }
+type Tex = { photo: THREE.Texture; depth: THREE.Texture; aspect: number; note?: string; overlays?: THREE.Texture[] }
+/* Transparent 1×1: "no overlay" for a stage slot. */
+const NO_OVERLAY = (() => { const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); t.needsUpdate = true; return t })()
 
 function canvasTex(cv: HTMLCanvasElement, srgb: boolean) {
   const t = new THREE.CanvasTexture(cv)
@@ -191,41 +211,56 @@ function loadTex(ch: StoryChapter, src: DepthSrc, onReady: () => void): Tex {
     })
     out.depth.colorSpace = THREE.NoColorSpace
   }
+  if (ch.overlays?.length) {
+    out.overlays = ch.overlays.map((o) => {
+      const t = loader.load(BASE + o.src, () => onReady(), undefined, () => { out.note = `overlay not found: public/${o.src}`; onReady() })
+      t.colorSpace = THREE.SRGBColorSpace
+      return t
+    })
+  }
   return out
 }
 
 /* `chapters`: which photos this page tells (default: the whole STORY);
-   `title`: its intro heading. #story1 etc. pass their own. */
-export default function StoryPage({ chapters = STORY, title = 'Depth, as you scroll' }: { chapters?: StoryChapter[]; title?: string } = {}) {
+   `title`: its intro heading; `storageKey`: prefix its settings are
+   remembered under; `defaults`: its starting settings. #story1 / #story2
+   pass their own. */
+export default function StoryPage({ chapters = STORY, title = 'Depth, as you scroll', storageKey = 'mnth:', defaults = {} }:
+  { chapters?: StoryChapter[]; title?: string; storageKey?: string; defaults?: StoryDefaults } = {}) {
   const STORY = chapters
+  const pk = (name: string) => storageKey + name
   const holder = useRef<HTMLDivElement>(null)
   const chaptersRef = useRef<HTMLDivElement>(null)
   const meterRef = useRef<HTMLSpanElement>(null)
-  const [strength, setStrength] = useState(1)
+  const [strength, setStrengthState] = useState(() => {
+    try { const v = Number(localStorage.getItem(pk('storyStrength'))); return v > 0 ? v : defaults.strength ?? 1 } catch { return defaults.strength ?? 1 }
+  })
+  const setStrength = (v: number) => { setStrengthState(v); writePref(pk('storyStrength'), String(v)) }
   const [showDepth, setShowDepth] = useState(false)
-  const [layout, setLayoutState] = useState<Layout>(readLayout)
-  const [sketch, setSketchState] = useState(readSketch)
-  const [trace, setTraceState] = useState<Trace>(readTrace)
-  const [fit, setFitState] = useState<Fit>(readFit)
-  const [depthSrc, setDepthSrcState] = useState<DepthSrc>(readDepthSrc)
-  const setDepthSrc = (d: DepthSrc) => { setDepthSrcState(d); setNotes({}); try { localStorage.setItem(DEPTH_SRC_KEY, d) } catch { /* storage unavailable */ } }
+  const [layout, setLayoutState] = useState<Layout>(() => readPref(pk('storyLayout'), ['full', 'left', 'right'] as const, defaults.layout ?? 'full'))
+  const [sketch, setSketchState] = useState(() => readFlag(pk('storySketch'), defaults.sketch ?? false))
+  const [trace, setTraceState] = useState<Trace>(() => readPref(pk('storyTrace'), ['detail', 'outline'] as const, defaults.trace ?? 'detail'))
+  const [fit, setFitState] = useState<Fit>(() => readPref(pk('storyFit'), ['fill', 'fit'] as const, defaults.fit ?? 'fill'))
+  const [depthSrc, setDepthSrcState] = useState<DepthSrc>(() => readPref(pk('storyDepthSrc'), ['original', 'ai'] as const, defaults.depthSrc ?? 'original'))
+  const setDepthSrc = (d: DepthSrc) => { setDepthSrcState(d); setNotes({}); writePref(pk('storyDepthSrc'), d) }
   const hasAi = STORY.some((c) => c.aiDepth)
-  const [reverse, setReverseState] = useState(readReverse)
-  const setReverse = (on: boolean) => { setReverseState(on); try { localStorage.setItem(REVERSE_KEY, on ? '1' : '0') } catch { /* storage unavailable */ } }
-  const setFit = (f: Fit) => { setFitState(f); try { localStorage.setItem(FIT_KEY, f) } catch { /* storage unavailable */ } }
+  const [reverse, setReverseState] = useState(() => readFlag(pk('storyReverse'), defaults.reverse ?? false))
+  const setReverse = (on: boolean) => { setReverseState(on); writePref(pk('storyReverse'), on ? '1' : '0') }
+  const setFit = (f: Fit) => { setFitState(f); writePref(pk('storyFit'), f) }
   // Contained (whole photo in frame): fit, sketch, or a split half.
   const contained = fit === 'fit' || sketch || layout !== 'full'
-  const setTrace = (t: Trace) => { setTraceState(t); try { localStorage.setItem(TRACE_KEY, t) } catch { /* storage unavailable */ } }
-  const setSketch = (on: boolean) => { setSketchState(on); try { localStorage.setItem(SKETCH_KEY, on ? '1' : '0') } catch { /* storage unavailable */ } }
+  const setTrace = (t: Trace) => { setTraceState(t); writePref(pk('storyTrace'), t) }
+  const setSketch = (on: boolean) => { setSketchState(on); writePref(pk('storySketch'), on ? '1' : '0') }
   // Sketch mode steps: each scroll lands on the next stage (trace → photo → zoom).
   useEffect(() => {
     const el = document.documentElement
     el.style.scrollSnapType = sketch ? 'y mandatory' : ''
     return () => { el.style.scrollSnapType = '' }
   }, [sketch])
-  const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
+  const setLayout = (l: Layout) => { setLayoutState(l); writePref(pk('storyLayout'), l) }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [stageLabel, setStageLabel] = useState<string | null>(null)
   const settings = useRef({ strength, showDepth, layout, sketch, trace, contained, depthSrc, reverse })
   settings.current = { strength, showDepth, layout, sketch, trace, contained, depthSrc, reverse }
 
@@ -245,6 +280,7 @@ export default function StoryPage({ chapters = STORY, title = 'Depth, as you scr
         vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthTest,
         uniforms: {
           photo: { value: null }, depthMap: { value: null }, s: { value: 0 }, K: { value: K }, d0: { value: 0.5 }, opacity: { value: 1 }, showDepth: { value: 0 },
+          ovA: { value: NO_OVERLAY }, ovB: { value: NO_OVERLAY }, ovMix: { value: 0 }, ovOn: { value: 0 }, ovTop: { value: 1 },
           fidelity: { value: 1 }, outlineOnly: { value: 0 }, texel: { value: new THREE.Vector2(1 / 900, 1 / 900) }, ink: { value: new THREE.Color() }, paper: { value: new THREE.Color() },
         },
       })
@@ -279,9 +315,16 @@ export default function StoryPage({ chapters = STORY, title = 'Depth, as you scr
     readColours()
     const onTheme = () => requestAnimationFrame(readColours)
     window.addEventListener('mnth:theme', onTheme)
-    const apply = (m: THREE.Mesh, i: number, s: number, opacity: number, fidelity = 1) => {
+    // ov: stage overlays A → B (indices, -1 = none) by mix; omitted = none.
+    const apply = (m: THREE.Mesh, i: number, s: number, opacity: number, fidelity = 1, ov?: { a: number; b: number; mix: number }) => {
       const t = tex(i), ch = STORY[i], u = (m.material as THREE.ShaderMaterial).uniforms
       u.fidelity.value = fidelity
+      const ovs = t.overlays
+      u.ovOn.value = ov && ovs ? 1 : 0
+      if (ov && ovs) {
+        u.ovA.value = ov.a >= 0 ? ovs[ov.a] : NO_OVERLAY; u.ovB.value = ov.b >= 0 ? ovs[ov.b] : NO_OVERLAY
+        u.ovMix.value = ov.mix; u.ovTop.value = ch.overlayTop ?? 1
+      }
       u.outlineOnly.value = settings.current.trace === 'outline' ? 1 : 0
       u.texel.value.set(1 / 900, t.aspect / 900)
       u.ink.value.copy(colours.ink); u.paper.value.copy(colours.paper)
@@ -314,27 +357,45 @@ export default function StoryPage({ chapters = STORY, title = 'Depth, as you scr
     }
     window.addEventListener('pointermove', onMove)
 
-    let raf = 0, last = -1
+    let raf = 0, last = -1, lastStage = -2
     const t0 = performance.now()
     const frame = () => {
       raf = requestAnimationFrame(frame)
       setView()
-      const secH = (window.innerHeight * SEC_VH) / 100
+      // Chapters can differ in length (stage chapters run longer).
+      const vh = window.innerHeight / 100
       const y = -chaptersEl.getBoundingClientRect().top
-      const i = Math.min(STORY.length - 1, Math.max(0, Math.floor(y / secH)))
-      const p = y < 0 ? 0 : clamp01((y - i * secH) / secH)
+      let i = 0, top = 0
+      while (i < STORY.length - 1 && y >= top + chapterVH(STORY[i]) * vh) { top += chapterVH(STORY[i]) * vh; i++ }
+      const yl = Math.max(0, y - top), H = chapterVH(STORY[i]) * vh
+      const p = y < 0 ? 0 : clamp01(yl / H)
+      const nOv = STORY[i].overlays?.length ?? 0
+      // Stage chapters: the usual sequence over the base, then the stages.
+      const pb = nOv ? clamp01(yl / (BASE_VH * vh)) : p
+      const f = nOv ? (yl - BASE_VH * vh) / (STAGE_VH * vh) : -1
+      let ov: { a: number; b: number; mix: number } | undefined
+      if (nOv && f >= 0) {
+        const k = Math.min(nOv - 1, Math.floor(f))
+        ov = f >= nOv ? { a: nOv - 1, b: nOv - 1, mix: 1 } : { a: k - 1, b: k, mix: ease(clamp01((f - k) / STAGE_FADE)) }
+      }
+      const stageNow = ov ? (ov.mix > 0.5 ? ov.b : ov.a) : -1
+      if (stageNow !== lastStage) {
+        lastStage = stageNow
+        const o = stageNow >= 0 ? STORY[i].overlays![stageNow] : null
+        setStageLabel(o ? `${o.id} · ${o.title}` : null)
+      }
       const sk = settings.current.sketch
       const fade = i < STORY.length - 1 && p > FADE ? ease((p - FADE) / (1 - FADE)) : 0
       // Sketch: trace + open depth → full-definition flat photo, in one
       // scroll (reverse: flat trace → photo in depth). Normal: depth grows
       // (reverse: full depth flattens).
       const rev = settings.current.reverse
-      const sp = ease(clamp01(p / SK_END))
+      const sp = ease(clamp01(pb / SK_END))
       const fid = sk ? sp : 1
-      const grow = sk ? sp : ease(clamp01(p / RAMP))
+      const grow = sk ? sp : ease(clamp01(pb / RAMP))
       const s = (sk ? !rev : rev) ? 1 - grow : grow
       const s0 = (sk ? !rev : rev) ? 1 : 0             // a chapter's opening depth
-      apply(cur, i, s, 1, fid)
+      apply(cur, i, s, 1, fid, ov)
       next.visible = fade > 0
       if (fade > 0) apply(next, i + 1, s0, fade, sk ? 0 : 1)   // next chapter's opening state
       if (i + 1 < STORY.length) tex(i + 1)               // preload the next chapter
@@ -380,14 +441,15 @@ export default function StoryPage({ chapters = STORY, title = 'Depth, as you scr
 
       <div ref={chaptersRef}>
         {STORY.map((ch, i) => (
-          <section key={ch.id} className={st.chapter} style={{ height: `${SEC_VH}vh` }}>
-            {/* Sketch mode stops: trace in depth, then the flat photo. */}
-            {sketch && [0, SK_END].map((f) => <span key={f} className={st.snap} style={{ top: `${f * 100}%` }} aria-hidden="true" />)}
+          <section key={ch.id} className={st.chapter} style={{ height: `${chapterVH(ch)}vh` }}>
+            {/* Sketch mode stops: trace in depth, then the flat photo (and each stage). */}
+            {sketch && snapStops(ch).map((f) => <span key={f} className={st.snap} style={{ top: `${f * 100}%` }} aria-hidden="true" />)}
             <div className={st.capWrap}>
               <article className={st.card}>
                 <p className={st.kick}>{String(i + 1).padStart(2, '0')} / {String(STORY.length).padStart(2, '0')}</p>
                 <h2 className={st.chTitle}>{ch.title}</h2>
                 <p className={st.lede}>{ch.caption}</p>
+                {i === active && stageLabel && <p className={st.stageLabel}>stage {stageLabel}</p>}
                 {notes[ch.id] && <p className={st.note}>{notes[ch.id]}</p>}
                 {ch.heic && (
                   <a className={st.heic} href={BASE + ch.heic}>spatial photo (Vision Pro) <span aria-hidden="true">↦</span></a>

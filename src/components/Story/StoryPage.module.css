@@ -27,6 +27,7 @@
 .lede { margin: 0.6rem 0 0; font-size: 0.98rem; line-height: 1.55; }
 .lede code, .note code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; }
 .hint { margin: 1rem 0 0; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
+.stageLabel { margin: 0.7rem 0 0; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--crimson); }
 .note { margin: 0.7rem 0 0; padding: 0.4rem 0.55rem; border: 1px dashed var(--crimson); font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.08em; color: var(--crimson); }
 .heic { display: inline-block; margin-top: 0.8rem; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--crimson); }
 
