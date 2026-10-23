@@ -650,7 +650,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       orb: THREE.Mesh
       ring1: THREE.Mesh
       ring2: THREE.Mesh
-      orbPos: THREE.Vector3
+      orbPos: THREE.Vector3     // rest position (rotor-local)
+      hit?: THREE.Mesh          // invisible pick sphere, follows the orb
+      tOff?: number             // collision-avoidance slide along the coil (t units)
     }
     const nodes: NodeRec[] = []
     const nodePickables: THREE.Object3D[] = []
@@ -1211,7 +1213,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           })
         }
 
-        nodes.push({ strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone() })
+        const rec: NodeRec = { strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone(), tOff: 0 }
+        nodes.push(rec)
         nodePickables.push(orb)
         // Invisible hit sphere spanning the pulse rings, so a click
         // anywhere on the node (orb, rings, halo) registers.
@@ -1221,6 +1224,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         )
         hit.position.copy(orbPos)
         hit.userData.strandId = STRANDS[i].id
+        rec.hit = hit
         rotor.add(hit)
         nodePickables.push(hit)
       }
@@ -1760,7 +1764,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         n.orb.scale.setScalar(s)
         // Centred on the body; drawn on top of it (see nodeCubeMaterials)
         // so the coil never obscures it as the staff turns.
-        n.orb.position.copy(n.orbPos)
+        // Live position: the rest point, slid along the coil while it
+        // steps aside from a neighbour (avoidClusters → tOff).
+        if (n.tOff) serpentCurve.getPoint(THREE.MathUtils.clamp(n.t + n.tOff, AVOID.tMin, AVOID.tMax), n.orb.position)
+        else n.orb.position.copy(n.orbPos)
+        n.hit?.position.copy(n.orb.position)
         n.ring1.position.copy(n.orb.position)
         n.ring2.position.copy(n.orb.position)
         _q.copy(camera.quaternion)
@@ -2589,6 +2597,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       })
       reachL.length = 0; reachR.length = 0
       updateLogos(dt)
+      avoidClusters(dt)
       declutterClusters(dt)
       // 5 & 6. Sync the HTML labels (this also places a window opened in
       // list view), then draw the frame — skipped while the list view
@@ -2630,6 +2639,69 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        already placed fades out (and can't be picked) until it's clear —
        e.g. a strand passing behind another as the staff turns. */
     const clusterFade: number[] = []
+
+    /* Collision avoidance: before two strands' clusters meet on screen,
+       the lower-priority one (not focused / hovered, farther away) slides
+       along the coil — clockwise or anticlockwise round the staff,
+       whichever opens the gap — and eases back to its place once its rest
+       spot is clear again. The fade above stays only as a last resort
+       (e.g. a fast fling the slide can't keep up with). */
+    const AVOID = { margin: 26, back: 40, rate: 0.16, max: 0.075, ease: 2.2, tMin: 0.015, tMax: 0.88 }
+    const _av = new THREE.Vector3()
+    const screenX = (t: number, w: number) => {
+      serpentCurve.getPoint(THREE.MathUtils.clamp(t, AVOID.tMin, AVOID.tMax), _av)
+      rotor.localToWorld(_av).project(camera)
+      return (_av.x * 0.5 + 0.5) * w
+    }
+    function avoidClusters(dt: number) {
+      const w = container.clientWidth, h = container.clientHeight
+      const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
+      const boxes = nodes.map((n, ni) => {
+        if (!n.orb.userData.cube) return null
+        const b = screenBox(n.orb, w, h)
+        logos.forEach((l) => {
+          if (l.node !== ni || !l.sprite.visible) return
+          const c = screenBox(l.sprite, w, h)
+          b.l = Math.min(b.l, c.l); b.t = Math.min(b.t, c.t); b.r = Math.max(b.r, c.r); b.b = Math.max(b.b, c.b)
+        })
+        return b
+      })
+      const z = nodes.map((n) => n.orb.getWorldPosition(_dv).project(camera).z)
+      const rank = (i: number) => (i === focusIndex && isFocused() ? 0 : i === hovered ? 1 : 2)
+      const order = nodes.map((_, ni) => ni).filter((ni) => boxes[ni]).sort((a, b) => rank(a) - rank(b) || z[a] - z[b])
+      const near = (a: { l: number; t: number; r: number; b: number }, p: { l: number; t: number; r: number; b: number }, m: number) =>
+        a.l < p.r + m && a.r > p.l - m && a.t < p.b + m && a.b > p.t - m
+      const placed: number[] = []
+      order.forEach((ni) => {
+        const n = nodes[ni], bx = boxes[ni]!
+        const off = n.tOff ?? 0
+        // The focused / hovered strand never moves (it's being looked at).
+        if (rank(ni) < 2) { n.tOff = off + (0 - off) * Math.min(1, dt * AVOID.ease * 3); placed.push(ni); return }
+        const threat = placed.find((pi) => near(bx, boxes[pi]!, AVOID.margin))
+        if (threat !== undefined) {
+          // Which way along the coil pulls this cluster away from the other
+          // on screen: try a small step each way, keep the one that widens
+          // the horizontal gap.
+          const pb = boxes[threat]!, pc = (pb.l + pb.r) / 2
+          const t0 = n.t + off, eps = 0.01
+          const gapUp = Math.abs(screenX(t0 + eps, w) - pc), gapDn = Math.abs(screenX(t0 - eps, w) - pc)
+          const dir = gapUp >= gapDn ? 1 : -1
+          n.tOff = THREE.MathUtils.clamp(off + dir * AVOID.rate * dt, -AVOID.max, AVOID.max)
+        } else if (off !== 0) {
+          // Clear: head home, but only once the rest spot itself is clear
+          // (with a wider margin), so it doesn't bounce straight back.
+          const dx = screenX(n.t, w) - screenX(n.t + off, w)
+          const rest = { l: bx.l + dx, r: bx.r + dx, t: bx.t, b: bx.b }
+          const blocked = placed.some((pi) => near(rest, boxes[pi]!, AVOID.back))
+          if (!blocked) {
+            let nOff = off + (0 - off) * Math.min(1, dt * AVOID.ease)
+            if (Math.abs(nOff) < 0.0008) nOff = 0
+            n.tOff = nOff
+          }
+        }
+        placed.push(ni)
+      })
+    }
     const fadeOf = (o: THREE.Object3D) => {
       const i = nodes.findIndex((x) => x.strand.id === o.userData.strandId)
       return i < 0 ? 1 : clusterFade[i] ?? 1
