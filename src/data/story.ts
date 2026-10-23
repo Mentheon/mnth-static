@@ -17,7 +17,7 @@
       `spatial export -i IMG.HEIC -o left.png -o right.png` and use one eye.
    2. Make a depth map of the SAME image: a greyscale PNG, white = near,
       black = far (e.g. Depth Anything V2,
-      depth-anything/Depth-Anything-V2-Small-hf). Same aspect ratio as the
+      depth-anything/Depth-Anything-V2-Large-hf). Same aspect ratio as the
       photo; it can be smaller (1024 px wide is plenty).
    3. Add an entry below. `depth` is optional: without one the page uses a
       simple top-far/bottom-near gradient so you can still try the photo.

@@ -26,6 +26,7 @@ Setup (once, in the project; works on Linux and macOS):
 Usage:
   .venv/bin/python scripts/story_import.py               # story-src/ -> public/story/
   .venv/bin/python scripts/story_import.py ~/Desktop/trip --ai
+  .venv/bin/python scripts/story_import.py --ai --ai-model small   # faster, Apache-2.0
 Check `spatial export --help` if your version's flags differ.
 """
 import argparse, json, re, shutil, subprocess, sys, tempfile
@@ -45,6 +46,9 @@ GEN = ROOT / "src" / "data" / "story.generated.ts"
 PHOTO_EDGE = 2400      # long edge of the web JPEG
 DEPTH_W = 1024         # depth map width
 MATCH_W = 1280         # width the stereo matching runs at
+# --ai-model: Depth Anything V2 sizes. Small is Apache-2.0; Base and Large
+# are sharper but CC-BY-NC-4.0 (non-commercial).
+AI_MODELS = {s: f"depth-anything/Depth-Anything-V2-{s.title()}-hf" for s in ("small", "base", "large")}
 
 
 def slug(name: str) -> str:
@@ -163,7 +167,7 @@ def embedded_depth(path: Path, photo):
     return np.clip(d, 0, 1)
 
 
-def ai_depth(img):
+def ai_depth(img, model="large"):
     """Depth Anything V2 (optional) for ordinary photos -> 0..1, 1 = near."""
     try:
         from transformers import pipeline
@@ -171,7 +175,7 @@ def ai_depth(img):
     except ImportError:
         return None
     pipe = ai_depth.pipe = getattr(ai_depth, "pipe", None) or pipeline(
-        "depth-estimation", model="depth-anything/Depth-Anything-V2-Small-hf")
+        "depth-estimation", model=AI_MODELS[model])
     out = pipe(Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)))["predicted_depth"].squeeze().numpy()
     out = cv2.resize(out.astype(np.float32), (img.shape[1], img.shape[0]))
     lo, hi = np.percentile(out, 2), np.percentile(out, 98)
@@ -194,6 +198,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("src", nargs="?", default=str(ROOT / "story-src"), help="folder of photos (default story-src/)")
     ap.add_argument("--ai", action="store_true", help="also make an AI depth map for every photo (Depth Anything V2)")
+    ap.add_argument("--ai-model", choices=AI_MODELS, default="large",
+                    help="Depth Anything V2 size for --ai (default large; small is the only commercial-use licence)")
     a = ap.parse_args()
     src = Path(a.src).expanduser()
     files = sorted(p for p in src.iterdir() if p.suffix.lower() in {".heic", ".jpg", ".jpeg", ".png"}) if src.is_dir() else []
@@ -216,7 +222,7 @@ def main():
                 kind = "portrait" if depth is not None else "flat"
         # --ai: an AI estimate for EVERY photo, kept beside the original
         # depth (never replacing it); the page switches original | ai.
-        ai = ai_depth(photo) if a.ai else None
+        ai = ai_depth(photo, a.ai_model) if a.ai else None
         photo = resize_long(photo, PHOTO_EDGE)
         cv2.imwrite(str(OUT / f"{sid}.jpg"), photo, [cv2.IMWRITE_JPEG_QUALITY, 88])
         entry = {"id": sid, "title": f.stem.replace("_", " ").replace("-", " "), "caption": "", "photo": f"story/{sid}.jpg"}
