@@ -21,10 +21,17 @@ const K = 0.55                     // max depth displacement (world units) at st
 const FOV = 35, DIST = 3, MARGIN = 1.14
 const CONTAIN = 0.88               // split mode: the whole photo, with a little room round it
 /* Sketch mode: each chapter starts as a line trace on a blueprint (the
-   whole photo in frame), and one scroll turns it into the photo WHILE its
-   depth opens up in perspective. SK_END = where that finishes (chapter
+   whole photo in frame) with its depth fully open and swaying — the
+   trace hides any roughness in the depth — and one scroll resolves it into
+   the full-definition photo as the depth settles flat: the flat, sharp
+   photo is the resting view. SK_END = where that finishes (chapter
    progress); SK_SWAY = side-to-side camera swing at full depth. */
 const SK_END = 0.6, SK_SWAY = 0.2
+/* Trace style: 'detail' = every edge (photo + depth); 'outline' = only
+   object outlines, bold (mostly depth edges, plus coarse photo edges). */
+type Trace = 'detail' | 'outline'
+const TRACE_KEY = 'mnth:storyTrace'
+const readTrace = (): Trace => { try { return localStorage.getItem(TRACE_KEY) === 'outline' ? 'outline' : 'detail' } catch { return 'detail' } }
 const SKETCH_KEY = 'mnth:storySketch'
 const readSketch = () => { try { return localStorage.getItem(SKETCH_KEY) === '1' } catch { return false } }
 
@@ -52,7 +59,7 @@ void main() {
    photo. The trace resolves near-first (depth-ordered reveal). */
 const FRAG = /* glsl */ `
 uniform sampler2D photo, depthMap;
-uniform float opacity, showDepth, fidelity;
+uniform float opacity, showDepth, fidelity, outlineOnly;
 uniform vec2 texel;
 uniform vec3 ink, paper;
 varying vec2 vUv;
@@ -72,11 +79,31 @@ float sobelD(vec2 uv) {
   float gy = dep(uv + vec2(0.0, t.y)) - dep(uv - vec2(0.0, t.y));
   return length(vec2(gx, gy));
 }
+/* Bold object outlines: depth edges sampled wide (thick, clean lines),
+   plus photo edges at a coarse scale with a high threshold (shapes, not
+   texture). */
+float outlines(vec2 uv) {
+  vec2 t = texel * 3.0;
+  float g = 0.0;
+  for (int k = 0; k < 8; k++) {
+    float a = float(k) * 0.7853982;
+    vec2 o = vec2(cos(a), sin(a)) * t;
+    g = max(g, abs(dep(uv + o) - dep(uv - o)));
+  }
+  float dl = smoothstep(0.06, 0.14, g);
+  float cl = 0.0;
+  vec2 c4 = texel * 4.0;
+  float gx = lum(uv + vec2(c4.x, 0.0)) - lum(uv - vec2(c4.x, 0.0));
+  float gy = lum(uv + vec2(0.0, c4.y)) - lum(uv - vec2(0.0, c4.y));
+  cl = smoothstep(0.3, 0.45, length(vec2(gx, gy)));
+  return max(dl, cl * 0.6);
+}
 void main() {
   vec3 c = texture2D(photo, vUv).rgb;
   float d = dep(vUv);
   if (fidelity < 0.999) {
-    float e = max(smoothstep(0.22, 0.5, sobelL(vUv)) * 0.75, smoothstep(0.035, 0.1, sobelD(vUv)));
+    float e = outlineOnly > 0.5 ? outlines(vUv)
+      : max(smoothstep(0.22, 0.5, sobelL(vUv)) * 0.75, smoothstep(0.035, 0.1, sobelD(vUv)));
     vec2 fr = min(vUv, 1.0 - vUv) / texel;
     e = max(e, 1.0 - smoothstep(0.8, 1.6, min(fr.x, fr.y)));
     vec3 sketch = mix(paper, ink, e);
@@ -159,6 +186,8 @@ export default function StoryPage() {
   const [showDepth, setShowDepth] = useState(false)
   const [layout, setLayoutState] = useState<Layout>(readLayout)
   const [sketch, setSketchState] = useState(readSketch)
+  const [trace, setTraceState] = useState<Trace>(readTrace)
+  const setTrace = (t: Trace) => { setTraceState(t); try { localStorage.setItem(TRACE_KEY, t) } catch { /* storage unavailable */ } }
   const setSketch = (on: boolean) => { setSketchState(on); try { localStorage.setItem(SKETCH_KEY, on ? '1' : '0') } catch { /* storage unavailable */ } }
   // Sketch mode steps: each scroll lands on the next stage (trace → photo → zoom).
   useEffect(() => {
@@ -169,8 +198,8 @@ export default function StoryPage() {
   const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const settings = useRef({ strength, showDepth, layout, sketch })
-  settings.current = { strength, showDepth, layout, sketch }
+  const settings = useRef({ strength, showDepth, layout, sketch, trace })
+  settings.current = { strength, showDepth, layout, sketch, trace }
 
   useEffect(() => {
     const el = holder.current, chaptersEl = chaptersRef.current
@@ -188,7 +217,7 @@ export default function StoryPage() {
         vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthTest,
         uniforms: {
           photo: { value: null }, depthMap: { value: null }, s: { value: 0 }, K: { value: K }, d0: { value: 0.5 }, opacity: { value: 1 }, showDepth: { value: 0 },
-          fidelity: { value: 1 }, texel: { value: new THREE.Vector2(1 / 900, 1 / 900) }, ink: { value: new THREE.Color() }, paper: { value: new THREE.Color() },
+          fidelity: { value: 1 }, outlineOnly: { value: 0 }, texel: { value: new THREE.Vector2(1 / 900, 1 / 900) }, ink: { value: new THREE.Color() }, paper: { value: new THREE.Color() },
         },
       })
       const m = new THREE.Mesh(geo, mat); m.renderOrder = order; scene.add(m); return m
@@ -223,6 +252,7 @@ export default function StoryPage() {
     const apply = (m: THREE.Mesh, i: number, s: number, opacity: number, fidelity = 1) => {
       const t = tex(i), ch = STORY[i], u = (m.material as THREE.ShaderMaterial).uniforms
       u.fidelity.value = fidelity
+      u.outlineOnly.value = settings.current.trace === 'outline' ? 1 : 0
       u.texel.value.set(1 / 900, t.aspect / 900)
       u.ink.value.copy(colours.ink); u.paper.value.copy(colours.paper)
       u.photo.value = t.photo; u.depthMap.value = t.depth
@@ -265,13 +295,13 @@ export default function StoryPage() {
       const p = y < 0 ? 0 : clamp01((y - i * secH) / secH)
       const sk = settings.current.sketch
       const fade = i < STORY.length - 1 && p > FADE ? ease((p - FADE) / (1 - FADE)) : 0
-      // Sketch: trace → photo and flat → depth together, in one scroll.
+      // Sketch: trace + open depth → full-definition flat photo, in one scroll.
       const sp = ease(clamp01(p / SK_END))
       const fid = sk ? sp : 1
-      const s = sk ? sp : ease(clamp01(p / RAMP))
+      const s = sk ? 1 - sp : ease(clamp01(p / RAMP))
       apply(cur, i, s, 1, fid)
       next.visible = fade > 0
-      if (fade > 0) apply(next, i + 1, 0, fade, sk ? 0 : 1)
+      if (fade > 0) apply(next, i + 1, sk ? 1 : 0, fade, sk ? 0 : 1)   // next chapter's opening state
       if (i + 1 < STORY.length) tex(i + 1)               // preload the next chapter
       if (i !== last) { last = i; setActive(i) }
       if (meterRef.current) meterRef.current.style.setProperty('--s', s.toFixed(3))
@@ -316,7 +346,7 @@ export default function StoryPage() {
       <div ref={chaptersRef}>
         {STORY.map((ch, i) => (
           <section key={ch.id} className={st.chapter} style={{ height: `${SEC_VH}vh` }}>
-            {/* Sketch mode stops: trace, then photo in depth. */}
+            {/* Sketch mode stops: trace in depth, then the flat photo. */}
             {sketch && [0, SK_END].map((f) => <span key={f} className={st.snap} style={{ top: `${f * 100}%` }} aria-hidden="true" />)}
             <div className={st.capWrap}>
               <article className={st.card}>
@@ -352,10 +382,17 @@ export default function StoryPage() {
           depth
           <input type="range" min={0} max={2} step={0.05} value={strength} onChange={(e) => setStrength(Number(e.target.value))} />
         </label>
-        <label className={st.ctl} title="Each photo starts as a line trace on a blueprint; one scroll brings in the photo as its depth opens up">
+        <label className={st.ctl} title="Each photo starts as a line trace in open depth on a blueprint; one scroll resolves it into the full photo as the depth settles flat">
           <input type="checkbox" checked={sketch} onChange={(e) => setSketch(e.target.checked)} />
           sketch
         </label>
+        {sketch && (
+          <span className={st.seg} role="group" aria-label="Trace style">
+            {(['detail', 'outline'] as const).map((t) => (
+              <button key={t} type="button" aria-pressed={trace === t} onClick={() => setTrace(t)}>{t}</button>
+            ))}
+          </span>
+        )}
         <label className={st.ctl}>
           <input type="checkbox" checked={showDepth} onChange={(e) => setShowDepth(e.target.checked)} />
           show depth map
