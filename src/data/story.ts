@@ -5,7 +5,8 @@
    the parallax reads on a flat screen.
 
    FROM IPHONE SPATIAL PHOTOS (.HEIC) — the easy way
-     Put the HEICs in story-src/ and run  python3 scripts/story_import.py
+     Put the HEICs in story-src/ and run  .venv/bin/python scripts/story_import.py
+     (setup once: python3 -m venv .venv && .venv/bin/pip install opencv-contrib-python numpy pillow-heif)
      It splits each into its two eyes, measures real depth from the shift
      between them, writes public/story/<name>.jpg + <name>-depth.png (+ the
      HEIC for Vision Pro) and lists them in story.generated.ts (IMPORTED).

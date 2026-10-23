@@ -2,7 +2,8 @@
 """Import iPhone spatial photos (.HEIC) into the #story page.
 
 For each HEIC in the input folder (default: story-src/):
-  1. `spatial export` splits it into its left and right eye images.
+  1. Split it into its left and right eye images: `spatial export` on
+     macOS, or pillow-heif (reads both images in the HEIC) anywhere else.
   2. OpenCV stereo matching (SGBM) measures how far each point shifts
      between the eyes (disparity): big shift = near. That becomes the
      depth map (greyscale PNG, white = near), true depth from the camera.
@@ -12,14 +13,15 @@ to list them (titles from the file names; edit captions in story.ts or
 rename the files). Ordinary (non-spatial) HEICs/JPEGs are imported too,
 with no depth map, unless --ai is given and Depth Anything is installed.
 
-Setup (macOS):
-  brew install spatial
-  python3 -m pip install opencv-contrib-python numpy
-  # optional, for non-spatial photos: python3 -m pip install transformers torch pillow
+Setup (once, in the project; works on Linux and macOS):
+  python3 -m venv .venv
+  .venv/bin/pip install opencv-contrib-python numpy pillow-heif
+  # optional, for non-spatial photos: .venv/bin/pip install transformers torch
+  # optional on macOS: brew install spatial
 
 Usage:
-  python3 scripts/story_import.py               # story-src/ -> public/story/
-  python3 scripts/story_import.py ~/Desktop/trip --ai
+  .venv/bin/python scripts/story_import.py               # story-src/ -> public/story/
+  .venv/bin/python scripts/story_import.py ~/Desktop/trip --ai
 Check `spatial export --help` if your version's flags differ.
 """
 import argparse, json, re, shutil, subprocess, sys, tempfile
@@ -29,7 +31,9 @@ try:
     import cv2
     import numpy as np
 except ImportError:
-    sys.exit("Needs OpenCV + numpy:  python3 -m pip install opencv-contrib-python numpy")
+    sys.exit("Needs OpenCV + numpy (in a venv):\n  python3 -m venv .venv\n"
+             "  .venv/bin/pip install opencv-contrib-python numpy pillow-heif\n"
+             "then run with  .venv/bin/python scripts/story_import.py")
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "public" / "story"
@@ -49,10 +53,39 @@ def resize_long(img, edge):
     return img if k >= 1 else cv2.resize(img, (round(w * k), round(h * k)), interpolation=cv2.INTER_AREA)
 
 
+def heif_images(heic: Path):
+    """Every top-level image in a HEIC as BGR arrays (pillow-heif)."""
+    try:
+        import pillow_heif
+    except ImportError:
+        sys.exit("Needs pillow-heif to read HEIC:  .venv/bin/pip install pillow-heif")
+    hf = pillow_heif.open_heif(str(heic), convert_hdr_to_8bit=True)
+    out = []
+    for im in hf:
+        a = np.asarray(im)
+        out.append(cv2.cvtColor(a, cv2.COLOR_RGBA2BGR if a.shape[2] == 4 else cv2.COLOR_RGB2BGR))
+    return out
+
+
+def valid_ratio(L, R):
+    """Share of pixels SGBM can match with L as the left eye (wrong order -> few)."""
+    k = 640 / L.shape[1]
+    gl = cv2.cvtColor(cv2.resize(L, None, fx=k, fy=k), cv2.COLOR_BGR2GRAY)
+    gr = cv2.cvtColor(cv2.resize(R, None, fx=k, fy=k), cv2.COLOR_BGR2GRAY)
+    d = cv2.StereoSGBM_create(minDisparity=0, numDisparities=48, blockSize=5).compute(gl, gr)
+    return float((d > 0).mean())
+
+
 def export_eyes(heic: Path, tmp: Path):
     """Left/right eye images from a spatial HEIC, or None if it isn't one."""
     if not shutil.which("spatial"):
-        sys.exit("`spatial` not found:  brew install spatial")
+        imgs = heif_images(heic)
+        if len(imgs) < 2 or imgs[0].shape != imgs[1].shape:
+            return None                       # an ordinary single-image HEIC
+        a, b = imgs[0], imgs[1]
+        # The file doesn't say which is which here: the right order is the
+        # one stereo matching can actually match.
+        return (a, b) if valid_ratio(a, b) >= valid_ratio(b, a) else (b, a)
     left, right = tmp / "left.png", tmp / "right.png"
     r = subprocess.run(["spatial", "export", "-i", str(heic), "-o", str(left), "-o", str(right)],
                        capture_output=True, text=True)
@@ -113,6 +146,9 @@ def ai_depth(img):
 
 def read_any(path: Path, tmp: Path):
     img = cv2.imread(str(path))
+    if img is None and path.suffix.lower() == ".heic":
+        imgs = heif_images(path)
+        img = imgs[0] if imgs else None
     if img is None and shutil.which("sips"):          # HEIC on macOS
         jpg = tmp / "flat.jpg"
         subprocess.run(["sips", "-s", "format", "jpeg", str(path), "--out", str(jpg)], capture_output=True)
