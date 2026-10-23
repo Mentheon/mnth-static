@@ -25,6 +25,8 @@
    plane (default 0.5); `strength` scales how far the depth expands
    (default 1; keep it modest, ~0.6–1.4, for comfort). */
 
+import { IMPORTED } from './story.generated'
+
 export interface StoryChapter {
   id: string
   title: string
@@ -40,8 +42,6 @@ export interface StoryChapter {
   /** Built-in generated test scene (no files needed). */
   demo?: boolean
 }
-
-import { IMPORTED } from './story.generated'
 
 /* Hand-listed chapters (below) come after the imported ones. The test
    scene shows only until something has been imported or listed. */
