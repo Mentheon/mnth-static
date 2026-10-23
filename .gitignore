@@ -3,3 +3,6 @@ dist
 .DS_Store
 *.local
 Main 3D page work.zip
+
+# raw photos for scripts/story_import.py
+story-src/

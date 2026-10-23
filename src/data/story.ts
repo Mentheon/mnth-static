@@ -4,7 +4,13 @@
    chapter its depth "expands" from flat to full, and the view drifts so
    the parallax reads on a flat screen.
 
-   ADDING A PHOTO
+   FROM IPHONE SPATIAL PHOTOS (.HEIC) — the easy way
+     Put the HEICs in story-src/ and run  python3 scripts/story_import.py
+     It splits each into its two eyes, measures real depth from the shift
+     between them, writes public/story/<name>.jpg + <name>-depth.png (+ the
+     HEIC for Vision Pro) and lists them in story.generated.ts (IMPORTED).
+
+   ADDING A PHOTO BY HAND
    1. Put the photo in public/story/ (JPEG/PNG/WebP — not HEIC; browsers
       other than Safari can't decode it). For an iPhone spatial photo,
       `spatial export -i IMG.HEIC -o left.png -o right.png` and use one eye.
@@ -35,13 +41,21 @@ export interface StoryChapter {
   demo?: boolean
 }
 
-export const STORY: StoryChapter[] = [
+import { IMPORTED } from './story.generated'
+
+/* Hand-listed chapters (below) come after the imported ones. The test
+   scene shows only until something has been imported or listed. */
+const MANUAL: StoryChapter[] = [
+  // { id: 'ch1', title: 'Chapter one', caption: 'What happens here.', photo: 'story/01.jpg', depth: 'story/01-depth.png' },
+]
+
+const DEMO: StoryChapter[] = [
   {
     id: 'demo',
     title: 'Test scene',
     caption: 'A generated landscape with a matching depth map, so the effect can be tried before any photos are added. Scroll to let the depth expand.',
     demo: true,
   },
-  // { id: 'ch1', title: 'Chapter one', caption: 'What happens here.', photo: 'story/01.jpg', depth: 'story/01-depth.png' },
-  // { id: 'ch2', title: 'Chapter two', caption: '…', photo: 'story/02.jpg', depth: 'story/02-depth.png', heic: 'story/02.heic' },
 ]
+
+export const STORY: StoryChapter[] = IMPORTED.length || MANUAL.length ? [...IMPORTED, ...MANUAL] : DEMO
