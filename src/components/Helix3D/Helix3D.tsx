@@ -656,8 +656,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       ring1: THREE.Mesh
       ring2: THREE.Mesh
       orbPos: THREE.Vector3     // rest position (rotor-local)
-      swing?: number            // collision avoidance: its sub-cubes' rotation round it (rad)
-      swingDir?: number         // committed swing direction while threatened (±1, 0 = none)
     }
     const nodes: NodeRec[] = []
     const nodePickables: THREE.Object3D[] = []
@@ -1218,7 +1216,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           })
         }
 
-        nodes.push({ strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone(), swing: 0 })
+        nodes.push({ strand: STRANDS[i], t, orb, ring1, ring2, orbPos: orbPos.clone() })
         nodePickables.push(orb)
         // Invisible hit sphere spanning the pulse rings, so a click
         // anywhere on the node (orb, rings, halo) registers.
@@ -1831,10 +1829,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           vx = THREE.MathUtils.lerp(side * rowD, sx * offTile, m)
           vy = THREE.MathUtils.lerp(0, sy * offTile, m)
         }
-        // Collision avoidance (avoidClusters): the node's sub-cubes rotate
-        // round it as one ring, by n.swing; tiles (focused) sit square.
-        const sw = (n.swing ?? 0) * (1 - m), cs = Math.cos(sw), sn = Math.sin(sw)
-        const ox = vx * cs - vy * sn, oy = vx * sn + vy * cs
+        const ox = vx, oy = vy
         _wp.copy(_np).addScaledVector(_right, ox).addScaledVector(_camUp, oy)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
@@ -1919,7 +1914,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         l.sprite.quaternion.copy(_inv).multiply(_q)
         updateOutline(l.sprite)
         // How far this node's cubes reach sideways (px), from where the cube
-        // actually sits (Advisory's outer row cubes, swung cubes): any cube
+        // actually sits (e.g. Advisory's outer row cubes): any cube
         // level with the node pushes its label out beyond it.
         if (Math.abs(oy) < s && Math.abs(ox) > 1e-4) {
           const px = ((Math.abs(ox) + s * 0.75) / (2 * d * tanH)) * hpx
@@ -2617,7 +2612,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       })
       reachL.length = 0; reachR.length = 0
       updateLogos(dt)
-      avoidClusters(dt)
       // 5 & 6. Sync the HTML labels (this also places a window opened in
       // list view), then draw the frame — skipped while the list view
       // hides the canvas, which is the bulk of the per-frame cost.
@@ -2651,83 +2645,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const e = o.getWorldPosition(_dv).addScaledVector(_camUp, half).project(camera)
       const r = Math.abs((-e.y * 0.5 + 0.5) * h - cy)
       return { l: cx - r, t: cy - r, r: cx + r, b: cy + r }
-    }
-    /* Collision avoidance: strands stay where they are on the coil. When
-       any of a strand's project sub-cubes is about to meet another
-       strand's cubes (now, or AVOID.look s ahead at the staff's spin),
-       its sub-cubes rotate round their own section cube as one ring —
-       clockwise or anticlockwise, whichever opens more room — and swing
-       back once their rest spots are clear. Higher priority (focused,
-       hovered, nearer) holds still; nothing is hidden. */
-    const AVOID = { margin: 34, back: 52, my: 6, look: 0.45, rate: 3.2, max: 1.35, ease: 2.5 }
-    type Box = { l: number; t: number; r: number; b: number }
-    const shiftBox = (b: Box, dx: number, dy = 0): Box => ({ l: b.l + dx, r: b.r + dx, t: b.t + dy, b: b.b + dy })
-    // Early warning is sideways (the spin brings strands together
-    // sideways); vertically only a near-touch counts.
-    const nearBox = (a: Box, p: Box, m: number) => a.l < p.r + m && a.r > p.l - m && a.t < p.b + AVOID.my && a.b > p.t - AVOID.my
-    const _av = new THREE.Vector3()
-    function avoidClusters(dt: number) {
-      const w = container.clientWidth, h = container.clientHeight
-      const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
-      const core: (Box | null)[] = nodes.map((n) => (n.orb.userData.cube ? screenBox(n.orb, w, h) : null))
-      const subs: Box[][] = nodes.map((_, ni) => logos.filter((l) => l.node === ni && l.sprite.visible).map((l) => screenBox(l.sprite, w, h)))
-      // Look ahead: each strand's screen-x shift AVOID.look s from now.
-      const a = THREE.MathUtils.clamp(smV * AVOID.look, -1.2, 1.2), ca = Math.cos(a), sa = Math.sin(a)
-      const ahead = nodes.map((n) => {
-        n.orb.getWorldPosition(_dv)
-        const x0 = (_av.copy(_dv).project(camera).x * 0.5 + 0.5) * w
-        _av.set(_dv.x * ca + _dv.z * sa, _dv.y, -_dv.x * sa + _dv.z * ca).project(camera)
-        return (_av.x * 0.5 + 0.5) * w - x0
-      })
-      const z = nodes.map((n) => n.orb.getWorldPosition(_dv).project(camera).z)
-      const rank = (i: number) => (i === focusIndex && isFocused() ? 0 : i === hovered ? 1 : 2)
-      const order = nodes.map((_, ni) => ni).filter((ni) => core[ni]).sort((x, y) => rank(x) - rank(y) || z[x] - z[y])
-      // A strand's sub-cubes rotated by `d` (screen px, about its centre).
-      const rotated = (ni: number, d: number) => {
-        const c = core[ni]!, cx = (c.l + c.r) / 2, cy = (c.t + c.b) / 2, k = Math.cos(d), q = Math.sin(d)
-        return subs[ni].map((b) => {
-          const bx = (b.l + b.r) / 2 - cx, by = cy - (b.t + b.b) / 2          // y up
-          const rx = bx * k - by * q, ry = bx * q + by * k
-          return shiftBox(b, cx + rx - (b.l + b.r) / 2, cy - ry - (b.t + b.b) / 2)
-        })
-      }
-      // Everything already placed (higher priority): their cores + sub-cubes.
-      const placedBoxes: { b: Box; ni: number }[] = []
-      const threatened = (ni: number, mine: Box[], m: number) =>
-        mine.some((c) => placedBoxes.some(({ b, ni: pi }) =>
-          nearBox(c, b, m) || nearBox(shiftBox(c, ahead[ni]), shiftBox(b, ahead[pi]), m)))
-      const room = (mine: Box[]) => {           // closest approach to anything placed
-        let best = Infinity
-        mine.forEach((c) => placedBoxes.forEach(({ b }) => {
-          const dx = Math.max(b.l - c.r, c.l - b.r, 0), dy = Math.max(b.t - c.b, c.t - b.b, 0)
-          best = Math.min(best, Math.hypot(dx, dy))
-        }))
-        return best
-      }
-      order.forEach((ni) => {
-        const n = nodes[ni]
-        const sw = n.swing ?? 0
-        if (rank(ni) < 2 || !subs[ni].length) {
-          // Focused / hovered (being looked at) or no sub-cubes: hold still.
-          n.swing = sw + (0 - sw) * Math.min(1, dt * AVOID.ease * 2); n.swingDir = 0
-        } else if (threatened(ni, subs[ni], AVOID.margin)) {
-          // Pick a way once (whichever leaves more room), keep it until clear.
-          if (!n.swingDir) n.swingDir = room(rotated(ni, 0.25)) >= room(rotated(ni, -0.25)) ? 1 : -1
-          let next = sw + n.swingDir * AVOID.rate * dt
-          if (Math.abs(next) > AVOID.max) { n.swingDir = -n.swingDir; next = THREE.MathUtils.clamp(next, -AVOID.max, AVOID.max) }
-          n.swing = next
-        } else {
-          n.swingDir = 0
-          // Clear: swing home once the rest positions are clear (wider margin).
-          if (sw !== 0 && !threatened(ni, rotated(ni, -sw), AVOID.back)) {
-            let nx = sw + (0 - sw) * Math.min(1, dt * AVOID.ease)
-            if (Math.abs(nx) < 0.002) nx = 0
-            n.swing = nx
-          }
-        }
-        placedBoxes.push({ b: core[ni]!, ni })
-        subs[ni].forEach((b) => placedBoxes.push({ b, ni }))
-      })
     }
     function declutterLabels(depth: number[], shown: boolean[], w: number, h: number) {
       const PAD = 6
