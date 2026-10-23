@@ -744,13 +744,15 @@
 }
 .helix3d-root .helix-center-label .title .accent { color: var(--crimson); }
 /* Ledger under the headline: a row of four square tiles. */
-.helix3d-root .helix-ledger { display: flex; gap: 0.5rem; margin: 1.4rem 0 0; }
+.helix3d-root .helix-ledger { display: flex; gap: 0.5rem; width: max-content; margin: 1.4rem 0 0; }
+/* Fixed, identical squares: flex: none so the headline's 18ch column
+   can't squeeze them by their content (they used to come out uneven). */
 .helix3d-root .helix-ledger div {
-  width: 4.4rem; height: 4.4rem; box-sizing: border-box; padding: 0.5rem;
+  flex: none; width: 4.4rem; height: 4.4rem; box-sizing: border-box; padding: 0.5rem; overflow: hidden;
   display: flex; flex-direction: column; justify-content: space-between;
   background: #2F0147; color: #FFECE1;
 }
-.helix3d-root .helix-ledger dt { font-family: 'JetBrains Mono', monospace; font-size: 0.53rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.helix3d-root .helix-ledger dt { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
 .helix3d-root .helix-ledger dd { margin: 0; font-family: 'Lato', sans-serif; font-weight: 900; font-size: 1.6rem; line-height: 1; }
 .helix3d-root .helix-ledger .hl-projects { background: #9C528B; }
 .helix3d-root .helix-ledger .hl-services { background: #E0A526; color: #2F0147; }
