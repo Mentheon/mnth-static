@@ -36,6 +36,8 @@ export interface StoryChapter {
   photo?: string
   /** Greyscale depth map under public/ (white = near). */
   depth?: string
+  /** AI-estimated depth map (story_import.py --ai); the page can use it instead. */
+  aiDepth?: string
   /** Optional spatial HEIC under public/ (Vision Pro: long-press → View Spatial Photo). */
   heic?: string
   focus?: number

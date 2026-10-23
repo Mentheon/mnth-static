@@ -33,6 +33,11 @@ type Trace = 'detail' | 'outline'
 /* Full layout: 'fill' = photo covers the page (cropped); 'fit' = the whole
    photo centred on the blueprint, as sketch mode always shows it. */
 type Fit = 'fill' | 'fit'
+/* Depth source: 'original' = the photo's own (camera / two eyes; else the
+   gradient); 'ai' = the Depth Anything estimate, where one was made. */
+type DepthSrc = 'original' | 'ai'
+const DEPTH_SRC_KEY = 'mnth:storyDepthSrc'
+const readDepthSrc = (): DepthSrc => { try { return localStorage.getItem(DEPTH_SRC_KEY) === 'ai' ? 'ai' : 'original' } catch { return 'original' } }
 const FIT_KEY = 'mnth:storyFit'
 const readFit = (): Fit => { try { return localStorage.getItem(FIT_KEY) === 'fit' ? 'fit' : 'fill' } catch { return 'fill' } }
 const TRACE_KEY = 'mnth:storyTrace'
@@ -164,19 +169,21 @@ function demoTex(): Tex {
   d.fillStyle = '#fff'; d.fillRect(300, 470, 120, 530)
   return { photo: canvasTex(pc, true), depth: canvasTex(dc, false), aspect: W / H }
 }
-function loadTex(ch: StoryChapter, onReady: () => void): Tex {
+function loadTex(ch: StoryChapter, src: DepthSrc, onReady: () => void): Tex {
   if (ch.demo) { const t = demoTex(); queueMicrotask(onReady); return t }
-  const out: Tex = { photo: new THREE.Texture(), depth: ch.depth ? new THREE.Texture() : gradientDepth(), aspect: 1.5 }
-  if (!ch.depth) out.note = 'no depth map: using a top-far gradient'
+  const depthPath = src === 'ai' ? ch.aiDepth ?? ch.depth : ch.depth
+  const out: Tex = { photo: new THREE.Texture(), depth: depthPath ? new THREE.Texture() : gradientDepth(), aspect: 1.5 }
+  if (!depthPath) out.note = 'no depth map: using a top-far gradient'
+  else if (src === 'ai' && !ch.aiDepth) out.note = 'no ai depth for this photo (run the import with --ai): showing its original'
   const loader = new THREE.TextureLoader()
   out.photo = loader.load(BASE + ch.photo, (t) => {
     out.aspect = (t.image as HTMLImageElement).width / (t.image as HTMLImageElement).height
     onReady()
   }, undefined, () => { out.note = `photo not found: public/${ch.photo}`; onReady() })
   out.photo.colorSpace = THREE.SRGBColorSpace
-  if (ch.depth) {
-    out.depth = loader.load(BASE + ch.depth, () => onReady(), undefined, () => {
-      out.depth = gradientDepth(); out.note = `depth map not found: public/${ch.depth}`; onReady()
+  if (depthPath) {
+    out.depth = loader.load(BASE + depthPath, () => onReady(), undefined, () => {
+      out.depth = gradientDepth(); out.note = `depth map not found: public/${depthPath}`; onReady()
     })
     out.depth.colorSpace = THREE.NoColorSpace
   }
@@ -193,6 +200,9 @@ export default function StoryPage() {
   const [sketch, setSketchState] = useState(readSketch)
   const [trace, setTraceState] = useState<Trace>(readTrace)
   const [fit, setFitState] = useState<Fit>(readFit)
+  const [depthSrc, setDepthSrcState] = useState<DepthSrc>(readDepthSrc)
+  const setDepthSrc = (d: DepthSrc) => { setDepthSrcState(d); setNotes({}); try { localStorage.setItem(DEPTH_SRC_KEY, d) } catch { /* storage unavailable */ } }
+  const hasAi = STORY.some((c) => c.aiDepth)
   const setFit = (f: Fit) => { setFitState(f); try { localStorage.setItem(FIT_KEY, f) } catch { /* storage unavailable */ } }
   // Contained (whole photo in frame): fit, sketch, or a split half.
   const contained = fit === 'fit' || sketch || layout !== 'full'
@@ -207,8 +217,8 @@ export default function StoryPage() {
   const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const settings = useRef({ strength, showDepth, layout, sketch, trace, contained })
-  settings.current = { strength, showDepth, layout, sketch, trace, contained }
+  const settings = useRef({ strength, showDepth, layout, sketch, trace, contained, depthSrc })
+  settings.current = { strength, showDepth, layout, sketch, trace, contained, depthSrc }
 
   useEffect(() => {
     const el = holder.current, chaptersEl = chaptersRef.current
@@ -233,13 +243,15 @@ export default function StoryPage() {
     }
     const cur = mkMesh(0, true), next = mkMesh(1, false)   // next paints over during the crossfade
 
-    const cache = new Map<number, Tex>()
+    const cache = new Map<string, Tex>()
     const tex = (i: number) => {
-      if (!cache.has(i)) cache.set(i, loadTex(STORY[i], () => {
-        const t = cache.get(i)
-        if (t?.note) setNotes((n) => ({ ...n, [STORY[i].id]: t.note! }))
-      }))
-      return cache.get(i)!
+      const src = settings.current.depthSrc, key = `${i}:${src}`
+      if (!cache.has(key)) {
+        const t = loadTex(STORY[i], src, () => { if (t.note && settings.current.depthSrc === src) setNotes((n) => ({ ...n, [STORY[i].id]: t.note! })) })
+        cache.set(key, t)
+        if (t.note) queueMicrotask(() => setNotes((n) => ({ ...n, [STORY[i].id]: t.note! })))
+      }
+      return cache.get(key)!
     }
     const fit = (m: THREE.Mesh, aspect: number) => {
       const vh = 2 * DIST * Math.tan(THREE.MathUtils.degToRad(FOV / 2)), va = camera.aspect
@@ -395,6 +407,13 @@ export default function StoryPage() {
           <span className={st.seg} role="group" aria-label="Photo fit" title={sketch ? 'Sketch mode always fits the whole photo' : undefined}>
             {(['fill', 'fit'] as const).map((f) => (
               <button key={f} type="button" aria-pressed={(sketch ? 'fit' : fit) === f} disabled={sketch} onClick={() => setFit(f)}>{f}</button>
+            ))}
+          </span>
+        )}
+        {hasAi && (
+          <span className={st.seg} role="group" aria-label="Depth source" title="original: the photo's own depth · ai: Depth Anything's estimate">
+            {(['original', 'ai'] as const).map((d) => (
+              <button key={d} type="button" aria-pressed={depthSrc === d} onClick={() => setDepthSrc(d)}>{d}</button>
             ))}
           </span>
         )}

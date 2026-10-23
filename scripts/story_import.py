@@ -13,7 +13,9 @@ that embedded depth instead. For each spatial HEIC in the input folder
 Results go to public/story/, and src/data/story.generated.ts is rewritten
 to list them (titles from the file names; edit captions in story.ts or
 rename the files). Ordinary (non-spatial) HEICs/JPEGs are imported too,
-with no depth map, unless --ai is given and Depth Anything is installed.
+with no depth map. --ai also makes an AI depth estimate (Depth Anything V2)
+for every photo, saved beside the original (<name>-ai-depth.png); the page
+can switch between the two.
 
 Setup (once, in the project; works on Linux and macOS):
   python3 -m venv .venv
@@ -191,7 +193,7 @@ def read_any(path: Path, tmp: Path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("src", nargs="?", default=str(ROOT / "story-src"), help="folder of photos (default story-src/)")
-    ap.add_argument("--ai", action="store_true", help="estimate depth for non-spatial photos (Depth Anything V2)")
+    ap.add_argument("--ai", action="store_true", help="also make an AI depth map for every photo (Depth Anything V2)")
     a = ap.parse_args()
     src = Path(a.src).expanduser()
     files = sorted(p for p in src.iterdir() if p.suffix.lower() in {".heic", ".jpg", ".jpeg", ".png"}) if src.is_dir() else []
@@ -210,26 +212,30 @@ def main():
                 photo = read_any(f, tmp)
                 if photo is None:
                     print(f"  skip {f.name}: can't read it"); continue
-                depth, kind = embedded_depth(f, photo), "portrait"
-                if depth is None:
-                    depth, kind = (ai_depth(photo) if a.ai else None), "flat"
+                depth = embedded_depth(f, photo)
+                kind = "portrait" if depth is not None else "flat"
+        # --ai: an AI estimate for EVERY photo, kept beside the original
+        # depth (never replacing it); the page switches original | ai.
+        ai = ai_depth(photo) if a.ai else None
         photo = resize_long(photo, PHOTO_EDGE)
         cv2.imwrite(str(OUT / f"{sid}.jpg"), photo, [cv2.IMWRITE_JPEG_QUALITY, 88])
         entry = {"id": sid, "title": f.stem.replace("_", " ").replace("-", " "), "caption": "", "photo": f"story/{sid}.jpg"}
-        if depth is not None:
-            ph, pw = photo.shape[:2]
-            dmap = cv2.resize(depth, (DEPTH_W, round(DEPTH_W * ph / pw)), interpolation=cv2.INTER_AREA)
-            cv2.imwrite(str(OUT / f"{sid}-depth.png"), (np.nan_to_num(np.clip(dmap, 0, 1)) * 255).astype(np.uint8))
-            entry["depth"] = f"story/{sid}-depth.png"
+        ph, pw = photo.shape[:2]
+        for key, dm, name in (("depth", depth, f"{sid}-depth.png"), ("aiDepth", ai, f"{sid}-ai-depth.png")):
+            if dm is None:
+                continue
+            dmap = cv2.resize(dm, (DEPTH_W, round(DEPTH_W * ph / pw)), interpolation=cv2.INTER_AREA)
+            cv2.imwrite(str(OUT / name), (np.nan_to_num(np.clip(dmap, 0, 1)) * 255).astype(np.uint8))
+            entry[key] = f"story/{name}"
         if kind == "spatial":
             shutil.copyfile(f, OUT / f"{sid}.heic")
             entry["heic"] = f"story/{sid}.heic"
         entries.append(entry)
-        print(f"  {f.name}: {kind}{'' if depth is not None else ' (no depth map)'} -> public/story/{sid}.jpg")
+        print(f"  {f.name}: {kind}{'' if depth is not None else ' (no depth of its own)'}{' + ai depth' if ai is not None else ''} -> public/story/{sid}.jpg")
     # Tidy up: files from a previous import whose photo has left story-src/.
-    keep = {Path(e[k]).name for e in entries for k in ("photo", "depth", "heic") if k in e}
+    keep = {Path(e[k]).name for e in entries for k in ("photo", "depth", "aiDepth", "heic") if k in e}
     if GEN.exists():
-        old = re.findall(r'"(?:photo|depth|heic)": "story/([^"]+)"', GEN.read_text())
+        old = re.findall(r'"(?:photo|depth|aiDepth|heic)": "story/([^"]+)"', GEN.read_text())
         for name in old:
             if name not in keep and (OUT / name).exists():
                 (OUT / name).unlink()
