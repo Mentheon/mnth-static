@@ -43,6 +43,19 @@
 .ctl input[type='range'] { width: 90px; accent-color: var(--crimson); }
 .ctl input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--crimson); }
 
+/* Layout switch (full | left | right). */
+.seg { display: inline-flex; border: 1px solid var(--ink-soft); }
+.seg button {
+  padding: 0.3rem 0.55rem; border: 0; background: none; color: var(--ink-quiet); cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+}
+.seg button + button { border-left: 1px solid var(--ink-soft); }
+.seg button[aria-pressed='true'] { background: var(--ink); color: var(--bg); }
+
+/* Split: the photo fills one half, so text moves to the other. */
+.page[data-layout='left'] .intro, .page[data-layout='left'] .outro, .page[data-layout='left'] .capWrap { padding-left: calc(50% + 2rem); }
+.page[data-layout='right'] .intro, .page[data-layout='right'] .outro, .page[data-layout='right'] .capWrap { padding-right: calc(50% + 2rem); }
+
 @media (max-width: 720px) {
   .intro, .outro, .capWrap { padding: 0 1rem; }
   .card { max-width: none; }

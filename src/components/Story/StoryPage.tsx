@@ -19,6 +19,15 @@ const RAMP = 0.65                  // share of a chapter over which depth expand
 const FADE = 0.82                  // crossfade to the next chapter starts here
 const K = 0.55                     // max depth displacement (world units) at strength 1
 const FOV = 35, DIST = 3, MARGIN = 1.14
+const CONTAIN = 0.88               // split mode: the whole photo, with a little room round it
+
+/* full = photo covers the page; left/right = the whole photo (uncropped)
+   in that half, captions in the other — for viewing from a distance. */
+type Layout = 'full' | 'left' | 'right'
+const LAYOUT_KEY = 'mnth:storyLayout'
+const readLayout = (): Layout => {
+  try { const v = localStorage.getItem(LAYOUT_KEY); return v === 'left' || v === 'right' ? v : 'full' } catch { return 'full' }
+}
 
 const VERT = /* glsl */ `
 uniform sampler2D depthMap;
@@ -112,10 +121,12 @@ export default function StoryPage() {
   const meterRef = useRef<HTMLSpanElement>(null)
   const [strength, setStrength] = useState(1)
   const [showDepth, setShowDepth] = useState(false)
+  const [layout, setLayoutState] = useState<Layout>(readLayout)
+  const setLayout = (l: Layout) => { setLayoutState(l); try { localStorage.setItem(LAYOUT_KEY, l) } catch { /* storage unavailable */ } }
   const [active, setActive] = useState(0)
   const [notes, setNotes] = useState<Record<string, string>>({})
-  const settings = useRef({ strength, showDepth })
-  settings.current = { strength, showDepth }
+  const settings = useRef({ strength, showDepth, layout })
+  settings.current = { strength, showDepth, layout }
 
   useEffect(() => {
     const el = holder.current, chaptersEl = chaptersRef.current
@@ -147,7 +158,9 @@ export default function StoryPage() {
     }
     const fit = (m: THREE.Mesh, aspect: number) => {
       const vh = 2 * DIST * Math.tan(THREE.MathUtils.degToRad(FOV / 2)), va = camera.aspect
-      const h = aspect > va ? vh * MARGIN : (vh * va * MARGIN) / aspect
+      let h: number
+      if (settings.current.layout === 'full') h = aspect > va ? vh * MARGIN : (vh * va * MARGIN) / aspect   // cover
+      else h = aspect > va ? (vh * va * CONTAIN) / aspect : vh * CONTAIN                                    // contain
       m.scale.set(h * aspect, h, 1)
     }
     const apply = (m: THREE.Mesh, i: number, s: number, opacity: number) => {
@@ -159,9 +172,17 @@ export default function StoryPage() {
       fit(m, t.aspect)
     }
 
-    const resize = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight)
-      camera.aspect = window.innerWidth / window.innerHeight
+    const resize = () => renderer.setSize(window.innerWidth, window.innerHeight)
+    /* Draw into the whole page or one half of it. */
+    let viewKey = ''
+    const setView = () => {
+      const W = window.innerWidth, H = window.innerHeight, l = settings.current.layout
+      const x = l === 'right' ? W / 2 : 0, w = l === 'full' ? W : W / 2
+      const key = `${l}:${W}x${H}`
+      if (key === viewKey) return
+      viewKey = key
+      renderer.setViewport(x, 0, w, H)
+      camera.aspect = w / H
       camera.updateProjectionMatrix()
     }
     resize()
@@ -177,6 +198,7 @@ export default function StoryPage() {
     const t0 = performance.now()
     const frame = () => {
       raf = requestAnimationFrame(frame)
+      setView()
       const secH = (window.innerHeight * SEC_VH) / 100
       const y = -chaptersEl.getBoundingClientRect().top
       const i = Math.min(STORY.length - 1, Math.max(0, Math.floor(y / secH)))
@@ -210,7 +232,7 @@ export default function StoryPage() {
   }, [])
 
   return (
-    <div className={st.page}>
+    <div className={st.page} data-layout={layout}>
       <div ref={holder} className={st.stage} aria-hidden="true" />
 
       <section className={st.intro}>
@@ -253,6 +275,11 @@ export default function StoryPage() {
       <aside className={st.panel} aria-label="Depth controls">
         <span className={st.count}>{String(active + 1).padStart(2, '0')} / {String(STORY.length).padStart(2, '0')}</span>
         <span className={st.meter} ref={meterRef} title="Depth (scroll progress)"><i /></span>
+        <span className={st.seg} role="group" aria-label="Layout">
+          {(['full', 'left', 'right'] as const).map((l) => (
+            <button key={l} type="button" aria-pressed={layout === l} onClick={() => setLayout(l)}>{l}</button>
+          ))}
+        </span>
         <label className={st.ctl}>
           depth
           <input type="range" min={0} max={2} step={0.05} value={strength} onChange={(e) => setStrength(Number(e.target.value))} />
