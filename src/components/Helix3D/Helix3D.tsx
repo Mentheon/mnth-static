@@ -608,10 +608,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* Slot order: 9, 3, 12 and 6 o'clock first (so four cubes, e.g.
        Advisory's services, sit in a fixed cross around their node). */
     /* Advisory's services: expanded cross (Research left, Design up,
-       Development down, Consultancy right); at rest they sit in one row,
-       outer cubes ADV_ROW_STEP cube-widths beyond the inner ones. */
+       Development down, Consultancy right); at rest they sit in one row
+       with equal gaps between every neighbour. */
     const ADV_CROSS: [number, number][] = [[-1, 0], [0, 1], [0, -1], [1, 0]]
-    const ADV_ROW_STEP = 1.3
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -1826,7 +1825,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           // [Research][Design] (node) [Development][Consultancy] — easing
           // into the cross as it's focused.
           const side = k % 4 < 2 ? -1 : 1, outer = k % 4 === 0 || k % 4 === 3
-          const rowD = sideOff + (outer ? s * ADV_ROW_STEP : 0)
+          // Equal gaps along the row: outer↔inner = inner↔node.
+          const gap = sideOff - ne * 0.5 - s * 0.5
+          const rowD = outer ? sideOff + s + gap : sideOff
           vx = THREE.MathUtils.lerp(side * rowD, sx * offTile, m)
           vy = THREE.MathUtils.lerp(0, sy * offTile, m)
         }
