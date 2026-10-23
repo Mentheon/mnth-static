@@ -20,11 +20,11 @@ const FADE = 0.82                  // crossfade to the next chapter starts here
 const K = 0.55                     // max depth displacement (world units) at strength 1
 const FOV = 35, DIST = 3, MARGIN = 1.14
 const CONTAIN = 0.88               // split mode: the whole photo, with a little room round it
-/* Sketch mode: each chapter runs trace → photo → depth (perspective), the
-   whole photo in frame on a plum blueprint. Phase ends as chapter progress;
-   SK_SWAY = side-to-side camera swing at full depth, so the depth reads. */
-const SK_FID = 0.3, SK_DEPTH = 0.75, SK_SWAY = 0.2
-const SK_INK = '#E2B7D3', SK_PAPER = '#2F0147'     // purple on purple
+/* Sketch mode: each chapter starts as a line trace on a blueprint (the
+   whole photo in frame), and one scroll turns it into the photo WHILE its
+   depth opens up in perspective. SK_END = where that finishes (chapter
+   progress); SK_SWAY = side-to-side camera swing at full depth. */
+const SK_END = 0.6, SK_SWAY = 0.2
 const SKETCH_KEY = 'mnth:storySketch'
 const readSketch = () => { try { return localStorage.getItem(SKETCH_KEY) === '1' } catch { return false } }
 
@@ -210,8 +210,16 @@ export default function StoryPage() {
       else h = aspect > va ? (vh * va * CONTAIN) / aspect : vh * CONTAIN                                    // contain
       m.scale.set(h * aspect, h, 1)
     }
-    // Trace: light grape on the blueprint's plum, in both themes.
-    const colours = { ink: new THREE.Color(SK_INK), paper: new THREE.Color(SK_PAPER) }
+    // Trace colours follow the site theme (ink on paper), like the blueprint.
+    const colours = { ink: new THREE.Color('#2F0147'), paper: new THREE.Color('#FFECE1') }
+    const readColours = () => {
+      const cs = getComputedStyle(document.documentElement)
+      colours.ink.set(cs.getPropertyValue('--ink').trim() || '#2F0147')
+      colours.paper.set(cs.getPropertyValue('--bg').trim() || '#FFECE1')
+    }
+    readColours()
+    const onTheme = () => requestAnimationFrame(readColours)
+    window.addEventListener('mnth:theme', onTheme)
     const apply = (m: THREE.Mesh, i: number, s: number, opacity: number, fidelity = 1) => {
       const t = tex(i), ch = STORY[i], u = (m.material as THREE.ShaderMaterial).uniforms
       u.fidelity.value = fidelity
@@ -257,9 +265,10 @@ export default function StoryPage() {
       const p = y < 0 ? 0 : clamp01((y - i * secH) / secH)
       const sk = settings.current.sketch
       const fade = i < STORY.length - 1 && p > FADE ? ease((p - FADE) / (1 - FADE)) : 0
-      // Sketch: trace → photo, then the depth opens up (same framing).
-      const fid = sk ? ease(clamp01(p / SK_FID)) : 1
-      const s = sk ? ease(clamp01((p - SK_FID) / (SK_DEPTH - SK_FID))) : ease(clamp01(p / RAMP))
+      // Sketch: trace → photo and flat → depth together, in one scroll.
+      const sp = ease(clamp01(p / SK_END))
+      const fid = sk ? sp : 1
+      const s = sk ? sp : ease(clamp01(p / RAMP))
       apply(cur, i, s, 1, fid)
       next.visible = fade > 0
       if (fade > 0) apply(next, i + 1, 0, fade, sk ? 0 : 1)
@@ -281,6 +290,7 @@ export default function StoryPage() {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('mnth:theme', onTheme)
       cache.forEach((t) => { t.photo.dispose(); t.depth.dispose() })
       geo.dispose(); (cur.material as THREE.Material).dispose(); (next.material as THREE.Material).dispose()
       renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove()
@@ -306,8 +316,8 @@ export default function StoryPage() {
       <div ref={chaptersRef}>
         {STORY.map((ch, i) => (
           <section key={ch.id} className={st.chapter} style={{ height: `${SEC_VH}vh` }}>
-            {/* Sketch mode stops: trace, photo, depth. */}
-            {sketch && [0, SK_FID, SK_DEPTH].map((f) => <span key={f} className={st.snap} style={{ top: `${f * 100}%` }} aria-hidden="true" />)}
+            {/* Sketch mode stops: trace, then photo in depth. */}
+            {sketch && [0, SK_END].map((f) => <span key={f} className={st.snap} style={{ top: `${f * 100}%` }} aria-hidden="true" />)}
             <div className={st.capWrap}>
               <article className={st.card}>
                 <p className={st.kick}>{String(i + 1).padStart(2, '0')} / {String(STORY.length).padStart(2, '0')}</p>
@@ -342,7 +352,7 @@ export default function StoryPage() {
           depth
           <input type="range" min={0} max={2} step={0.05} value={strength} onChange={(e) => setStrength(Number(e.target.value))} />
         </label>
-        <label className={st.ctl} title="Each photo starts as a line trace on a blueprint; scroll to bring in the photo, then again to open up its depth">
+        <label className={st.ctl} title="Each photo starts as a line trace on a blueprint; one scroll brings in the photo as its depth opens up">
           <input type="checkbox" checked={sketch} onChange={(e) => setSketch(e.target.checked)} />
           sketch
         </label>

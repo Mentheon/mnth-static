@@ -43,15 +43,15 @@
 .ctl input[type='range'] { width: 90px; accent-color: var(--crimson); }
 .ctl input[type='checkbox'] { width: 16px; height: 16px; margin: 0; accent-color: var(--crimson); }
 
-/* Sketch mode: a plum blueprint behind the photo (28px minor / 140px
-   major grid in grape), matching the trace's purple-on-purple. */
+/* Sketch mode: a blueprint behind the photo in the site theme (28px
+   minor / 140px major grid in the ink colour, on the page colour). */
 .page[data-sketch='on'] .stage {
-  background-color: #2F0147;
+  background-color: var(--bg);
   background-image:
-    linear-gradient(rgba(197, 137, 181, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(197, 137, 181, 0.12) 1px, transparent 1px),
-    linear-gradient(rgba(197, 137, 181, 0.24) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(197, 137, 181, 0.24) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1px);
   background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
   background-position: -1px -1px;
 }
