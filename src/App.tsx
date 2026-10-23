@@ -1,6 +1,7 @@
 import { useState, useEffect, Fragment, type ReactNode } from 'react'
 import NavBar from './components/NavBar'
 import WhoPage from './components/WhoPage'
+import StoryPage from './components/Story/StoryPage'
 import ConceptView from './components/ConceptView'
 import Helix3D from './components/Helix3D/Helix3D'
 import ScrollLockView from './components/Helix3D/ScrollLockView'
@@ -61,6 +62,7 @@ export default function App() {
     hashPath === '#helix3d' ? 'helix3d'    : // bare or ?skipIntro=true both route to helix3d
     hash === '#scrolllock' ? 'scrolllock' :
     hashPath === '#who' ? 'who'        : // ?person=<id> opens that profile
+    hashPath === '#story' ? 'story'    : // experimental scroll-depth photo story
     hash === '#loaders' ? 'loaders'    :
     hash === '#concept' ? 'concept'    :
     isStrandRoute       ? 'strand'     :
@@ -143,6 +145,8 @@ export default function App() {
         <NavBar />
         {page === 'who' ? (
           <WhoPage />
+        ) : page === 'story' ? (
+          <StoryPage />
         ) : page === 'loaders' ? (
           // #loaders — preview/cycle the loader variants (◀ ▶).
           <LoaderGallery />
