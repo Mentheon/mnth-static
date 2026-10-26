@@ -105,6 +105,8 @@
 .fields div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px dashed var(--ink-soft); }
 .fields dt { flex: none; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
 .fields dd { margin: 0; font-weight: 700; font-size: 0.88rem; line-height: 1.35; text-align: right; }
+.ctaRow { display: flex; align-items: center; gap: 0.4rem; margin-top: 1.3rem; }
+.ctaRow .cta { flex: 1; margin-top: 0; }
 .cta {
   display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 48px; margin-top: 1.3rem;
   background: var(--crimson); color: #FFECE1; border-radius: 2px; text-decoration: none;

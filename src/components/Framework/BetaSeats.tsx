@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { pad2, type Output } from '../../data/framework'
 import { useSwipeDown } from '../../lib/useSwipeDown'
+import CopyEmail from '../CopyEmail'
 import s from './BetaSeats.module.css'
 
 /* Beta testers: a row of seats (abstract figures), some taken. Pick an
@@ -211,6 +212,7 @@ function RequestDialog({ o, seat, seats, email, author, onClose }: {
                   : copied === 'yes'
                     ? `Copied. Now send it to ${recipient}.`
                     : `Copy this summary and send to ${recipient}${email ? ', or use Open email to draft it in your mail app' : ''}.`}
+              {email && <CopyEmail email={email} />}
             </p>
           </div>
         </div>

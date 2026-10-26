@@ -8,6 +8,8 @@ import { productTileHTML, productMarksReady } from '../ProductMark'
 import StrandMark from '../StrandMark'
 import Padlock from '../Padlock'
 import { CONTACT_EMAIL } from '../../data/people'
+import CopyEmail from '../CopyEmail'
+import { ADVISORY_SCOPE } from '../../data/advisory'
 import { useSwipeDown } from '../../lib/useSwipeDown'
 import s from './MobileHome.module.css'
 
@@ -52,7 +54,7 @@ function ServiceRow({ o }: { o: Output }) {
       <div className={s.serviceBody}>
         {a.body.map((p, i) => <p key={i}>{p}</p>)}
         <ul className={s.covers}>{a.covers.map((c) => <li key={c}>{c}</li>)}</ul>
-        <p className={s.more}>For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a></p>
+        <p className={s.more}>For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a><CopyEmail /></p>
       </div>
     </details>
   )
@@ -117,7 +119,7 @@ export default function MobileHome() {
 
       <footer className={s.foot}>
         <span>mentheon ltd · companies house 15974246</span>
-        <a href={`mailto:${CONTACT_EMAIL}`}>contact</a>
+        <span><a href={`mailto:${CONTACT_EMAIL}`}>contact</a><CopyEmail /></span>
       </footer>
 
       {openCat && (
@@ -181,6 +183,7 @@ function StrandSheet({ cat, onClose, onStep }: { cat: CategoryId; onClose: () =>
             </div>
           </div>
           <p className={s.sheetPurpose}>{c.purpose}.</p>
+          {cat === 'advisory' && <p className={s.sheetPurpose}>{ADVISORY_SCOPE}</p>}
           <dl className={s.fields}>
             <div><dt>{cat === 'advisory' ? 'services' : 'projects'}</dt><dd>{pad2(os.length)}</dd></div>
             <div><dt>{cat === 'advisory' ? 'covers' : 'typical outputs'}</dt><dd>{c.typicalOutputs}</dd></div>
@@ -190,7 +193,7 @@ function StrandSheet({ cat, onClose, onStep }: { cat: CategoryId; onClose: () =>
             {os.length ? os.map((o) => <ProjectRow key={o.id} o={o} />) : <p className={s.empty}>no projects yet</p>}
           </div>
           {cat === 'advisory'
-            ? <a className={s.cta} href={advisoryMail()}>Email {CONTACT_EMAIL} <span aria-hidden="true">↦</span></a>
+            ? <span className={s.ctaRow}><a className={s.cta} href={advisoryMail()}>Email {CONTACT_EMAIL} <span aria-hidden="true">↦</span></a><CopyEmail /></span>
             : <a className={s.cta} href={catHref(cat)}>View {c.label.toLowerCase()} <span aria-hidden="true">→</span></a>}
         </div>
       </section>

@@ -12,7 +12,7 @@ import {
   categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
   outputById, isAdvisory, advisoryFor,
 } from '../../data/framework'
-import { ADVISORY_GOLD, ADVISORY_INK } from '../../data/advisory'
+import { ADVISORY_GOLD, ADVISORY_INK, ADVISORY_SCOPE } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
 import './helix3d.css'
 import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID, markWord, WORD } from '../ProductMark'
@@ -20,6 +20,7 @@ import { markIntroDone, skipIntroAlways } from '../../lib/introGate'
 import { useSwipeDown } from '../../lib/useSwipeDown'
 import { CONTACT_EMAIL } from '../../data/people'
 import { SITE_MENU } from '../../data/menu'
+import CopyEmail, { bindCopyEmail, copyEmailHTML } from '../CopyEmail'
 
 /* =================================================================
    Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
@@ -210,7 +211,7 @@ function ServicePeek({ o }: { o: Output }) {
       <p className="op-synopsis">{a.lede}</p>
       {a.body.map((p, i) => <p key={i} className="adv-text">{p}</p>)}
       <ul className="adv-covers">{a.covers.map((c) => <li key={c}>{c}</li>)}</ul>
-      <p className="adv-more">For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a></p>
+      <p className="adv-more">For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a><CopyEmail /></p>
       <div className="op-actions">
         <a className="op-cta" href={advisoryMail(a.label)}>email about {a.short.toLowerCase()} <span aria-hidden="true">↦</span></a>
       </div>
@@ -229,6 +230,7 @@ function AdvisoryPeek({ s }: { s: Strand }) {
         <span className="cp-verb adv-verb">Advise.</span>
       </div>
       <p className="op-synopsis">Consultancy and advisory services across research, design and development. Choose a field for details.</p>
+      <p className="adv-text">{ADVISORY_SCOPE}</p>
       <div className="cp-projects">
         {s.outputs.map((o) => (
           <button key={o.id} type="button" className="cp-project" onClick={() => sceneApi.openProject(o.id)}
@@ -244,7 +246,7 @@ function AdvisoryPeek({ s }: { s: Strand }) {
           </button>
         ))}
       </div>
-      <p className="adv-more">For more details, email <a href={advisoryMail()}>{CONTACT_EMAIL}</a></p>
+      <p className="adv-more">For more details, email <a href={advisoryMail()}>{CONTACT_EMAIL}</a><CopyEmail /></p>
       <div className="op-actions">
         <a className="op-cta" href={advisoryMail()}>email nicholas <span aria-hidden="true">↦</span></a>
       </div>
@@ -323,6 +325,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
   /* The single React-managed DOM node. All imperative DOM access
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
+  // Copy-email icons inside HTML-string markup (the list view).
+  useEffect(() => (rootRef.current ? bindCopyEmail(rootRef.current) : undefined), [])
 
   /* Boot-splash palette. Resolved from the shared per-session theme
      key (`mnth:theme`, also used by the Marginalia page) so light/
@@ -2957,7 +2961,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <span class="list-band-verb">${c.verb}</span>
           <span class="list-band-status">${pad2(items.length)} · ${categoryStatus(c.id)}</span>
           ${c.id === 'advisory'
-            ? `<a class="list-band-link" href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory enquiry')}">email ↦</a>`
+            ? `<span class="list-band-link"><a href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory enquiry')}">email ↦</a>${copyEmailHTML()}</span>`
             : `<a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>`}
         </div>
         ${items.length ? items.map((o) => {
@@ -3455,7 +3459,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         </div>
         <div className="menu-bottom">
           <span>mentheon ltd · companies house 15974246</span>
-          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a></span>
+          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a><CopyEmail /></span>
         </div>
       </div>
 

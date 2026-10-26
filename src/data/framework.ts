@@ -44,7 +44,7 @@ export const HELIX_CATEGORIES = CATEGORIES.filter((c) => c.onHelix)
    framework / register pages don't list it; categoryById still finds it. */
 export const ADVISORY_CATEGORY: Category = {
   id: 'advisory', num: 'AD', code: 'ADV', label: 'Advisory', verb: 'Advise', onHelix: false, clinical: false,
-  purpose: 'Consultancy and advisory services across research, design and development',
+  purpose: 'Consultancy and advisory services across research, design and development, in digital health and every other domain',
   typicalOutputs: 'Research, design, development and consultancy engagements', typicalRegClass: 'Not applicable',
 }
 export const isAdvisory = (o: { category: CategoryId }) => o.category === 'advisory'

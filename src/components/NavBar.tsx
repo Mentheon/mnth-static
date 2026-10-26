@@ -21,6 +21,7 @@ import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './NavBar.module.css';
 import { CONTACT_EMAIL } from '../data/people';
 import { SITE_MENU } from '../data/menu';
+import CopyEmail from './CopyEmail';
 import { useSwipeDown } from '../lib/useSwipeDown';
 import { isIntroDone, onIntroDone } from '../lib/introGate';
 
@@ -195,6 +196,7 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
             <a href="#">linkedin</a>
             <a href="#">github</a>
             <a href={`mailto:${CONTACT_EMAIL}`}>contact</a>
+            <CopyEmail />
           </span>
         </div>
       </div>
