@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   STAFF_ORDER, STRAND, categoryById, outputsIn, categoryStatus, outputName, typeById, stageLabel,
-  isOpen, pad2, OUTPUTS, isAdvisory, advisoryFor, type CategoryId, type Output,
+  isOpen, pad2, OUTPUTS, isAdvisory, advisoryFor, categoryHref, type CategoryId, type Output,
 } from '../../data/framework'
 import { productTileHTML, productMarksReady } from '../ProductMark'
 import StrandMark from '../StrandMark'
@@ -18,7 +18,7 @@ import s from './MobileHome.module.css'
    open projects link on; the rest are padlocked). Tapping a strand opens
    its bottom sheet. "Open the 3D helix" loads the full scene. */
 
-const catHref = (c: CategoryId) => (c === 'plasmids' ? '#plasmids' : `#category/${c}`)
+const catHref = categoryHref
 
 function subtitle(cat: CategoryId) {
   const c = categoryById(cat)!

@@ -10,7 +10,7 @@ import type { Strand as DataStrand } from '../../data/strands'
 import {
   OUTPUTS, CATEGORIES, HELIX_CATEGORIES, categoryById, typeById, stageLabel, outputName, affiliationLabel,
   categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
-  outputById, isAdvisory, advisoryFor,
+  outputById, isAdvisory, advisoryFor, categoryHref, type CategoryId,
 } from '../../data/framework'
 import { ADVISORY_GOLD, ADVISORY_INK, ADVISORY_SCOPE } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
@@ -1947,13 +1947,20 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         `
         label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
         label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
-        // A strand's label (its title bar) opens its window straight
-        // away, as clicking the focused section cube does.
-        label.addEventListener('click', (e) => {
-          e.preventDefault()
-          const idx = nodes.indexOf(n)
-          if (idx >= 0) openPanel(idx)
-        })
+        // A strand's label opens its main section page. Advisory has no
+        // page, so its label opens its window in place.
+        const cat = n.strand.category as CategoryId
+        label.setAttribute('role', 'link')
+        label.tabIndex = 0
+        label.setAttribute('aria-label', cat === 'advisory' ? `${n.strand.name}: open details` : `${n.strand.name}: open section`)
+        const go = () => {
+          if (cat === 'advisory') {
+            const idx = nodes.indexOf(n)
+            if (idx >= 0) openPanel(idx)
+          } else window.location.hash = categoryHref(cat)
+        }
+        label.addEventListener('click', (e) => { e.preventDefault(); go() })
+        label.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); go() } })
         labelsEl.appendChild(label)
       })
     }
@@ -2962,7 +2969,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <span class="list-band-status">${pad2(items.length)} · ${categoryStatus(c.id)}</span>
           ${c.id === 'advisory'
             ? `<span class="list-band-link"><a href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory enquiry')}">email ↦</a>${copyEmailHTML()}</span>`
-            : `<a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>`}
+            : `<a class="list-band-link" href="${categoryHref(c.id)}">category →</a>`}
         </div>
         ${items.length ? items.map((o) => {
           const body = `

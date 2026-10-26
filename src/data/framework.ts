@@ -48,6 +48,8 @@ export const ADVISORY_CATEGORY: Category = {
   typicalOutputs: 'Research, design, development and consultancy engagements', typicalRegClass: 'Not applicable',
 }
 export const isAdvisory = (o: { category: CategoryId }) => o.category === 'advisory'
+/* A category's main section page (Advisory has none: it opens in place). */
+export const categoryHref = (c: CategoryId) => (c === 'plasmids' ? '#plasmids' : `#category/${c}`)
 /* Each category is presented as a strand. `split` is the two-line break
    on its logo tile (Helix3D cube faces, the mobile list). */
 export const STRAND: Record<CategoryId, { name: string; split: [string, string] }> = {
