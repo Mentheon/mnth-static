@@ -94,8 +94,8 @@
   --gate-fg-soft:  rgba(255, 236, 225, 0.4);
   --gate-fg-faint: rgba(255, 236, 225, 0.2);
 
-  --menu-bg:      var(--ink);
-  --menu-fg:      var(--bg);
+  --menu-bg:      #2F0147;   /* the logo's purple, both themes */
+  --menu-fg:      #FFECE1;
 
   --shadow-md:    0 4px 12px rgba(47, 1, 71, 0.18);
   --shadow-lg:    0 8px 24px rgba(47, 1, 71, 0.22);
@@ -138,7 +138,7 @@
   --gate-fg-soft:  rgba(255, 236, 225, 0.4);
   --gate-fg-faint: rgba(255, 236, 225, 0.2);
 
-  --menu-bg:      #0F0118;
+  --menu-bg:      #2F0147;
   --menu-fg:      #FFECE1;
 
   --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.5);

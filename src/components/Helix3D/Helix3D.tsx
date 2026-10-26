@@ -19,6 +19,7 @@ import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, A
 import { markIntroDone, skipIntroAlways } from '../../lib/introGate'
 import { useSwipeDown } from '../../lib/useSwipeDown'
 import { CONTACT_EMAIL } from '../../data/people'
+import { SITE_MENU } from '../../data/menu'
 
 /* =================================================================
    Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
@@ -3434,7 +3435,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       </div>
 
       {/* MENU — full-screen overlay (z 200), toggled via .is-open by
-          #menu-open / #menu-close. Links are placeholders. */}
+          #menu-open / #menu-close. Items: SITE_MENU (shared with NavBar). */}
       <div className="menu-overlay" id="menu-overlay" aria-hidden="true">
         {/* Phones: theme + text size live here (the nav is slimmed). */}
         <div className="menu-mobile-ctrls">
@@ -3448,7 +3449,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <button className="menu-close" id="menu-close" title="Close (esc)" aria-label="Close menu (Esc)">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services'], ['advisory', '#helix3d?skipIntro=true&focus=advisory']].map(([label, href], i) => (
+          {SITE_MENU.map(({ label, href }, i) => (
             <a key={href} className="menu-item" href={href}><span className="menu-item-num">{pad2(i + 1)}</span>{label}</a>
           ))}
         </div>

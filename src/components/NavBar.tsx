@@ -20,24 +20,13 @@ import { useState, useEffect, useRef } from 'react';
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './NavBar.module.css';
 import { CONTACT_EMAIL } from '../data/people';
+import { SITE_MENU } from '../data/menu';
 import { useSwipeDown } from '../lib/useSwipeDown';
 import { isIntroDone, onIntroDone } from '../lib/introGate';
 
 type Theme = 'light' | 'dark';
 const THEME_KEY = 'mnth:theme';
 
-// Keep this list identical to the Helix3D in-scene menu overlay.
-const MENU = [
-  { num: '01', label: 'pathway', href: '#helix3d?skipIntro=true' },
-  { num: '02', label: 'register', href: '#register' },
-  { num: '03', label: 'plasmids', href: '#plasmids' },
-  { num: '04', label: 'infrastructure', href: '#infrastructure' },
-  { num: '05', label: 'services', href: '#services' },
-  { num: '06', label: 'framework', href: '#framework' },
-  { num: '07', label: 'marginalia', href: '#marginalia' },
-  { num: '08', label: 'who', href: '#who' },
-  { num: '09', label: 'advisory', href: '#helix3d?skipIntro=true&focus=advisory' },
-];
 
 function readTheme(): Theme {
   try {
@@ -187,14 +176,14 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
         </div>
 
         <nav className={styles.menuItems} aria-label="Site">
-          {MENU.map((m) => (
+          {SITE_MENU.map((m, i) => (
             <a
-              key={m.num}
+              key={m.href}
               className={styles.menuItem}
               href={m.href}
               onClick={() => setMenuOpen(false)}
             >
-              <span className={styles.menuItemNum}>{m.num}</span>
+              <span className={styles.menuItemNum}>{String(i + 1).padStart(2, '0')}</span>
               {m.label}
             </a>
           ))}
