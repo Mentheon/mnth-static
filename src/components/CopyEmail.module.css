@@ -1,12 +1,12 @@
 /* Copy-email icon: inherits the surrounding text colour, quiet until hovered. */
 .copy {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 1.5em; height: 1.5em; margin-left: 0.35em; padding: 0;
+  width: 1.6em; height: 1.6em; margin-left: 0.3em; padding: 0;
   vertical-align: -0.3em; border: 0; border-radius: 3px;
-  background: none; color: inherit; opacity: 0.55; cursor: pointer;
+  background: none; color: inherit; opacity: 0.8; cursor: pointer;
   transition: opacity 0.2s, color 0.2s;
 }
-.copy svg { width: 0.95em; height: 0.95em; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.copy svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 @media (hover: hover) { .copy:hover { opacity: 1; } }
 .copy:focus-visible { opacity: 1; outline: 1px solid currentColor; outline-offset: 1px; }
 .done { opacity: 1; }
