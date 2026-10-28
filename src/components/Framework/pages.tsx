@@ -253,6 +253,70 @@ function OutputMarks({ o }: { o: Output }) {
   )
 }
 const pending = (what: string) => <p className={s.empty}>{what} · to be written</p>
+
+/* ---- Core features (software outputs with o.sample / o.features) ---- */
+/* Feature copy may carry `inline code` in backticks. */
+const withCode = (t: string) => t.split('`').map((p, i) => (i % 2 ? <code key={i} className={s.fCode}>{p}</code> : p))
+/* The marks the software reads, highlighted in its sample input: a leading
+   - or ?, ::type, @date/@length, #tag, and [[references]]. */
+const MARK_RE = /((?<=^\s*)[-?](?=\s)|::\w+|@\w+|#\w+|\[\[[^\]]*\]\])/g
+function SampleLine({ line }: { line: string }) {
+  return (
+    <>
+      {line.split(MARK_RE).map((p, i) => (
+        i % 2 === 0 ? p : <span key={i} className={p.startsWith('[[') ? s.fRef : s.fMark}>{p}</span>
+      ))}
+    </>
+  )
+}
+function CoreFeatures({ o }: { o: Output }) {
+  const cards = useRef<(HTMLElement | null)[]>([])
+  const jump = (i: number) => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    cards.current[i]?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' })
+  }
+  const features = o.features ?? []
+  return (
+    <>
+      {o.sample && (
+        <figure className={s.fSample}>
+          <figcaption className={s.fSampleCap}>
+            <span className={s.fDots} aria-hidden="true"><i /><i /><i /></span>{o.sample.caption}
+          </figcaption>
+          <pre className={s.fSampleBody}>
+            {o.sample.lines.map((l, i) => <span key={i}><SampleLine line={l} />{'\n'}</span>)}
+          </pre>
+        </figure>
+      )}
+      {features.length > 0 && (
+        <>
+          {/* Buttons, not #anchors: the hash is the router. */}
+          <nav className={s.fIndex} aria-label="Features">
+            {features.map((f, i) => (
+              <button key={f.tag} type="button" className={s.fIndexItem} onClick={() => jump(i)}>
+                <span className={s.fIndexNum}>{pad2(i + 1)}</span>{f.tag}
+              </button>
+            ))}
+          </nav>
+          <div className={s.features}>
+            {features.map((f, i) => (
+              <article key={f.tag} ref={(el) => { cards.current[i] = el }} className={cx(s.card, s.feature)}>
+                <span className={s.cardNum}>{pad2(i + 1)} · {f.tag}</span>
+                <h3 className={s.featureTitle}>{f.title}</h3>
+                <p className={s.featureText}>{withCode(f.text)}</p>
+                {f.keys?.length ? (
+                  <dl className={s.fKeys}>
+                    {f.keys.map(([k, v]) => <div key={k} className={s.fKey}><dt>{k}</dt><dd>{v}</dd></div>)}
+                  </dl>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  )
+}
 /* Contact cards. A contact tied to a person (data/people) shows their
    photo, and "profile" opens their window over this page (no
    navigation); Esc closes it before PageShell's Esc-back fires. */
@@ -411,6 +475,12 @@ export function OutputPage({ o }: { o: Output }) {
       <Section num={num()} title="Abstract">
         {o.abstract ? <p className={s.abstract}>{o.abstract}</p> : pending('abstract')}
       </Section>
+
+      {(o.sample || o.features?.length) && (
+        <Section num={num()} title="Core features">
+          <CoreFeatures o={o} />
+        </Section>
+      )}
 
       <Section num={num()} title="Objectives">
         {o.objectives?.length ? (
