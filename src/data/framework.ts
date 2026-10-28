@@ -195,14 +195,22 @@ export interface Output {
      confirmed. `email` is where "Open email" sends a request; without it
      the dialog offers Copy summary only. */
   beta?: { seats: number; taken: number; email?: string }
-  /* Software: a short sample of what the software reads, shown at the
-     head of Core features. Marks (-, ?, ::, @, #, [[ ]]) are highlighted. */
-  sample?: { caption: string; lines: string[] }
-  /* Software: the core features, one card each. `text` may carry
+  /* Software: the core features, one row each. `text` may carry
      `inline code` in backticks; `keys` are mark → meaning pairs. */
   features?: Feature[]
 }
-export interface Feature { tag: string; title: string; text: string; keys?: [string, string][] }
+export interface Feature {
+  tag: string
+  title: string
+  text: string
+  keys?: [string, string][]
+  /* A real screenshot, served from /<dir>/<name>-light|dark.webp (or
+     <name>.webp when `themed` is false). `fit: 'panel'` = a small window
+     shown at its own size rather than full width. */
+  shot?: { dir: string; name: string; alt: string; themed?: boolean; fit?: 'window' | 'panel' }
+  /* An HTML prototype instead, for what only exists outside the browser. */
+  proto?: 'menubar'
+}
 export interface Contact {
   name: string; role: string; institution: string
   email?: string
@@ -234,7 +242,7 @@ const ph = (code: string, o: Omit<Output, 'id' | 'code' | 'placeholder' | 'title
 /* Aufdröselung (PLA-01) writeup. Sourced from the app itself (Ordior,
    ordior-front 0.4.9): only shipped behaviour is described as such; the
    browser provenance helper (roadmap T40) is described as planned. */
-const AUFDROSELUNG: Pick<Output, 'abstract' | 'objectives' | 'researchQuestions' | 'sample' | 'features'> = {
+const AUFDROSELUNG: Pick<Output, 'abstract' | 'objectives' | 'researchQuestions' | 'features'> = {
   abstract: 'Aufdröselung (German: to unravel, to untangle) is a local-first Mac app for planning and tracking work, built on Ordior, Mentheon’s materialisation engine. People write the day as they would on paper, one line after another in their own order, and a deterministic local parser reads each line into a fragment: a task, a question, a project or a note, with its dates and length, and a record of why it was read that way. Fragments are planned onto days, timed against what actually happened, and materialised into finished artefacts that keep a trace back to the line that produced them. Every change to a plan is kept as a version, and text that enters or leaves the workspace is recorded with its source. The project asks whether planning software can stay as quick and forgiving as a paper list while keeping the provenance a researcher expects of their data: what was intended, what happened, and where each piece came from. Everything runs on the user’s machine; optional AI assistance runs locally and changes nothing without confirmation. The app is in closed beta, and testers’ insights shape its next stage.',
   objectives: [
     { verb: 'Capture', text: 'the working day as free text, with a small set of marks that a list with no marks at all still survives.' },
@@ -250,50 +258,39 @@ const AUFDROSELUNG: Pick<Output, 'abstract' | 'objectives' | 'researchQuestions'
     'Does keeping every change to a plan as a version help people understand how their day moved, rather than merely record it?',
     'How much provenance (declared, proposed or observed) will people sustain in everyday work before recording it becomes a burden?',
   ],
-  sample: {
-    caption: 'a day, written messy',
-    lines: [
-      '::project dissertation',
-      '  - Assignment week 3: linked lists @do today:09:30 @length 2 hours',
-      '  ? ask the tutor about big-O',
-      '  - draft the methods chapter @do tomorrow @due 2026-11-14',
-      '  - reread [[Smithson 2024]] #methods',
-      '',
-      'chase the ethics board',
-    ],
-  },
   features: [
-    { tag: 'write', title: 'Write it messy.',
+    { tag: 'write', shot: { dir: 'aufdroselung', name: 'write', alt: 'The capture screen: a semester written as a list, with the live reading beside it' }, title: 'Write it messy.',
       text: 'Write the day one line after another, the way you think. A few marks say what each line is: `-` for a task, `?` for a question, `::project` for a project, `#tag` to label it, and `@do`, `@due` and `@length` for time. `@due` is when something is owed; `@do` is the decision to work on it. A list with no marks still reads.',
       keys: [['-', 'task'], ['?', 'question'], ['::project', 'project'], ['@do · @due · @length', 'when · owed · how long']] },
-    { tag: 'read', title: 'Each line becomes a fragment.',
+    { tag: 'read', shot: { dir: 'aufdroselung', name: 'read', alt: 'A session: the transcript on the left, each line read into a fragment on the right' }, title: 'Each line becomes a fragment.',
       text: 'A live reading sits beside the list as you type. Generate, and every line becomes a fragment that says why it was read the way it was. A mark decides; a local parser reads the rest. Optional local AI may suggest a reading where a line is vague, and nothing it suggests is applied until you confirm it.',
       keys: [['mark', 'decides'], ['local parser', 'reads the rest'], ['local ai', 'suggests · you confirm']] },
-    { tag: 'plan', title: 'Every change to the plan is kept.',
+    { tag: 'plan', shot: { dir: 'aufdroselung', name: 'plan', alt: 'The week board: work dragged onto days, with day.ics and week.ics export' }, title: 'Every change to the plan is kept.',
       text: 'Drag work onto a day on the week board, drop it at a time on the day board, or see the month as a calendar. Each change to the day or the week is kept as a new version, so you can see how the plan moved, and why.',
       keys: [['v1', '08:12 · written'], ['v2', '10:40 · moved'], ['v3', '13:05 · moved']] },
-    { tag: 'time', title: 'Planned against actual.',
+    { tag: 'time', shot: { dir: 'aufdroselung', name: 'time', alt: 'The time view: the plan beside what was clocked, and the day’s figures' }, title: 'Planned against actual.',
       text: 'Start and stop a clock on any task, and the time view shows the plan beside what really happened. When a day runs over, shift-drag a block and the ones after it make way, or drag its foot to lengthen it. Progress is a bar you set yourself; time spent sits beside it and is never folded in.',
       keys: [['shift + drag', 'later blocks make way'], ['drag foot', 'lengthen a block'], ['progress', 'yours, not the clock’s']] },
-    { tag: 'calendar', title: 'Bring your own calendar.',
+    { tag: 'calendar', shot: { dir: 'aufdroselung', name: 'calendar', alt: 'The plan as a calendar, with the day and week ready to export as .ics' }, title: 'Bring your own calendar.',
       text: 'Export the day or the week as an `.ics` file and open it in any calendar. Before it is written, the button says what the file will carry, because timed and all-day events land differently. It works where an institution’s IT policy blocks two-way calendar feeds, and nothing is transmitted.',
       keys: [['day.ics', 'today’s plan'], ['week.ics', 'the whole week']] },
-    { tag: 'grow', title: 'Progress you look forward to.',
-      text: 'A pop-out window floats above your other work and fills as the day does, tracking task time and completion. Pick how it grows: a plant, a spool, a candle, a tank, an hourglass, a tide or the moon.',
-      keys: [['pop-out', 'above your other windows'], ['views', 'plant · spool · candle · tank · hourglass · tide · moon']] },
-    { tag: 'artefacts', title: 'Lines become finished artefacts.',
+    { tag: 'grow', shot: { dir: 'aufdroselung', name: 'grow', alt: 'The pop-out: the clock on a task, a plant growing with the day, and the task, day and week figures', themed: false, fit: 'panel' },
+      title: 'Progress you look forward to.',
+      text: 'A pop-out window floats above your other work and fills as the day does: the task on the clock, time against what was scheduled, and the task, day and week at a glance. Pick how it grows from eighteen pictures: a plant, a spool, the moon, a candle, a tank, an hourglass, a tide and more.',
+      keys: [['pop-out', 'above your other windows'], ['pictures', 'eighteen, from a plant to a tide'], ['figures', 'task · day · week']] },
+    { tag: 'artefacts', shot: { dir: 'aufdroselung', name: 'artefacts', alt: 'An artefact and its provenance: source line, fragment, session, transform and generation' }, title: 'Lines become finished artefacts.',
       text: 'A fragment can be materialised into one or many artefacts, made on your Mac from nine fixed templates. Each artefact keeps a trace back to the line it came from, so the finished thing never loses its origin.',
       keys: [['template', 'one of nine, fixed'], ['trace', 'back to its line']] },
-    { tag: 'sources', title: 'Every source is marked.',
+    { tag: 'sources', shot: { dir: 'aufdroselung', name: 'sources', alt: 'A paste recorded in capture: the badge asks where it came from, ⌘1–9' }, title: 'Every source is marked.',
       text: 'Copying out is egress; pasting in is ingress, and each is recorded with its source. When you paste, a prompt asks where it came from (⌘1–9). Every span is marked declared, proposed, observed or untraced, so what you said, what was guessed and what is unknown stay apart. A browser helper that records what you forget to declare is planned.',
       keys: [['egress', 'copied out, with source'], ['ingress', 'pasted in, with source'], ['basis', 'declared · proposed · observed · untraced']] },
-    { tag: 'connects', title: 'One syntax names anything.',
+    { tag: 'connects', shot: { dir: 'aufdroselung', name: 'connects', alt: 'The graph: a project, its fragments and the artefacts they made' }, title: 'One syntax names anything.',
       text: 'Name a task, artefact or document with `[[ ]]`. Start typing and it completes from what already exists, or create it inline. Everything named is linked, and the graph, documents and projects show how it connects.',
       keys: [['[[ ]]', 'names anything'], ['tab', 'completes from what exists'], ['graph', 'how it all connects']] },
-    { tag: 'tray', title: 'Your day, in the menu bar.',
-      text: 'The clock lives in the Mac menu bar: start the last task again or stop the clock without opening the app. Turn on Essen under Friends to sit beside your progress.',
-      keys: [['menu bar', 'start · stop the clock'], ['friends', 'Essen']] },
-    { tag: 'local', title: 'Local first, always.',
+    { tag: 'tray', proto: 'menubar', title: 'Your day, in the menu bar.',
+      text: 'The clock lives in the Mac menu bar, with the task and the day at a glance. From there, stop the clock or start the last task again, pop the clock out, or bring the app forward. Under Friends, turn on Essen to sit beside your progress.',
+      keys: [['menu bar', 'stop · start it again'], ['t: · d:', 'the task and the day'], ['friends', 'Essen']] },
+    { tag: 'local', shot: { dir: 'aufdroselung', name: 'local', alt: 'What is kept: choose a folder and the workspace is written there as plain files' }, title: 'Local first, always.',
       text: 'Your data stays on your Mac. Parsing is local, and AI, if you turn it on, runs locally too. Work is saved as plain `.md` files you can open in your own note editor, and you can bring your own cloud if you wish. Nothing is lost: deleted items go to the trash, backups are automatic, and updates are signed.',
       keys: [['local', 'store · parser · ai'], ['.md', 'your own editor'], ['cloud', 'yours, if you wish']] },
   ],
