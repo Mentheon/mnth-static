@@ -10,7 +10,7 @@ import type { Strand as DataStrand } from '../../data/strands'
 import {
   OUTPUTS, CATEGORIES, HELIX_CATEGORIES, categoryById, typeById, stageLabel, outputName, affiliationLabel,
   categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
-  outputById, isAdvisory, advisoryFor, categoryHref, type CategoryId,
+  outputById, isAdvisory, advisoryFor, categoryHref,
 } from '../../data/framework'
 import { ADVISORY_GOLD, ADVISORY_INK, ADVISORY_SCOPE } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
@@ -867,6 +867,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dom.addEventListener('pointermove', onDragMove)
       dom.addEventListener('pointerup', onDragUp)
       dom.addEventListener('pointercancel', onDragCancel)
+      root!.addEventListener('pointerdown', haltOnPress, true)
+      window.addEventListener('pointerup', holdOnRelease)
       /* WebGL context loss (phones under GPU-memory pressure, e.g. while
          the intro's own canvas is alive) blanks the canvas for good if
          the browser never restores it. Three restores what it can; if
@@ -893,6 +895,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         dom.removeEventListener('pointermove', onDragMove)
         dom.removeEventListener('pointerup', onDragUp)
         dom.removeEventListener('pointercancel', onDragCancel)
+        root!.removeEventListener('pointerdown', haltOnPress, true)
+        window.removeEventListener('pointerup', holdOnRelease)
       })
     }
 
@@ -1947,17 +1951,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         `
         label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
         label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
-        // A strand's label opens its main section page. Advisory has no
-        // page, so its label opens its window in place.
-        const cat = n.strand.category as CategoryId
-        label.setAttribute('role', 'link')
+        // A strand's label acts like its centre node: the first click
+        // enters (focuses) the strand, a second opens its window.
+        label.setAttribute('role', 'button')
         label.tabIndex = 0
-        label.setAttribute('aria-label', cat === 'advisory' ? `${n.strand.name}: open details` : `${n.strand.name}: open section`)
+        label.setAttribute('aria-label', `${n.strand.name}: enter strand`)
         const go = () => {
-          if (cat === 'advisory') {
-            const idx = nodes.indexOf(n)
-            if (idx >= 0) openPanel(idx)
-          } else window.location.hash = categoryHref(cat)
+          const idx = nodes.indexOf(n)
+          if (idx >= 0) onNodeClick(idx)
         }
         label.addEventListener('click', (e) => { e.preventDefault(); go() })
         label.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); go() } })
@@ -2072,6 +2073,20 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dragging = false
       spinVel = 0
     }
+    /* Any press or tap anywhere in the scene (canvas, labels, overlays —
+       capture phase, so nothing can swallow it) stops the staff dead:
+       fling/swipe coast, pending swipe fling and the idle turn (held like
+       the two-finger halt until STALL_RELEASE after the press ends). The
+       cubes keep their own momentum — a sudden stop after a fast spin is
+       what kicks it. A drag that follows still spins it (onDragMove). */
+    let pressHoldT = 0
+    function haltOnPress() {
+      spinVel = 0
+      swPending = false
+      stallHold = true
+      pressHoldT = performance.now()
+    }
+    const holdOnRelease = () => { if (stallHold) pressHoldT = performance.now() }
 
     /* Two-step: a first click only FOCUSES the node (zoom/snap +
        bubble, like scrolling to it). Clicking the already-focused
@@ -2531,7 +2546,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         } else {
           rotorAngle += diff * Math.min(1, dt * 6)
         }
-      } else if (stallHold && performance.now() - lastWheelT > STALL_RELEASE) {
+      } else if (stallHold && performance.now() - Math.max(lastWheelT, pressHoldT) > STALL_RELEASE) {
         stallHold = false
       } else if (!panelOpen && !isFocused() && !hoveredId && !stallHold) {
         rotorAngle += ROTOR_FREE_SPEED * dt
@@ -3284,6 +3299,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         })
         renderer?.dispose()
         renderer?.domElement?.remove()
+        // Strand labels + cube captions are built into #node-labels; a
+        // remount (StrictMode, scene reset) would otherwise leave this
+        // scene's dead copies on top, swallowing clicks.
+        $('#node-labels')?.replaceChildren()
       } catch { /* noop */ }
     }
   }, [])
