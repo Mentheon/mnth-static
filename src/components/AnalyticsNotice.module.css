@@ -39,6 +39,17 @@
 
 .text { margin: 0; }
 
+.link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--crimson);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+@media (hover: hover) { .link:hover { color: #FFECE1; text-decoration-color: currentColor; } }
+.link:focus-visible, .logo:focus-visible { outline: 2px solid #FFECE1; outline-offset: 2px; }
+
 .button {
   flex: none;
   font: 700 0.7rem/1 'JetBrains Mono', monospace;

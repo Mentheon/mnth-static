@@ -33,6 +33,14 @@ export default function App() {
   // `key` on the content Fragment) so effect-driven views like
   // Helix3D fully rebuild without a browser reload.
   const [renderKey, setRenderKey] = useState(0)
+  // Helix3D asks for a remount when its WebGL context is lost and not
+  // restored (see initThree). Capped so a broken GPU can't loop.
+  useEffect(() => {
+    let resets = 0
+    const onReset = () => { if (resets++ < 2) setRenderKey((k) => k + 1) }
+    window.addEventListener('mnth:helix-reset', onReset)
+    return () => window.removeEventListener('mnth:helix-reset', onReset)
+  }, [])
   // `#strand` (no id) and `#strand/<id>` both route to the detail view.
   const isStrandRoute = hash === '#strand' || hash.startsWith('#strand/')
   // `#marginalia`, `#marginalia/<slug>`, and `#marginalia?strand=<id>`
@@ -86,14 +94,15 @@ export default function App() {
     // Marginalia tab) — rendered standalone, no shared Header.
     // First load (renderKey 0) plays the loader/gate intro; any
     // dev re-render (renderKey > 0) skips straight to the scene.
-    content = isMobile ? (
-      // Phones: the site bar (list | staff · menu) over the scene, in
-      // place of the scene's own nav.
+    // Phones: the site bar (3d | list · menu) over the scene, in place
+    // of the scene's own nav. Helix3D keeps the same tree slot either
+    // way, so crossing the breakpoint never remounts the WebGL scene.
+    content = (
       <>
-        <NavBar view="3d" />
+        {isMobile && <NavBar view="3d" />}
         <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
       </>
-    ) : <Helix3D skipIntro={renderKey > 0 || wantsSkipIntro} />
+    )
   } else if (page === 'scrolllock') {
     // Frozen scroll-locked variant of the same 3D concept.
     content = <ScrollLockView />
@@ -155,12 +164,13 @@ export default function App() {
           (() => {
             const id = hashPath.slice('#category/'.length)
             const c = categoryById(id)
-            return !c ? <NotFoundPage what="category" /> : c.id === 'plasmids' ? <PlasmidsPage /> : <CategoryPage key={c.id} id={c.id as CategoryId} />
+            // Advisory has no pages (its node's window + email only).
+            return !c || c.id === 'advisory' ? <NotFoundPage what="category" /> : c.id === 'plasmids' ? <PlasmidsPage /> : <CategoryPage key={c.id} id={c.id as CategoryId} />
           })()
         ) : page === 'output' ? (
           (() => {
             const o = outputById(hashPath.slice('#output/'.length))
-            return !o ? <NotFoundPage what="output" />
+            return !o || o.category === 'advisory' ? <NotFoundPage what="output" />
               : isOpen(o) ? <OutputPage key={o.id} o={o} />
               : <LockedOutputPage key={o.id} o={o} />
           })()

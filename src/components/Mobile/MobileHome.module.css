@@ -42,6 +42,19 @@
 .lock { display: inline-flex; align-items: center; gap: 0.3rem; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-quiet); }
 .empty { margin: 0.6rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
 
+/* Advisory services: rows expand in place (write-up + email only). */
+.service > summary { list-style: none; cursor: pointer; }
+.service > summary::-webkit-details-marker { display: none; }
+.service > summary .rowSub { text-transform: none; letter-spacing: 0.02em; font-family: 'Lato', sans-serif; font-size: 0.78rem; font-style: italic; }
+.chev { width: 24px; text-align: center; color: var(--crimson); font-size: 1.2rem; font-weight: 700; transition: rotate 0.2s; }
+.service[open] .chev { rotate: 45deg; }
+.serviceBody { padding: 0.5rem 0 0.9rem 48px; font-size: 0.88rem; line-height: 1.5; }
+.serviceBody p { margin: 0 0 0.6rem; opacity: 0.88; }
+.covers { margin: 0.6rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.covers li { padding: 0.25rem 0.45rem; border: 1px solid #E0A526; font-family: 'JetBrains Mono', monospace; font-size: 0.54rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.serviceBody .more { margin: 0.8rem 0 0; opacity: 1; }
+.more a { color: var(--crimson); font-weight: 700; word-break: break-all; }
+
 /* Product tiles from productTileHTML: product marks (.ptile) and the
    code tiles for untitled outputs (.logo-tile). */
 .tile { display: block; width: 36px; height: 36px; }
@@ -70,7 +83,7 @@
   animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.crop { position: absolute; top: -10px; left: 6px; width: 20px; height: 20px; border-top: 3px solid var(--crimson); border-left: 3px solid var(--crimson); z-index: 2; }
+.crop { display: none; }   /* phone sheets: no corner mark (floated over the rounded top) */
 .bar {
   position: relative; flex: none; height: 52px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 0.25rem 0 1rem; background: var(--ink); color: var(--bg); border-radius: 6px 6px 0 0; touch-action: none;
@@ -92,6 +105,8 @@
 .fields div { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px dashed var(--ink-soft); }
 .fields dt { flex: none; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-quiet); }
 .fields dd { margin: 0; font-weight: 700; font-size: 0.88rem; line-height: 1.35; text-align: right; }
+.ctaRow { display: flex; align-items: center; gap: 0.4rem; margin-top: 1.3rem; }
+.ctaRow .cta { flex: 1; margin-top: 0; }
 .cta {
   display: flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 48px; margin-top: 1.3rem;
   background: var(--crimson); color: #FFECE1; border-radius: 2px; text-decoration: none;

@@ -20,22 +20,14 @@ import { useState, useEffect, useRef } from 'react';
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../lib/textScale';
 import styles from './NavBar.module.css';
 import { CONTACT_EMAIL } from '../data/people';
+import { SITE_MENU } from '../data/menu';
+import CopyEmail from './CopyEmail';
 import { useSwipeDown } from '../lib/useSwipeDown';
+import { isIntroDone, onIntroDone } from '../lib/introGate';
 
 type Theme = 'light' | 'dark';
 const THEME_KEY = 'mnth:theme';
 
-// Keep this list identical to the Helix3D in-scene menu overlay.
-const MENU = [
-  { num: '01', label: 'pathway', href: '#helix3d?skipIntro=true' },
-  { num: '02', label: 'register', href: '#register' },
-  { num: '03', label: 'plasmids', href: '#plasmids' },
-  { num: '04', label: 'infrastructure', href: '#infrastructure' },
-  { num: '05', label: 'services', href: '#services' },
-  { num: '06', label: 'framework', href: '#framework' },
-  { num: '07', label: 'marginalia', href: '#marginalia' },
-  { num: '08', label: 'who', href: '#who' },
-];
 
 function readTheme(): Theme {
   try {
@@ -57,6 +49,9 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const barRef = useRef<HTMLElement>(null);
   const menuSwipe = useSwipeDown(() => setMenuOpen(false)); // swipe the top row down to close
+  // 3d view: the switch waits for the intro to finish (it sat over it).
+  const [introDone, setIntroDone] = useState(isIntroDone);
+  useEffect(() => onIntroDone(() => setIntroDone(true)), []);
 
   // Apply the theme globally (on <html>) so every token-driven page
   // flips, and persist it to the shared key.
@@ -160,7 +155,7 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
 
       {/* Phones: 3d | list, centred on its own row just below the bar
           (fixed with it over the 3D view). */}
-      {view && (
+      {view && (view !== '3d' || introDone) && (
         <div className={`${styles.viewRow}${view === '3d' ? ` ${styles.viewRowOver}` : ''}`}>
           <nav className={styles.viewSwitch} aria-label="View">
             <a href={VIEW_HREF['3d']} aria-current={view === '3d' ? 'page' : undefined}>3d</a>
@@ -182,14 +177,14 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
         </div>
 
         <nav className={styles.menuItems} aria-label="Site">
-          {MENU.map((m) => (
+          {SITE_MENU.map((m, i) => (
             <a
-              key={m.num}
+              key={m.href}
               className={styles.menuItem}
               href={m.href}
               onClick={() => setMenuOpen(false)}
             >
-              <span className={styles.menuItemNum}>{m.num}</span>
+              <span className={styles.menuItemNum}>{String(i + 1).padStart(2, '0')}</span>
               {m.label}
             </a>
           ))}
@@ -201,6 +196,7 @@ export default function NavBar({ view }: { view?: '3d' | 'list' } = {}) {
             <a href="#">linkedin</a>
             <a href="#">github</a>
             <a href={`mailto:${CONTACT_EMAIL}`}>contact</a>
+            <CopyEmail />
           </span>
         </div>
       </div>

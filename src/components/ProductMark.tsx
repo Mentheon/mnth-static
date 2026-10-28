@@ -41,6 +41,11 @@ export function layout3b(name: string) {
   const right = isA ? 12.35 + PT.INSET + (61.6 - 12.35) * k : x0 + measure(l, '900 100px Lato, sans-serif') * PT.BIG
   return { l, s, x0, k, isA, right, hdr: hdrSize() }
 }
+/* Advisory services: a three-letter word (res / des / dev / con) in
+   place of initial + second letter, so Design and Development differ. */
+export const WORD = { x: 12, size: 84, track: -2 }
+export const markWord = (o: Output) => (o.category === 'advisory' && o.product ? o.product.slice(0, 3).toLowerCase() : null)
+
 export function productTileHTML(o: Output, selected = false) {
   if (!o.product) {
     const [a, b] = o.code.split('-')
@@ -52,9 +57,13 @@ export function productTileHTML(o: Output, selected = false) {
     : `<text x="${L.x0}" y="178" class="pt-ink pt-initial" font-size="${PT.BIG}">${L.l}</text>`
   const sub = `<text x="${L.right + PT.GAP}" y="178" class="pt-ink pt-initial" font-size="${PT.SUB}">${L.s}</text>`
   const hdr = `<text x="12" y="${12 + L.hdr * 0.74}" class="pt-ink pt-plate" font-size="${L.hdr}" letter-spacing="${PT.HDR_TRACK * L.hdr}">${o.product.toUpperCase()}</text>`
+  const word = markWord(o)
+  const mark = word
+    ? `<text x="${WORD.x}" y="178" class="pt-ink pt-initial" font-size="${WORD.size}" letter-spacing="${WORD.track}">${word}</text>`
+    : big + sub
   const mask = `url(${import.meta.env.BASE_URL}emblem-cream.svg)`
-  return `<span class="ptile${selected ? ' is-selected' : ''}" aria-hidden="true"><span class="ptile-emblem" style="-webkit-mask-image:${mask};mask-image:${mask}"></span>`
-    + `<svg viewBox="0 0 195 195">${hdr}${big}${sub}</svg></span>`
+  return `<span class="ptile${selected ? ' is-selected' : ''}${o.category === 'advisory' ? ' is-advisory' : ''}" aria-hidden="true"><span class="ptile-emblem" style="-webkit-mask-image:${mask};mask-image:${mask}"></span>`
+    + `<svg viewBox="0 0 195 195">${hdr}${mark}</svg></span>`
 }
 
 export const AUF_ID = OUTPUTS.find((o) => o.product === 'Aufdröselung')?.id ?? 'pla-01'

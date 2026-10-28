@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as Reac
 import { createPortal } from 'react-dom'
 import type { Person } from '../data/people'
 import PersonAvatar from './PersonAvatar'
+import CopyEmail from './CopyEmail'
 import { useSwipeDown } from '../lib/useSwipeDown'
 import styles from './PersonWindow.module.css'
 
@@ -171,6 +172,7 @@ export default function PersonWindow({ person, index, total, title, anchor, onCl
                       {person.email} <span aria-hidden="true">↦</span>
                     </a>
                   )}
+                  {person.email && <CopyEmail email={person.email} />}
                 </div>
               )}
             </div>

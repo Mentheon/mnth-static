@@ -3,19 +3,24 @@ import * as THREE from 'three'
 import StrandPanel from '../StrandPanel'
 import MarginaliaTab from '../MarginaliaTab'
 import SerpentIntro from './SerpentIntro'
+import { nodeT, NODE_T } from './staffLayout'
 import type { LoaderMode } from '../Loaders/LoaderShared'
 import { adjustTextScale, applyTextScale, TEXT_STEP } from '../../lib/textScale'
 import type { Strand as DataStrand } from '../../data/strands'
 import {
   OUTPUTS, CATEGORIES, HELIX_CATEGORIES, categoryById, typeById, stageLabel, outputName, affiliationLabel,
   categoryStatus, outputsIn, pad2, LINK_LABEL, isOpen, STRAND, type Output,
+  outputById, isAdvisory, advisoryFor, categoryHref,
 } from '../../data/framework'
+import { ADVISORY_GOLD, ADVISORY_INK, ADVISORY_SCOPE } from '../../data/advisory'
 import Padlock, { LOCK_SVG } from '../Padlock'
 import './helix3d.css'
-import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID } from '../ProductMark'
+import { PT, aufPath, emblemImg, productMarksReady, layout3b, productTileHTML, AUF_ID, markWord, WORD } from '../ProductMark'
 import { markIntroDone, skipIntroAlways } from '../../lib/introGate'
 import { useSwipeDown } from '../../lib/useSwipeDown'
 import { CONTACT_EMAIL } from '../../data/people'
+import { SITE_MENU } from '../../data/menu'
+import CopyEmail, { bindCopyEmail, copyEmailHTML } from '../CopyEmail'
 
 /* =================================================================
    Mentheon — Helix3D · click-to-panel variant (Rod of Asclepius)
@@ -76,21 +81,23 @@ interface Strand {
   icon: string
   accent: string         // centre-headline accent
   category: string
-  band: number           // position on the staff, 0 = head (Plasmids)
+  band: number           // position on the staff, 0 = head (Advisory), 1 = Plasmids
   outputs: Output[]
 }
 const ICON_BY_CAT: Record<string, string> = {
-  detection: 'pulse', monitoring: 'wave', forecasting: 'trend', therapeutics: 'rings', perception: 'spark', plasmids: 'loop',
+  detection: 'pulse', monitoring: 'wave', forecasting: 'trend', therapeutics: 'rings', perception: 'spark', plasmids: 'loop', advisory: 'grid',
 }
-const STAFF_CATS = [categoryById('plasmids')!, ...HELIX_CATEGORIES]
+/* Advisory (gold, consultancy services) heads the staff, above Plasmids. */
+const STAFF_CATS = [categoryById('advisory')!, categoryById('plasmids')!, ...HELIX_CATEGORIES]
 const STRANDS: Strand[] = STAFF_CATS.map((c, i) => {
   const os = outputsIn(c.id)
   return {
     id: c.id, name: c.label,
-    subsidiary: `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(os.length)} project${os.length === 1 ? '' : 's'}`,
+    subsidiary: c.id === 'advisory' ? `consultancy · ${pad2(os.length)} services`
+      : `${c.id === 'plasmids' ? 'software' : c.verb.toLowerCase()} · ${pad2(os.length)} project${os.length === 1 ? '' : 's'}`,
     tag: c.purpose, synopsis: c.purpose, icon: ICON_BY_CAT[c.id], category: c.id, band: i, outputs: os,
     // Headline reads "A new era of <accent>"; Plasmids gets its own phrase.
-    accent: c.id === 'plasmids' ? 'Novel Software' : c.label,
+    accent: c.id === 'plasmids' ? 'Novel Software' : c.id === 'advisory' ? 'Expert Advisory' : c.label,
   }
 })
 const PROJECT_PREFIX = 'out:'
@@ -132,6 +139,7 @@ function toDataStrand(s: Strand): DataStrand {
 /* Window body for a focused output: kicker, title, synopsis, the
    classification fields, a compact stage line and links out. */
 function OutputPeek({ o }: { o: Output }) {
+  if (isAdvisory(o)) return <ServicePeek o={o} />
   const c = categoryById(o.category)!
   const t = typeById(o.type)
   return (
@@ -183,13 +191,77 @@ function LogoTile({ o, selected = false }: { o: Output; selected?: boolean }) {
 const peekHover: { id: string | null } = { id: null }
 /* Aufdröselung (PLA-01): its software logo + Essen, its character. */
 
+/* Calls into the imperative scene from window content (set in the
+   scene effect): open a project's / service's window in place. */
+const sceneApi = { openProject: (_id: string) => {} }
+const advisoryMail = (topic?: string) =>
+  `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(topic ? `Advisory enquiry: ${topic}` : 'Advisory enquiry')}`
+
+/* Advisory service window (one of the gold cubes): its boilerplate,
+   what it covers, and the only action — email. No page behind it. */
+function ServicePeek({ o }: { o: Output }) {
+  const a = advisoryFor(o)!
+  return (
+    <div className="output-peek adv-peek">
+      <p className="op-kicker">ad · advisory <span className="op-star">✲</span> {a.num} of {pad2(outputsIn('advisory').length)}</p>
+      <div className="op-title-row">
+        <div className="op-marks"><figure className="op-mark"><LogoTile o={o} /></figure></div>
+        <h2 className="op-title">{a.label}</h2>
+      </div>
+      <p className="op-synopsis">{a.lede}</p>
+      {a.body.map((p, i) => <p key={i} className="adv-text">{p}</p>)}
+      <ul className="adv-covers">{a.covers.map((c) => <li key={c}>{c}</li>)}</ul>
+      <p className="adv-more">For more details, email <a href={advisoryMail(a.label)}>{CONTACT_EMAIL}</a><CopyEmail /></p>
+      <div className="op-actions">
+        <a className="op-cta" href={advisoryMail(a.label)}>email about {a.short.toLowerCase()} <span aria-hidden="true">↦</span></a>
+      </div>
+    </div>
+  )
+}
+
+/* Advisory node window: what it is, its four services (each opens its
+   service window in place), and email. */
+function AdvisoryPeek({ s }: { s: Strand }) {
+  return (
+    <div className="output-peek adv-peek">
+      <p className="op-kicker">ad · head of the staff · consultancy <span className="op-star">✲</span> by enquiry</p>
+      <div className="cp-head">
+        <h2 className="op-title">Advisory</h2>
+        <span className="cp-verb adv-verb">Advise.</span>
+      </div>
+      <p className="op-synopsis">Consultancy and advisory services across research, design and development. Choose a field for details.</p>
+      <p className="adv-text">{ADVISORY_SCOPE}</p>
+      <div className="cp-projects">
+        {s.outputs.map((o) => (
+          <button key={o.id} type="button" className="cp-project" onClick={() => sceneApi.openProject(o.id)}
+            onPointerEnter={(e) => { if (e.pointerType === 'mouse') peekHover.id = o.id }}
+            onPointerLeave={() => { peekHover.id = null }}
+            onFocus={() => { peekHover.id = o.id }} onBlur={() => { peekHover.id = null }}>
+            <LogoTile o={o} />
+            <span className="cp-project-text">
+              <span className="cp-project-name">{o.title}</span>
+              <span className="cp-project-sub">{o.synopsis}</span>
+            </span>
+            <span className="cp-arrow" aria-hidden="true">→</span>
+          </button>
+        ))}
+      </div>
+      <p className="adv-more">For more details, email <a href={advisoryMail()}>{CONTACT_EMAIL}</a><CopyEmail /></p>
+      <div className="op-actions">
+        <a className="op-cta" href={advisoryMail()}>email nicholas <span aria-hidden="true">↦</span></a>
+      </div>
+    </div>
+  )
+}
+
 /* Window body for a focused category: verb, purpose, derived status
    and its projects (each opens its summary page). */
 function CategoryPeek({ s }: { s: Strand }) {
+  if (s.category === 'advisory') return <AdvisoryPeek s={s} />
   const c = categoryById(s.category)!
   return (
     <div className="output-peek">
-      <p className="op-kicker">{c.num} · {c.id === 'plasmids' ? 'head of the staff · software' : 'care pathway'} <span className="op-star">✲</span> {categoryStatus(c.id)}</p>
+      <p className="op-kicker">{c.num} · {c.id === 'plasmids' ? 'experimental software' : 'care pathway'} <span className="op-star">✲</span> {categoryStatus(c.id)}</p>
       <div className="cp-head">
         <h2 className="op-title">{c.label}</h2>
         <span className="cp-verb">{c.verb}.</span>
@@ -253,6 +325,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
   /* The single React-managed DOM node. All imperative DOM access
      and the Three.js canvas live inside it; nothing escapes it. */
   const rootRef = useRef<HTMLDivElement>(null)
+  // Copy-email icons inside HTML-string markup (the list view).
+  useEffect(() => (rootRef.current ? bindCopyEmail(rootRef.current) : undefined), [])
 
   /* Boot-splash palette. Resolved from the shared per-session theme
      key (`mnth:theme`, also used by the Marginalia page) so light/
@@ -356,7 +430,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     else { preMaxRef.current = winModeRef.current; setWinMode('max') }
   }
   const panelIdx = panelStrand ? STRANDS.findIndex((x) => x.id === panelStrand.id) : -1
-  const panelOut = panelStrand?.id.startsWith(PROJECT_PREFIX) ? OUTPUTS.find((o) => PROJECT_PREFIX + o.id === panelStrand.id) ?? null : null
+  const panelOut = panelStrand?.id.startsWith(PROJECT_PREFIX) ? outputById(panelStrand.id.slice(PROJECT_PREFIX.length)) ?? null : null
   const panelS = panelOut ? STRANDS.find((x) => x.category === panelOut.category) ?? null : panelIdx >= 0 ? STRANDS[panelIdx] : null
   const panelCat = panelS ? categoryById(panelS.category)! : null
   const panelIdRef = useRef<string | null>(null)
@@ -486,7 +560,14 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     /* The central staff. `height` deliberately exceeds the visible
        frame so the rod runs off top & bottom; `knobR` is the crimson
        sphere capping the top. */
-    const ROD = { radius: 0.05, height: 5.2, knobR: 0.10 }
+    /* Experiment levers (URL, e.g. #helix3d?skipIntro=true&coilR=1.1&pitch=1.3):
+       coilR = coil radius (default 0.8); pitch = coil height × (default 1,
+       more vertical room between neighbouring nodes). Not shown in the UI;
+       the intro still lands on the default coil. */
+    const coilQ = new URLSearchParams(window.location.hash.split('?')[1] || '')
+    const COIL_R = THREE.MathUtils.clamp(Number(coilQ.get('coilR')) || 0.8, 0.5, 2)
+    const PITCH = THREE.MathUtils.clamp(Number(coilQ.get('pitch')) || 1, 0.6, 2)
+    const ROD = { radius: 0.05, height: 5.2 * PITCH, knobR: 0.10 }
 
     /* The coil. radius = how far it wraps out from the rod;
        turns = revolutions over its height (more turns / less height
@@ -494,7 +575,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        mesh smoothness vs. cost. Kept tight (0.8 × 3.6) so all six
        nodes stay on-screen across aspect ratios. */
     const SERPENT = {
-      radius: 0.8, height: 3.6, turns: 3,
+      radius: COIL_R, height: 3.6 * PITCH, turns: 3,
       bodyR: 0.085, tubeSegs: 220, radialSegs: 14,
     }
 
@@ -529,6 +610,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
          stay clear in the middle. */
       tileFrac: 0.17, tileDepth: 1, tileGap: 0.03, ease: 6 }
     const tileMix: number[] = []
+    /* Slot order: 9, 3, 12 and 6 o'clock first (so four cubes, e.g.
+       Advisory's services, sit in a fixed cross around their node). */
+    /* Advisory's services: expanded cross (Research left, Design up,
+       Development down, Consultancy right); at rest they sit in one row
+       with equal gaps between every neighbour. */
+    const ADV_CROSS: [number, number][] = [[-1, 0], [0, 1], [0, -1], [1, 0]]
     const SLOTS: [number, number][] = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [1, 1], [-1, -1], [1, -1]]
     /* Plasmids node: a closed loop instead of a sphere. */
     const PLASMID = { loopR: 0.15, tubeR: 0.032 }
@@ -573,7 +660,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       orb: THREE.Mesh
       ring1: THREE.Mesh
       ring2: THREE.Mesh
-      orbPos: THREE.Vector3
+      orbPos: THREE.Vector3     // rest position (rotor-local)
     }
     const nodes: NodeRec[] = []
     const nodePickables: THREE.Object3D[] = []
@@ -689,7 +776,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        SNAKE.drop so the head sits well inside the frame and the tail
        trails off the bottom; nodes ride higher on the coil (tStart →
        tEnd) so the last category stays in view above the trailing tail. */
-    const SNAKE = { drop: 0.5, tStart: 0.03, tEnd: 0.84 }
+    const SNAKE = { drop: 0.5, tEnd: NODE_T.end }       // node t's: ./staffLayout
     const yOnCoil = (t: number) => SERPENT.height / 2 - SERPENT.height * t - SNAKE.drop
     const CONTENT = { top: SERPENT.height / 2 + 0.34 - SNAKE.drop, bottom: yOnCoil(SNAKE.tEnd) - 0.42 }
     function fitRest() {
@@ -780,7 +867,26 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dom.addEventListener('pointermove', onDragMove)
       dom.addEventListener('pointerup', onDragUp)
       dom.addEventListener('pointercancel', onDragCancel)
+      root!.addEventListener('pointerdown', haltOnPress, true)
+      window.addEventListener('pointerup', holdOnRelease)
+      /* WebGL context loss (phones under GPU-memory pressure, e.g. while
+         the intro's own canvas is alive) blanks the canvas for good if
+         the browser never restores it. Three restores what it can; if
+         nothing comes back within 1.2s, App remounts the scene. */
+      let lostTimer = 0
+      const onLost = () => {
+        window.clearTimeout(lostTimer)
+        lostTimer = window.setTimeout(() => {
+          if (!destroyed) window.dispatchEvent(new CustomEvent('mnth:helix-reset'))
+        }, 1200)
+      }
+      const onRestored = () => { window.clearTimeout(lostTimer); onResize() }
+      dom.addEventListener('webglcontextlost', onLost)
+      dom.addEventListener('webglcontextrestored', onRestored)
       cleanups.push(() => {
+        window.clearTimeout(lostTimer)
+        dom.removeEventListener('webglcontextlost', onLost)
+        dom.removeEventListener('webglcontextrestored', onRestored)
         window.removeEventListener('resize', onResize)
         dom.removeEventListener('pointermove', onPointerMove)
         dom.removeEventListener('pointerleave', onLeave)
@@ -789,6 +895,8 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         dom.removeEventListener('pointermove', onDragMove)
         dom.removeEventListener('pointerup', onDragUp)
         dom.removeEventListener('pointercancel', onDragCancel)
+        root!.removeEventListener('pointerdown', haltOnPress, true)
+        window.removeEventListener('pointerup', holdOnRelease)
       })
     }
 
@@ -1048,7 +1156,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       for (let i = 0; i < NODE.count; i++) {
         const S = STRANDS[i]
         const isPlasmid = S.category === 'plasmids'
-        const t = SNAKE.tStart + (SNAKE.tEnd - SNAKE.tStart) * (i / (NODE.count - 1))
+        const t = nodeT(i, NODE.count)              // Advisory high at the head, rest evenly below
         const pos = serpentCurve.getPoint(t)
         const radialDir = new THREE.Vector3(pos.x, 0, pos.z).normalize()
         const embedded = nodeStyle === 'embedded'
@@ -1170,8 +1278,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const g = cv.getContext('2d')!
       const dark = root!.getAttribute('data-theme') === 'dark'
       const crim = cssVar('--crimson') || '#A30B37'
-      const ground = accent ? crim : dark ? '#FFECE1' : PT.GRAPE
-      const ink = accent ? '#FFECE1' : dark ? PT.GRAPE : '#FFECE1'
+      const adv = isAdvisory(o)          // gold in both themes
+      const ground = accent ? crim : adv ? ADVISORY_GOLD : dark ? '#FFECE1' : PT.GRAPE
+      const ink = accent ? '#FFECE1' : adv ? ADVISORY_INK : dark ? PT.GRAPE : '#FFECE1'
       g.fillStyle = ground; g.fillRect(0, 0, S, S)
       if (emblemImg.complete && emblemImg.naturalWidth) {
         const t = document.createElement('canvas'); t.width = t.height = S
@@ -1182,11 +1291,19 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
       const L = layout3b(o.product!)
       g.save(); g.scale(k, k); g.fillStyle = ink
-      if (L.isA) {
-        g.save(); g.translate(12.35 + PT.INSET - L.k * 12.35, 178 - L.k * 178); g.scale(L.k, L.k)
-        g.fill(new Path2D(aufPath)); g.restore()
-      } else { g.font = `900 ${PT.BIG}px Lato, sans-serif`; g.fillText(L.l, L.x0, 178) }
-      g.font = `900 ${PT.SUB}px Lato, sans-serif`; g.fillText(L.s, L.right + PT.GAP, 178)
+      const word = markWord(o)
+      if (word) {
+        // Advisory services: three-letter word (res / des / dev / con).
+        g.font = `900 ${WORD.size}px Lato, sans-serif`
+        ;(g as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = `${WORD.track}px`
+        g.fillText(word, WORD.x, 178)
+      } else {
+        if (L.isA) {
+          g.save(); g.translate(12.35 + PT.INSET - L.k * 12.35, 178 - L.k * 178); g.scale(L.k, L.k)
+          g.fill(new Path2D(aufPath)); g.restore()
+        } else { g.font = `900 ${PT.BIG}px Lato, sans-serif`; g.fillText(L.l, L.x0, 178) }
+        g.font = `900 ${PT.SUB}px Lato, sans-serif`; g.fillText(L.s, L.right + PT.GAP, 178)
+      }
       g.font = `500 ${L.hdr}px "JetBrains Mono", monospace`
       ;(g as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = `${PT.HDR_TRACK * L.hdr}px`
       g.fillText(o.product!.toUpperCase(), 12, 12 + L.hdr * 0.74)
@@ -1214,8 +1331,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const g = cv.getContext('2d')!
       const dark = darkOverride ?? root!.getAttribute('data-theme') === 'dark'
       const crim = accent && darkOverride !== null ? '#A30B37' : cssVar('--crimson') || '#A30B37'
-      const ground = accent ? crim : dark ? '#FFECE1' : '#2F0147'
-      const ink = accent ? '#FFECE1' : dark ? '#2F0147' : '#FFECE1'
+      const adv = cat === 'advisory'      // gold in both themes
+      const ground = accent ? crim : adv ? ADVISORY_GOLD : dark ? '#FFECE1' : '#2F0147'
+      const ink = accent ? '#FFECE1' : adv ? ADVISORY_INK : dark ? '#2F0147' : '#FFECE1'
       g.fillStyle = ground; g.fillRect(0, 0, S, S)
       if (emblemImg.complete && emblemImg.naturalWidth) {
         const t = document.createElement('canvas'); t.width = t.height = S
@@ -1331,7 +1449,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const dark = root!.getAttribute('data-theme') === 'dark'
       // Sides are LIT (scene key/fill/rim lights) so each plane takes a
       // different value as the cube turns; the logo faces stay unlit.
-      const sideMat = litSide(dark ? 0xFFECE1 : 0x6A2A7E)
+      const sideMat = litSide(cat === 'advisory' ? new THREE.Color(ADVISORY_GOLD) : dark ? 0xFFECE1 : 0x6A2A7E)
       const sides = [sideMat, sideMat, sideMat, sideMat] as THREE.MeshBasicMaterial[]
       const face = new THREE.MeshBasicMaterial({ map: strandTexture(cat, false) })
       face.userData.normal = face.map
@@ -1398,7 +1516,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const dark = root!.getAttribute('data-theme') === 'dark'
       // Sides match the front face's ground: grape for product marks,
       // ink for placeholder code tiles (cream for both in dark).
-      const side = litSide(new THREE.Color(dark ? 0xFFECE1 : o.product ? PT.GRAPE : 0x5A2370))
+      const side = litSide(new THREE.Color(isAdvisory(o) ? ADVISORY_GOLD : dark ? 0xFFECE1 : o.product ? PT.GRAPE : 0x5A2370))
       const front = new THREE.MeshBasicMaterial({ map: logoTexture(o) })
       front.userData.normal = front.map
       front.userData.accent = logoTexture(o, true)
@@ -1534,7 +1652,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         if (destroyed) return
         regenLogos()
         $$('.list-item').forEach((a) => {
-          const o = OUTPUTS.find((x) => x.id === (a as HTMLElement).dataset.out)
+          const o = outputById((a as HTMLElement).dataset.out || '')
           const cell = a.querySelector('.list-mark')
           if (o && cell) cell.innerHTML = productTileHTML(o)
         })
@@ -1682,8 +1800,11 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const hov = hoveredOutput === l.o.id ? (m > 0.5 ? 1.06 : 1.2) : 1
         const frac = THREE.MathUtils.lerp(THREE.MathUtils.lerp(LOGO.sizeNear, LOGO.sizeFar, f), LOGO.tileFrac, m) * hov * portraitFit
         let s = frac * 2 * d * tanH                          // edge, world units
-        const [sx, sy] = SLOTS[k % SLOTS.length]
-        const ring = k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
+        const adv = isAdvisory(l.o)
+        // Advisory: expanded, a cross — outer pair (Research, Consultancy)
+        // left/right, inner pair (Design, Development) up/down.
+        const [sx, sy] = adv ? ADV_CROSS[k % 4] : SLOTS[k % SLOTS.length]
+        const ring = !adv && k >= SLOTS.length ? 1 + Math.floor(k / SLOTS.length) : 1
         const ne = nodeEdge[l.node] ?? 0          // section cube edge (embedded style)
         // Portrait phones: all three (cube · strand · cube) must fit the
         // width. Cap a side cube's edge to the room left beside the strand
@@ -1698,10 +1819,27 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         l.sprite.visible = fade > 0.03
         s *= fade
         // Phones: neighbour strands' cubes hug their strand cube (not the ring).
-        const offCube = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        // Cubes above/below a node hug it instead of clearing the pulse ring,
+        // so they stay out of the neighbouring strands' rows.
+        const sideOff = portrait ? ne * 0.5 + s * 0.95 : Math.max(NODE.ringR2 + s * 0.7, s * LOGO.gap, ne * 0.5 + s * 0.75)
+        const offCube = sx === 0 && !portrait ? ne * 0.5 + s * 0.7 : sideOff
         const offTile = (portrait ? ne * 0.5 : Math.max(NODE.ringR2 * 1.1, ne * 0.5)) + LOGO.tileGap + s / 2
         const off = THREE.MathUtils.lerp(offCube, offTile, m) * ring
-        _wp.copy(_np).addScaledVector(_right, sx * off).addScaledVector(_camUp, sy * off)
+        // Offset from the node (camera right/up, world units).
+        let vx = sx * off, vy = sy * off
+        if (adv) {
+          // Advisory at rest: one row, usual spacing —
+          // [Research][Design] (node) [Development][Consultancy] — easing
+          // into the cross as it's focused.
+          const side = k % 4 < 2 ? -1 : 1, outer = k % 4 === 0 || k % 4 === 3
+          // Equal gaps along the row: outer↔inner = inner↔node.
+          const gap = sideOff - ne * 0.5 - s * 0.5
+          const rowD = outer ? sideOff + s + gap : sideOff
+          vx = THREE.MathUtils.lerp(side * rowD, sx * offTile, m)
+          vy = THREE.MathUtils.lerp(0, sy * offTile, m)
+        }
+        const ox = vx, oy = vy
+        _wp.copy(_np).addScaledVector(_right, ox).addScaledVector(_camUp, oy)
         rotor.worldToLocal(_wp)
         l.sprite.position.copy(_wp)
         l.sprite.scale.set(s, s, s * THREE.MathUtils.lerp(1, LOGO.tileDepth, m))
@@ -1784,9 +1922,12 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         _q.multiply(_spinQ.setFromAxisAngle(_Y, momSpin(l.sprite, 0.8 + 0.4 * ((l.node * 7 + (slotOf.get(l.node) ?? 0) * 3) % 5) / 4, dt)))
         l.sprite.quaternion.copy(_inv).multiply(_q)
         updateOutline(l.sprite)
-        if (sy === 0) {
-          const px = ((off + s * 0.75) / (2 * d * tanH)) * hpx
-          const arr = sx < 0 ? reachL : reachR
+        // How far this node's cubes reach sideways (px), from where the cube
+        // actually sits (e.g. Advisory's outer row cubes): any cube
+        // level with the node pushes its label out beyond it.
+        if (Math.abs(oy) < s && Math.abs(ox) > 1e-4) {
+          const px = ((Math.abs(ox) + s * 0.75) / (2 * d * tanH)) * hpx
+          const arr = ox < 0 ? reachL : reachR
           arr[l.node] = Math.max(arr[l.node] ?? 0, px)
         }
       })
@@ -1799,7 +1940,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       const labelsEl = $('#node-labels')!
       nodes.forEach((n) => {
         const label = document.createElement('div')
-        label.className = n.strand.category === 'plasmids' ? 'node-label is-plasmid' : 'node-label'
+        label.className = n.strand.category === 'plasmids' ? 'node-label is-plasmid' : n.strand.category === 'advisory' ? 'node-label is-advisory' : 'node-label'
         label.dataset.id = n.strand.id
         label.innerHTML = `
           <div class="node-label-pip"></div>
@@ -1810,11 +1951,17 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         `
         label.addEventListener('mouseenter', () => { activate(n.strand.id); setLabelHover(n.strand.id) })
         label.addEventListener('mouseleave', () => { deactivate(); setLabelHover(null) })
-        label.addEventListener('click', (e) => {
-          e.preventDefault()
+        // A strand's label acts like its centre node: the first click
+        // enters (focuses) the strand, a second opens its window.
+        label.setAttribute('role', 'button')
+        label.tabIndex = 0
+        label.setAttribute('aria-label', `${n.strand.name}: enter strand`)
+        const go = () => {
           const idx = nodes.indexOf(n)
           if (idx >= 0) onNodeClick(idx)
-        })
+        }
+        label.addEventListener('click', (e) => { e.preventDefault(); go() })
+        label.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); go() } })
         labelsEl.appendChild(label)
       })
     }
@@ -1926,6 +2073,20 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       dragging = false
       spinVel = 0
     }
+    /* Any press or tap anywhere in the scene (canvas, labels, overlays —
+       capture phase, so nothing can swallow it) stops the staff dead:
+       fling/swipe coast, pending swipe fling and the idle turn (held like
+       the two-finger halt until STALL_RELEASE after the press ends). The
+       cubes keep their own momentum — a sudden stop after a fast spin is
+       what kicks it. A drag that follows still spins it (onDragMove). */
+    let pressHoldT = 0
+    function haltOnPress() {
+      spinVel = 0
+      swPending = false
+      stallHold = true
+      pressHoldT = performance.now()
+    }
+    const holdOnRelease = () => { if (stallHold) pressHoldT = performance.now() }
 
     /* Two-step: a first click only FOCUSES the node (zoom/snap +
        bubble, like scrolling to it). Clicking the already-focused
@@ -2066,16 +2227,18 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     }
     /* Open a project's window: park on its category node first. */
     function openProject(outputId: string) {
-      const o = OUTPUTS.find((x) => x.id === outputId)
+      const o = outputById(outputId)
       if (!o) return
       const i = nodes.findIndex((x) => x.strand.category === o.category)
       if (i < 0) return
-      // No public page yet → show its strand's window instead.
-      if (!isOpen(o)) { openPanel(i); return }
+      // No public page yet → show its strand's window instead. Advisory
+      // services always open their own window (write-up + email only).
+      if (!isOpen(o) && !isAdvisory(o)) { openPanel(i); return }
       focusByIndex(i)
       panelOpen = true
-      setPanelStrand({ id: PROJECT_PREFIX + o.id, label: o.title, tagline: '', href: '#output/' + o.id, themes: [] })
+      setPanelStrand({ id: PROJECT_PREFIX + o.id, label: o.title, tagline: '', href: isAdvisory(o) ? '#' : '#output/' + o.id, themes: [] })
     }
+    sceneApi.openProject = openProject
 
     /* Invoked from the React close handler via closePanelRef (close
        button / backdrop / Esc). Returns to wherever you were: the
@@ -2383,7 +2546,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         } else {
           rotorAngle += diff * Math.min(1, dt * 6)
         }
-      } else if (stallHold && performance.now() - lastWheelT > STALL_RELEASE) {
+      } else if (stallHold && performance.now() - Math.max(lastWheelT, pressHoldT) > STALL_RELEASE) {
         stallHold = false
       } else if (!panelOpen && !isFocused() && !hoveredId && !stallHold) {
         rotorAngle += ROTOR_FREE_SPEED * dt
@@ -2497,16 +2660,61 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
     const labelEls = new Map<string, HTMLElement>()
     let labelsElCached: HTMLElement | null = null
     const _lp = new THREE.Vector3(), _lo = new THREE.Vector3()
+    /* Labels never sit on top of one another, nor over the focused
+       strand's cube row (e.g. Plasmids' name over Advisory's cubes).
+       Priority: focused, then hovered, then nearest the camera; a label
+       that would overlap one already placed fades out until it's clear. */
+    const _dv = new THREE.Vector3()
+    function screenBox(o: THREE.Object3D, w: number, h: number) {
+      const half = o.scale.y * 0.5
+      const c = o.getWorldPosition(_dv).project(camera)
+      const cx = (c.x * 0.5 + 0.5) * w, cy = (-c.y * 0.5 + 0.5) * h
+      const e = o.getWorldPosition(_dv).addScaledVector(_camUp, half).project(camera)
+      const r = Math.abs((-e.y * 0.5 + 0.5) * h - cy)
+      return { l: cx - r, t: cy - r, r: cx + r, b: cy + r }
+    }
+    function declutterLabels(depth: number[], shown: boolean[], w: number, h: number) {
+      const PAD = 6
+      const host = labelsElCached!.getBoundingClientRect()
+      const hovered = hoveredId ? nodes.findIndex((x) => x.strand.id === hoveredId) : -1
+      const order = nodes.map((_, ni) => ni).filter((ni) => shown[ni]).sort((a, b) => {
+        const pa = a === focusIndex && isFocused() ? 0 : a === hovered ? 1 : 2
+        const pb = b === focusIndex && isFocused() ? 0 : b === hovered ? 1 : 2
+        return pa - pb || depth[a] - depth[b]
+      })
+      const placed: { l: number; t: number; r: number; b: number }[] = []
+      const hits = (bx: { l: number; t: number; r: number; b: number }) =>
+        placed.some((p) => bx.l < p.r + PAD && bx.r > p.l - PAD && bx.t < p.b + PAD && bx.b > p.t - PAD)
+      order.forEach((ni, k) => {
+        const label = labelEls.get(nodes[ni].strand.id)
+        const text = label?.querySelector('.node-label-text') as HTMLElement | null
+        if (!label || !text) return
+        const r = text.getBoundingClientRect()
+        const box = { l: r.left - host.left, t: r.top - host.top, r: r.right - host.left, b: r.bottom - host.top }
+        const clash = k > 0 && hits(box)
+        label.classList.toggle('is-occluded', clash)
+        if (!clash) placed.push(box)
+        // The focused strand's cubes + their captions are obstacles too.
+        if (k === 0 && ni === focusIndex && isFocused()) {
+          placed.push(screenBox(nodes[ni].orb, w, h))
+          logos.forEach((l) => { if (l.node === ni && l.sprite.visible) { const b = screenBox(l.sprite, w, h); b.b += CAP_GAP + 48; placed.push(b) } })
+        }
+      })
+      nodes.forEach((n, ni) => { if (!shown[ni]) labelEls.get(n.strand.id)?.classList.remove('is-occluded') })
+    }
+
     function updateLabels() {
       const labelsEl = labelsElCached ?? (labelsElCached = $('#node-labels')!)
       const w = labelsEl.clientWidth
       const h = labelsEl.clientHeight
       const phone = isPhone()
       _camUp.setFromMatrixColumn(camera.matrixWorld, 1)
+      const depth: number[] = [], shown: boolean[] = []
 
       nodes.forEach((n, ni) => {
         // project() → normalised device coords (-1..1); remap to px.
         const projP = n.orb.getWorldPosition(_lp).project(camera)
+        depth[ni] = projP.z
         const px = (projP.x * 0.5 + 0.5) * w
         const py = (-projP.y * 0.5 + 0.5) * h
         let label = labelEls.get(n.strand.id)
@@ -2548,7 +2756,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const hideHere = phone && isFocused() && ni !== focusIndex
         label.style.opacity = hideHere ? '0' : '1'
         label.style.visibility = hideHere ? 'hidden' : ''          // no fade-out ghost mid-swipe
+        shown[ni] = !hideHere
       })
+      declutterLabels(depth, shown, w, h)
 
 
       // Project captions — focused section only: a boxed name + type
@@ -2568,7 +2778,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         const on = !!nodes[l.node]?.orb.userData.cube && (tileMix[l.node] ?? 0) > 0.6 && !panelOpen
           && (!phone || l.node === focusIndex)                       // phones: the focused strand's only, at once
         cap.classList.toggle('is-visible', on)
-        if (!on) return
+        // Keep tracking the cube even while hidden: a caption that stopped
+        // being positioned froze in place for its 0.25s fade-out, so it
+        // hung behind as its cube moved on (the "lingering" labels).
         // Desktop: under the cube. Phones: ABOVE it, no wider than the
         // cube — the strand's own label owns the band below the row.
         const half = l.sprite.scale.y * 0.5
@@ -2614,11 +2826,13 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       // Strand drawer — tethered just under the focused node, so it
       // reads as "drawn out" from there. Clamped to stay on-screen;
       // max-height capped to the viewport (it scrolls internally).
-      if (panelOpen && isFocused() && winModeRef.current === 'dock') {
+      // No focused node to hang it on → centre it (it used to stay parked
+      // off-screen, leaving only the dim scrim).
+      if (panelOpen && winModeRef.current === 'dock') {
         const drawer = $('#strand-drawer') as HTMLDivElement | null
-        const n = nodes[focusIndex]
-        if (drawer && n) {
-          const dp = n.orb.getWorldPosition(_lp).project(camera)
+        const n = isFocused() ? nodes[focusIndex] : null
+        if (drawer) {
+          const dp = n ? n.orb.getWorldPosition(_lp).project(camera) : _lp.set(0, 0, 0)
           const dx = (dp.x * 0.5 + 0.5) * w
           const dy = (-dp.y * 0.5 + 0.5) * h
           // Pinned to the RIGHT of the node (its left edge sits just
@@ -2627,7 +2841,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           // (not scrollable).
           const dw = drawer.offsetWidth || 720
           // List view: dead centre of the page, independent of the coil.
-          const centred = listview.classList.contains('is-visible')
+          const centred = listview.classList.contains('is-visible') || !n
           const dh = drawer.offsetHeight || 400
           const left = centred ? Math.max(16, (w - dw) / 2) : Math.max(16, Math.min(dx + 32, w - dw - 16))
           const top = centred ? Math.max(56, (h - dh) / 2) : Math.max(56, Math.min(dy - 80, h - 220))
@@ -2657,6 +2871,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        pulse phase starts at 0) and begins rendering. */
     function startScene() {
       if (destroyed) return
+      // The viewport may have changed under the intro (iOS toolbar
+      // collapse, rotation): resync the canvas before the first frame.
+      onResize()
       animationActive = true
       lastT = performance.now()
       startT = lastT
@@ -2672,6 +2889,19 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       }
       cleanups.push(() => window.clearTimeout(ht))
     }
+    /* Same `focus=` link while already here (e.g. the menu's "advisory"):
+       close the menu and park on that node. */
+    const onFocusHash = () => {
+      const fq = new URLSearchParams(window.location.hash.split('?')[1] || '').get('focus')
+      if (!fq || !animationActive) return
+      const fi = nodes.findIndex((x) => x.strand.id === fq || x.strand.category === fq)
+      if (fi < 0) return
+      if ($('#menu-overlay')?.classList.contains('is-open')) onMenuClose()
+      if (panelOpen) { panelOpen = false; setPanelStrand(null) }
+      focusByIndex(fi)
+    }
+    window.addEventListener('hashchange', onFocusHash)
+    cleanups.push(() => window.removeEventListener('hashchange', onFocusHash))
 
     /* Re-apply the current palette to every material. Called after
        the theme toggle flips data-theme on the root (which changes
@@ -2752,7 +2982,9 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <span class="list-band-name">${c.label}</span>
           <span class="list-band-verb">${c.verb}</span>
           <span class="list-band-status">${pad2(items.length)} · ${categoryStatus(c.id)}</span>
-          <a class="list-band-link" href="${c.id === 'plasmids' ? '#plasmids' : '#category/' + c.id}">category →</a>
+          ${c.id === 'advisory'
+            ? `<span class="list-band-link"><a href="mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Advisory enquiry')}">email ↦</a>${copyEmailHTML()}</span>`
+            : `<a class="list-band-link" href="${categoryHref(c.id)}">category →</a>`}
         </div>
         ${items.length ? items.map((o) => {
           const body = `
@@ -2762,9 +2994,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
             <div class="list-title">${outputName(o)}</div>
             <div class="list-tag">${typeById(o.type).label.toLowerCase()} · ${stageLabel(o).toLowerCase()}</div>
           </div>`
-          // No public page yet: listed, padlocked, not linked.
-          return isOpen(o)
-            ? `<a class="list-item" href="#output/${o.id}" data-out="${o.id}">${body}<span class="list-arrow">→</span></a>`
+          // No public page yet: listed, padlocked, not linked. Advisory
+          // services open their window (write-up + email) in place.
+          return isOpen(o) || isAdvisory(o)
+            ? `<a class="list-item" href="${isAdvisory(o) ? '#' : '#output/' + o.id}" data-out="${o.id}">${body}<span class="list-arrow">→</span></a>`
             : `<div class="list-item is-locked" title="Details coming soon">${body}<span class="list-arrow">${LOCK_SVG}<span class="sr-only">details coming soon</span></span></div>`
         }).join('') : '<p class="list-empty">no projects yet</p>'}`
       }).join('')
@@ -2903,24 +3136,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       serpentPoly.visible = sketchMode && polyMode
     }
 
-    /* ---- MARQUEE — the scrolling top strip ----
-       The strip text is NOT in the JSX — edit this `phrases` array.
-       The block is duplicated (block + block) so the CSS
-       translateX(-50%) loop is seamless. '✲' renders as the accent
-       star; anything else as a plain segment. */
-    function buildMarquee() {
-      const track = $('#marquee-track')!
-      const phrases = [
-        'research programme · 2024–26', '✲',
-        'detection · monitoring · forecasting · therapeutics · perception', '✲',
-        'five categories · one pathway', '✲',
-        'plasmids · head of the staff', '✲',
-        'rendered with three.js · r184', '✲',
-      ]
-      const block = phrases.map((p) =>
-        p === '✲' ? `<span class="star">${p}</span>` : `<span>${p}</span>`).join('')
-      track.innerHTML = block + block
-    }
 
     /* ---- CURSOR — native dot + trailing ring ----
        The dot is the OS cursor itself (--cursor-dot in helix3d.css), so
@@ -3024,7 +3239,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
        behind the loader), then run the intro gates in sequence before
        starting the render loop. The `destroyed` guards bail if the
        component unmounts mid-intro. */
-    buildMarquee()
     buildList()
     initThree()
     initCursor()
@@ -3085,6 +3299,10 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         })
         renderer?.dispose()
         renderer?.domElement?.remove()
+        // Strand labels + cube captions are built into #node-labels; a
+        // remount (StrictMode, scene reset) would otherwise leave this
+        // scene's dead copies on top, swallowing clicks.
+        $('#node-labels')?.replaceChildren()
       } catch { /* noop */ }
     }
   }, [])
@@ -3100,7 +3318,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
      gate → loader, with the StrandPanel modal (z 600) above all.
 
      EDITING TEXT: all static copy is literal here, EXCEPT the
-     marquee (buildMarquee `phrases`) and the list view (buildList
+     list view (buildList
      from STRANDS). The clicked card is the real StrandPanel, fed
      adapted concept data via toDataStrand.
      MOVING THINGS: change the element's rule in helix3d.css — don't
@@ -3132,10 +3350,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       <span className="corner-crop corner-crop--bl" />
       <span className="corner-crop corner-crop--br" />
 
-      {/* MARQUEE — track is filled by buildMarquee(); edit phrases there */}
-      <div className="marquee">
-        <div className="marquee-track" id="marquee-track" />
-      </div>
 
       {/* NAV — wordmark + view toggle (#view-toggle) + theme button
           (#theme-switch) + menu button (#menu-open). All wired in the
@@ -3193,11 +3407,6 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           by buildList(). Clicking a node opens the StrandPanel
           modal (rendered below, outside .stage). */}
       <main className="stage">
-        <div className="stage-readout">
-          <div>programme<strong>research · 2024–26</strong></div>
-          <div>categories<strong>{pad2(STRANDS.length)}</strong></div>
-          <div>projects<strong>{pad2(OUTPUTS.length)}</strong></div>
-        </div>
 
         <div className="helix3d" id="helix3d" />{/* ← WebGL canvas mounts here */}
         <div className="helix-fog" id="helix-fog" />{/* edge vignette over canvas */}
@@ -3206,6 +3415,16 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
         <div className="helix-center-label" id="helix-center-label">
           <p className="kicker">research programme · 2024–26</p>
           <h1 className="title">A new era of <br/><span className="accent" id="helix-accent">Digital Health</span><span className="helix-caret" id="helix-caret" aria-hidden="true" /></h1>
+          {/* Ledger tile row (was the top-centre readout, which sat on the
+              snake): strands in ink, projects in grape, services in the
+              Advisory gold, est outlined. The programme line is the kicker
+              above, so it isn't repeated. */}
+          <dl className="helix-ledger">
+            <div className="hl-strands"><dt>strands</dt><dd>{pad2(STRANDS.length)}</dd></div>
+            <div className="hl-projects"><dt>projects</dt><dd>{pad2(OUTPUTS.length)}</dd></div>
+            <div className="hl-services"><dt>services</dt><dd>{pad2(outputsIn('advisory').length)}</dd></div>
+            <div className="hl-est"><dt>est</dt><dd>09.2024</dd></div>
+          </dl>
         </div>
 
         <div className="node-labels" id="node-labels" />
@@ -3246,7 +3465,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
       </div>
 
       {/* MENU — full-screen overlay (z 200), toggled via .is-open by
-          #menu-open / #menu-close. Links are placeholders. */}
+          #menu-open / #menu-close. Items: SITE_MENU (shared with NavBar). */}
       <div className="menu-overlay" id="menu-overlay" aria-hidden="true">
         {/* Phones: theme + text size live here (the nav is slimmed). */}
         <div className="menu-mobile-ctrls">
@@ -3260,13 +3479,13 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
           <button className="menu-close" id="menu-close" title="Close (esc)" aria-label="Close menu (Esc)">close <span className="menu-close-x" /></button>
         </div>
         <div className="menu-items">
-          {[['marginalia', '#marginalia'], ['people', '#who'], ['services', '#services']].map(([label, href], i) => (
+          {SITE_MENU.map(({ label, href }, i) => (
             <a key={href} className="menu-item" href={href}><span className="menu-item-num">{pad2(i + 1)}</span>{label}</a>
           ))}
         </div>
         <div className="menu-bottom">
           <span>mentheon ltd · companies house 15974246</span>
-          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a></span>
+          <span><a href="#">linkedin</a><a href="#">github</a><a href={`mailto:${CONTACT_EMAIL}`}>contact</a><CopyEmail /></span>
         </div>
       </div>
 
@@ -3298,7 +3517,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
             <div className="strand-win-bar" onPointerDown={onWinDragStart} onDoubleClick={onWinMax} {...winSwipe.handlers}>
               <span className="strand-win-grab" aria-hidden="true" />
               <span className="strand-win-title">
-                {panelOut && panelCat ? <>{panelOut.code.toLowerCase()} · {panelCat.label.toLowerCase()} · project</>
+                {panelOut && panelCat ? <>{panelOut.code.toLowerCase()} · {panelCat.label.toLowerCase()} · {isAdvisory(panelOut) ? 'service' : 'project'}</>
                   : panelS && panelCat ? <>{panelCat.num} · {panelCat.label.toLowerCase()} · {pad2(panelS.band + 1)} of {pad2(STRANDS.length)}</> : null}
               </span>
               <span className="strand-win-ctrls">

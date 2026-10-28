@@ -1,0 +1,15 @@
+/* Copy-email icon: inherits the surrounding text colour, quiet until hovered. */
+.copy {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.6em; height: 1.6em; margin-left: 0.3em; padding: 0;
+  vertical-align: -0.3em; border: 0; border-radius: 3px;
+  background: none; color: inherit; opacity: 0.8; cursor: pointer;
+  transition: opacity 0.2s, color 0.2s;
+}
+.copy svg { width: 1.1em; height: 1.1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) { .copy:hover { opacity: 1; } }
+.copy:focus-visible { opacity: 1; outline: 1px solid currentColor; outline-offset: 1px; }
+.done { opacity: 1; }
+/* Bigger hit area on touch screens without changing the icon size. */
+@media (pointer: coarse) { .copy { width: 2.2em; height: 2.2em; margin-left: 0.1em; vertical-align: -0.65em; } }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

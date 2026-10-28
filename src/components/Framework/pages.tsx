@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { productTileHTML, AUF_ID, essenIcon } from '../ProductMark'
 import Padlock from '../Padlock'
+import CopyEmail from '../CopyEmail'
 import BetaSeats from './BetaSeats'
 import PersonAvatar from '../PersonAvatar'
 import PersonWindow from '../PersonWindow'
@@ -288,6 +289,7 @@ function Contacts({ contacts, subject }: { contacts: Contact[]; subject: string 
                     onClick={() => setOpenId(person.id)}>profile →</button>
                 )}
                 {c.email && <a className={s.personMail} href={`mailto:${c.email}?subject=${encodeURIComponent(subject)}`}>email →</a>}
+                {c.email && <CopyEmail email={c.email} />}
               </span>
             )}
           </div>

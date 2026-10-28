@@ -141,7 +141,7 @@
     transform: none !important; width: auto !important; height: auto !important; max-height: 88dvh !important;
     animation: sheetRise 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .crop { left: 6px; top: -10px; }
+  .crop { display: none; }   /* no corner mark on a phone sheet (floated over its rounded top) */
   .bar { position: relative; height: 52px; border-radius: 6px 6px 0 0; cursor: default; touch-action: none; }
   .grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
   .ctrls button:not(.close) { display: none; }

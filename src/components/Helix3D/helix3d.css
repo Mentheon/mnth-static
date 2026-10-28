@@ -94,8 +94,8 @@
   --gate-fg-soft:  rgba(255, 236, 225, 0.4);
   --gate-fg-faint: rgba(255, 236, 225, 0.2);
 
-  --menu-bg:      var(--ink);
-  --menu-fg:      var(--bg);
+  --menu-bg:      #2F0147;   /* the logo's purple, both themes */
+  --menu-fg:      #FFECE1;
 
   --shadow-md:    0 4px 12px rgba(47, 1, 71, 0.18);
   --shadow-lg:    0 8px 24px rgba(47, 1, 71, 0.22);
@@ -138,7 +138,7 @@
   --gate-fg-soft:  rgba(255, 236, 225, 0.4);
   --gate-fg-faint: rgba(255, 236, 225, 0.2);
 
-  --menu-bg:      #0F0118;
+  --menu-bg:      #2F0147;
   --menu-fg:      #FFECE1;
 
   --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.5);
@@ -433,7 +433,7 @@
 @media (hover: hover) { .helix3d-root .gate-btn:hover { background: var(--gate-fg); color: var(--gate-bg); border-color: var(--gate-fg); } }
 .helix3d-root .gate-btn-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
 
-/* ====== MARQUEE / NAV ====== */
+/* ====== NAV ====== (the scrolling marquee strip above it was removed) */
 .helix3d-root .marquee {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   background: var(--bg); border-bottom: 1px solid var(--ink-soft);
@@ -452,7 +452,7 @@
 @keyframes helix3dMarquee { to { transform: translateX(-50%); } }
 
 .helix3d-root .nav {
-  position: fixed; top: 36px; left: 0; right: 0; z-index: 40;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
   padding: 1.4rem 2rem;
   /* flex-start (not center): a taller brand logo extends DOWNWARD
      instead of growing the row and dragging the right-hand controls
@@ -578,12 +578,11 @@
 /* ====== STAGE ====== */
 .helix3d-root .stage {
   position: relative; width: 100vw; height: 100vh;
-  padding-top: 36px;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 .helix3d-root .stage-readout {
-  position: absolute; top: calc(36px + 5rem); left: 50%;
+  position: absolute; top: calc(5rem); left: 50%;
   transform: translateX(-50%);
   display: flex; gap: 2rem;
   font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
@@ -741,8 +740,29 @@
   font-family: 'Lato', sans-serif; font-weight: 900;
   font-size: clamp(1.4rem, 2.4vw, 2.2rem); letter-spacing: -0.01em;
   line-height: 1.1; margin: 0; color: var(--ink);
+  /* Always exactly two lines ("A new era of" / the typed accent): no
+     wrapping and a fixed height, so the block — vertically centred —
+     never moves as accents of different lengths are typed and erased. */
+  white-space: nowrap; height: 2.2em;
 }
 .helix3d-root .helix-center-label .title .accent { color: var(--crimson); }
+/* Ledger under the headline: a row of four square tiles. */
+.helix3d-root .helix-ledger { display: flex; gap: 0.5rem; width: max-content; margin: 1.4rem 0 0; }
+/* Fixed, identical squares: flex: none so the headline's 18ch column
+   can't squeeze them by their content (they used to come out uneven). */
+.helix3d-root .helix-ledger div {
+  flex: none; width: 4.4rem; height: 4.4rem; box-sizing: border-box; padding: 0.5rem; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: #2F0147; color: #FFECE1;
+}
+.helix3d-root .helix-ledger dt { font-family: 'JetBrains Mono', monospace; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
+.helix3d-root .helix-ledger dd { margin: 0; font-family: 'Lato', sans-serif; font-weight: 900; font-size: 1.6rem; line-height: 1; }
+.helix3d-root .helix-ledger .hl-projects { background: #9C528B; }
+.helix3d-root .helix-ledger .hl-services { background: #E0A526; color: #2F0147; }
+.helix3d-root .helix-ledger .hl-est { background: none; color: var(--ink); border: 1.5px solid var(--ink); }
+.helix3d-root .helix-ledger .hl-est dd { font-size: 0.95rem; }
+/* Dark: the ink tile inverts to cream, like the strand cubes. */
+.helix3d-root[data-theme="dark"] .helix-ledger .hl-strands { background: #FFECE1; color: #2F0147; }
 /* Console-style caret — sits after the typed accent and blinks
    forever (steps(1) = hard on/off, no fade). */
 .helix3d-root .helix-caret {
@@ -781,7 +801,7 @@
 /* ====== LIST VIEW ====== */
 .helix3d-root .listview {
   position: absolute; inset: 0;
-  padding: calc(36px + 8rem) 2rem 4rem;
+  padding: calc(8rem) 2rem 4rem;
   display: flex; align-items: flex-start; justify-content: center;
   opacity: 0; pointer-events: none;
   transition: opacity 0.5s var(--ease-out);
@@ -835,9 +855,11 @@
 .helix3d-root .list-arrow { font-family: 'Lato', sans-serif; font-size: 1.4rem; color: var(--ink); transition: transform 0.3s var(--ease-out), color 0.2s; }
 
 /* ====== CORNERS / FOOTER / MENU / TRANSITION ====== */
+/* Top marks sit just below the nav row (padding + control height) so
+   they never touch the logo or the menu. */
 .helix3d-root .corner-crop { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 30; }
-.helix3d-root .corner-crop--tl { top: 48px; left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
-.helix3d-root .corner-crop--tr { top: 48px; right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tl { top: calc(1.4rem + 2.6rem + 0.7rem); left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tr { top: calc(1.4rem + 2.6rem + 0.7rem); right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--bl { bottom: 16px; left: 16px;  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--br { bottom: 16px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 
@@ -1001,7 +1023,7 @@
 .helix3d-root .strand-win.is-max .strand-win-body > div > div { min-height: 100%; }
 .helix3d-root .strand-win.is-max {
   transform: none !important;
-  left: 2rem; right: 2rem; top: calc(36px + 4.6rem); bottom: 4.2rem;
+  left: 2rem; right: 2rem; top: calc(4.6rem); bottom: 4.2rem;
   width: auto; height: auto;
 }
 .helix3d-root .strand-win-grip {
@@ -1020,7 +1042,7 @@
    md shadow) with the crimson corner crop. Keys are mono caps. */
 .helix3d-root .helix-help {
   position: absolute; z-index: 45;
-  top: calc(36px + 4.4rem); right: 2rem;
+  top: calc(4.4rem); right: 2rem;
   width: 300px; padding: 0.75rem 1rem 0.8rem;
   background: var(--bg); color: var(--ink);
   border: 1px solid var(--ink-soft); border-radius: 2px;
@@ -1107,6 +1129,36 @@
   border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson);
 }
 
+/* Decluttered (declutterLabels): a label that would overlap another,
+   or the focused strand's cube row, fades out until it's clear. */
+.helix3d-root .node-label { transition: opacity 0.18s ease; }
+.helix3d-root .node-label.is-occluded { opacity: 0 !important; pointer-events: none; }
+
+/* Advisory node (gold, head of the staff): gold pip + corner mark. */
+.helix3d-root .node-label.is-advisory .node-label-pip { background: #E0A526; }
+.helix3d-root .node-label.is-advisory .node-label-name { border-color: #E0A526; }
+.helix3d-root .node-label.is-advisory .node-label-name::before { border-color: #E0A526; }
+
+/* Project captions are tap/click targets while shown (open the cube's
+   window, same as clicking the cube). */
+.helix3d-root .cube-cap.is-visible { pointer-events: auto; cursor: var(--cursor-dot, pointer); }
+
+/* ====== Advisory windows (AdvisoryPeek / ServicePeek) ====== */
+.helix3d-root .adv-verb { color: #C98A0B; }
+.helix3d-root[data-theme="dark"] .adv-verb { color: #E0A526; }
+.helix3d-root .adv-peek button.cp-project {
+  width: 100%; border-top: 0; border-left: 0; border-right: 0; background: none;
+  font: inherit; text-align: left; cursor: var(--cursor-dot, pointer);
+}
+.helix3d-root .adv-text { margin: 0 0 0.7rem; font-size: 0.95rem; line-height: 1.55; opacity: 0.88; max-width: 62ch; }
+.helix3d-root .adv-covers { margin: 0.9rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.helix3d-root .adv-covers li {
+  padding: 0.3rem 0.55rem; border: 1px solid #E0A526;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+}
+.helix3d-root .adv-more { margin: 1.1rem 0 2.2rem; font-size: 0.92rem; line-height: 1.5; }
+.helix3d-root .adv-more a { color: var(--crimson); font-weight: 700; text-underline-offset: 2px; }
+
 /* ====== List view — grouped by category ====== */
 .helix3d-root .list-band {
   display: grid; grid-template-columns: 64px 56px auto 1fr auto auto; align-items: center; gap: 1.25rem;
@@ -1118,6 +1170,9 @@
 .helix3d-root .list-band-name { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.01em; }
 .helix3d-root .list-band-verb { font-style: italic; opacity: 0.7; }
 .helix3d-root .list-band-status { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); }
+/* Advisory's band: the email link + its copy icon share the cell. */
+.helix3d-root span.list-band-link { display: inline-flex; align-items: center; }
+.helix3d-root span.list-band-link a { color: inherit; text-decoration: none; }
 .helix3d-root .list-band-link { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); transition: color 0.2s; }
 @media (hover: hover) { .helix3d-root .list-band-link:hover { color: var(--crimson); } }
 .helix3d-root .list-empty { margin: 0; padding: 1rem 0 1rem 80px; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-quiet); border-bottom: 1px solid var(--ink-soft); }
@@ -1257,11 +1312,11 @@
 }
 @media (max-width: 720px) {
   .helix3d-root .band-rail { display: none; }
-  .helix3d-root .helix-help { top: calc(36px + 4.4rem); left: 1rem; right: 1rem; width: auto; }
-  .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(36px + 3.6rem); bottom: 3.6rem; }
+  .helix3d-root .helix-help { top: calc(4.4rem); left: 1rem; right: 1rem; width: auto; }
+  .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(3.6rem); bottom: 3.6rem; }
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
-  .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: 44px; }
+  .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: calc(1rem + 2.6rem + 0.6rem); }   /* below the nav row (logo, controls) */
   .helix3d-root .corner-crop--bl, .helix3d-root .corner-crop--br { bottom: 16px; }
   .helix3d-root .node-label-name { font-size: 0.7rem; }
   .helix3d-root .node-label-sub  { font-size: 0.5rem; }
@@ -1443,7 +1498,7 @@
     max-height: calc(100dvh - 64px); z-index: 600;
     animation: helixSheetRise 0.35s var(--ease-out);
   }
-  .helix3d-root .strand-win-crop { left: 6px; top: -10px; }
+  .helix3d-root .strand-win-crop { display: none; }   /* no corner mark on a phone sheet */
   .helix3d-root .strand-win-bar { position: relative; height: 52px; border-radius: 6px 6px 0 0; cursor: default; border-left: none; border-right: none; touch-action: none; }
   .helix3d-root .strand-win-grab { display: block; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--bg); opacity: 0.45; }
   .helix3d-root .strand-win-ctrls button:not(.strand-win-close) { display: none; }

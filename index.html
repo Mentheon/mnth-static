@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,11 +9,92 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
     />
-    <title>Mentheon</title>
-    <meta name="description" content="Digital Health Solutions - VR-RT and more" />
+
+    <!-- SEO: title, description, canonical -->
+    <title>Mentheon — digital health research &amp; software</title>
+    <meta
+      name="description"
+      content="Mentheon builds evidence-based software, from research through design to development. Digital health is our focus, but we work across every domain."
+    />
+    <link rel="canonical" href="https://mentheon.com/" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Icons (from favvectorprintlight.svg) -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#2F0147" />
+
+    <!-- Link previews (LinkedIn, Slack, iMessage, X) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mentheon" />
+    <meta property="og:url" content="https://mentheon.com/" />
+    <meta property="og:title" content="Mentheon — digital health research &amp; software" />
+    <meta
+      property="og:description"
+      content="Evidence-based software, from research through design to development. A digital health focus, but not a digital health limit."
+    />
+    <meta property="og:image" content="https://mentheon.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Mentheon — A new era of Digital Health" />
+    <meta property="og:locale" content="en_GB" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- With JS on, the crawler summary in #root stays hidden until React replaces it (no flash). -->
+    <script>document.documentElement.classList.add('js')</script>
+    <style>.js #seo-summary { display: none; }</style>
+
+    <!-- Structured data: the company behind the site -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Mentheon",
+        "legalName": "Mentheon Ltd",
+        "url": "https://mentheon.com/",
+        "logo": "https://mentheon.com/icon-512.png",
+        "email": "nicholas@mentheon.com",
+        "foundingDate": "2024-09",
+        "identifier": {
+          "@type": "PropertyValue",
+          "propertyID": "Companies House",
+          "value": "15974246"
+        },
+        "description": "A digital health research company building software; always with a basis in evidenced bottom-up, or top-down approaches. Specialisation, but not limited to monitoring, detection, therapeutics and VR reminiscence therapy."
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- What crawlers and no-JS visitors read; React replaces it on load. -->
+    <div id="root">
+      <main id="seo-summary" style="max-width: 40rem; margin: 4rem auto; padding: 0 1.5rem; font-family: Lato, sans-serif; color: #2F0147; background: #FFECE1">
+        <h1>Mentheon — a new era of digital health</h1>
+        <p>
+          Mentheon Ltd is a digital health research company. Its research programme (2024–26)
+          runs as strands, each building software toward one clinical aim:
+        </p>
+        <ul>
+          <li><strong>Plasmids</strong> — software</li>
+          <li><strong>Detection</strong> — detect</li>
+          <li><strong>Monitoring</strong> — measure</li>
+          <li><strong>Therapeutics</strong> — intervene, including personalised VR reminiscence therapy for dementia care</li>
+          <li><strong>Perception</strong> — understand</li>
+        </ul>
+        <p>
+          <strong>Advisory:</strong> research, design, development and consultancy services for
+          software in any domain. Digital health is our focus, not our limit: every engagement is
+          bottom-up and evidence-based, and we stay engaged across the whole research, design and
+          development pipeline.
+        </p>
+        <p>
+          <a href="#who">People</a> · <a href="#services">Services</a> · <a href="#marginalia">Marginalia</a> ·
+          <a href="mailto:nicholas@mentheon.com">nicholas@mentheon.com</a>
+        </p>
+        <p>Mentheon Ltd · Companies House 15974246 · est. 09.2024 · Bloemfontein · Newcastle · London</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

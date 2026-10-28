@@ -9,6 +9,7 @@ import styles from './AnalyticsNotice.module.css'
    the intro to finish so it never sits on top of it. */
 
 const KEY = 'mnth:analyticsNoticeSeen'
+const UMAMI_URL = 'https://umami.is'
 
 function seen(): boolean {
   try { return localStorage.getItem(KEY) === '1' } catch { return false }
@@ -32,10 +33,11 @@ export default function AnalyticsNotice({ onHelix }: { onHelix: boolean }) {
 
   return (
     <div className={styles.notice} role="region" aria-label="Analytics notice" style={swipe.style} {...swipe.handlers}>
-      <span className={styles.logo} role="img" aria-label="Umami" />
+      <a className={styles.logo} href={UMAMI_URL} target="_blank" rel="noopener noreferrer" aria-label="Umami (opens in a new tab)" />
       <p className={styles.text}>
-        We use privacy-friendly analytics (Umami) to count visits. No cookies,
-        no personal data, nothing shared with advertisers.
+        We use <a className={styles.link} href={UMAMI_URL} target="_blank" rel="noopener noreferrer">Umami</a>, a
+        cookieless analytics tool. It does not store IP addresses or personally
+        identifiable information, and does not track you across websites.
       </p>
       <button type="button" className={styles.button} onClick={dismiss}>
         Got it

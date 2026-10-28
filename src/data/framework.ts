@@ -5,9 +5,10 @@
    (set placeholder:false and fill title/synopsis when it is). */
 
 import { CONTACT_EMAIL } from './people'
+import { ADVISORY } from './advisory'
 
-export type CategoryId = 'detection' | 'monitoring' | 'forecasting' | 'therapeutics' | 'perception' | 'plasmids'
-export type OutputTypeId = 'programme' | 'artefact' | 'software' | 'product'
+export type CategoryId = 'detection' | 'monitoring' | 'forecasting' | 'therapeutics' | 'perception' | 'plasmids' | 'advisory'
+export type OutputTypeId = 'programme' | 'artefact' | 'software' | 'product' | 'service'
 export type RegClass = 'None' | 'Wellness' | 'Digital biomarker' | 'Diagnostic' | 'Prognostic' | 'Digital therapeutic'
 
 export interface Category {
@@ -38,9 +39,21 @@ export const CATEGORIES: Category[] = [
     purpose: 'Standalone experimental software with no clinical purpose', typicalOutputs: 'Software projects', typicalRegClass: 'None' },
 ]
 export const HELIX_CATEGORIES = CATEGORIES.filter((c) => c.onHelix)
+/* Advisory: the node at the very head of the staff, above Plasmids —
+   consultancy services, not research. Kept out of CATEGORIES so the
+   framework / register pages don't list it; categoryById still finds it. */
+export const ADVISORY_CATEGORY: Category = {
+  id: 'advisory', num: 'AD', code: 'ADV', label: 'Advisory', verb: 'Advise', onHelix: false, clinical: false,
+  purpose: 'Consultancy and advisory services across research, design and development, in digital health and every other domain',
+  typicalOutputs: 'Research, design, development and consultancy engagements', typicalRegClass: 'Not applicable',
+}
+export const isAdvisory = (o: { category: CategoryId }) => o.category === 'advisory'
+/* A category's main section page (Advisory has none: it opens in place). */
+export const categoryHref = (c: CategoryId) => (c === 'plasmids' ? '#plasmids' : `#category/${c}`)
 /* Each category is presented as a strand. `split` is the two-line break
    on its logo tile (Helix3D cube faces, the mobile list). */
 export const STRAND: Record<CategoryId, { name: string; split: [string, string] }> = {
+  advisory:     { name: 'Advisory',  split: ['ADVI', 'SORY'] },
   plasmids:     { name: 'Plasmids',  split: ['PLAS', 'MIDS'] },
   detection:    { name: 'Aevorix',   split: ['AEV', 'ORIX'] },
   monitoring:   { name: 'Vitrix',    split: ['VIT', 'RIX'] },
@@ -48,9 +61,9 @@ export const STRAND: Record<CategoryId, { name: string; split: [string, string] 
   therapeutics: { name: 'Lenitudo',  split: ['LENI', 'TUDO'] },
   perception:   { name: 'Kindreon',  split: ['KIND', 'REON'] },
 }
-/* Staff order: Plasmids at the head, then the pathway, Perception last. */
-export const STAFF_ORDER: CategoryId[] = ['plasmids', 'detection', 'monitoring', 'forecasting', 'therapeutics', 'perception']
-export const categoryById = (id: string) => CATEGORIES.find((c) => c.id === id)
+/* Staff order: Advisory at the head, then Plasmids, the pathway, Perception last. */
+export const STAFF_ORDER: CategoryId[] = ['advisory', 'plasmids', 'detection', 'monitoring', 'forecasting', 'therapeutics', 'perception']
+export const categoryById = (id: string) => (id === 'advisory' ? ADVISORY_CATEGORY : CATEGORIES.find((c) => c.id === id))
 
 export const BOUNDARIES: { pair: [CategoryId, CategoryId]; label: string; text: string }[] = [
   { pair: ['detection', 'forecasting'], label: 'Detection vs Forecasting',
@@ -113,7 +126,13 @@ export const OUTPUT_TYPES: OutputType[] = [
     direction: 'Derived', categoryRule: 'Inherited from its source',
     stages: ['Release candidate', 'Released', 'Maintained', 'Sunset'] },
 ]
-export const typeById = (id: string) => OUTPUT_TYPES.find((t) => t.id === id)!
+/* Advisory services' type. Not in OUTPUT_TYPES (no stage track on the
+   framework page / register filters). */
+export const SERVICE_TYPE: OutputType = {
+  id: 'service', label: 'Advisory service', definition: 'Consultancy and advisory engagements', direction: 'By enquiry',
+  categoryRule: 'Advisory', stages: ['By enquiry'],
+}
+export const typeById = (id: string) => (id === 'service' ? SERVICE_TYPE : OUTPUT_TYPES.find((t) => t.id === id)!)
 
 export const TRACK_NOTES = [
 'Stage 3 splits them: an ongoing study, an open iteration loop, or a prototype.',
@@ -222,8 +241,18 @@ export const OUTPUTS: Output[] = [
   ph('PLA-02', { product: 'Rostrella', title: 'Rostrella', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
 ]
 
-export const outputById = (id: string) => OUTPUTS.find((o) => o.id === id)
-export const outputsIn = (c: CategoryId) => OUTPUTS.filter((o) => o.category === c)
+/* Advisory's four services as outputs, so the staff shows them as cubes.
+   Never open (no pages): their window is the write-up + an email link.
+   Not in OUTPUTS, so the register and output counts leave them out. */
+export const ADVISORY_OUTPUTS: Output[] = ADVISORY.map((a) => ({
+  id: `adv-${a.id}`, code: `ADV-${a.num}`, placeholder: false, title: a.label, product: a.short,
+  synopsis: a.lede, abstract: a.body.join(' '), category: 'advisory', type: 'service', stage: 0, regClass: 'None',
+  affiliation: { kind: 'owned' },
+}))
+export const advisoryFor = (o: Output) => ADVISORY.find((a) => `adv-${a.id}` === o.id)
+
+export const outputById = (id: string) => OUTPUTS.find((o) => o.id === id) ?? ADVISORY_OUTPUTS.find((o) => o.id === id)
+export const outputsIn = (c: CategoryId) => (c === 'advisory' ? ADVISORY_OUTPUTS : OUTPUTS.filter((o) => o.category === c))
 export const isOpen = (o: Output) => !!o.open
 export const stageLabel = (o: Output) => typeById(o.type).stages[o.stage]
 export const outputName = (o: Output) => (o.placeholder ? `${o.title} · ${o.code}` : o.title)
@@ -231,8 +260,9 @@ export const affiliationLabel = (o: Output) =>
   o.affiliation.kind === 'owned' ? 'Mentheon-owned' : `Affiliated · ${o.affiliation.partner}`
 
 /* Category status is derived from its outputs, never set by hand. */
-export type CategoryStatus = 'no outputs' | 'nascent' | 'active'
+export type CategoryStatus = 'no outputs' | 'nascent' | 'active' | 'by enquiry'
 export function categoryStatus(c: CategoryId): CategoryStatus {
+  if (c === 'advisory') return 'by enquiry'
   const os = outputsIn(c)
   if (!os.length) return 'no outputs'
   return os.some((o) => o.type === 'product' || o.stage > 0) ? 'active' : 'nascent'
