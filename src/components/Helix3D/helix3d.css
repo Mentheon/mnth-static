@@ -855,9 +855,11 @@
 .helix3d-root .list-arrow { font-family: 'Lato', sans-serif; font-size: 1.4rem; color: var(--ink); transition: transform 0.3s var(--ease-out), color 0.2s; }
 
 /* ====== CORNERS / FOOTER / MENU / TRANSITION ====== */
+/* Top marks sit just below the nav row (padding + control height) so
+   they never touch the logo or the menu. */
 .helix3d-root .corner-crop { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 30; }
-.helix3d-root .corner-crop--tl { top: 48px; left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
-.helix3d-root .corner-crop--tr { top: 48px; right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tl { top: calc(1.4rem + 2.6rem + 0.7rem); left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tr { top: calc(1.4rem + 2.6rem + 0.7rem); right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--bl { bottom: 16px; left: 16px;  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--br { bottom: 16px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 
@@ -1314,7 +1316,7 @@
   .helix3d-root .strand-win.is-max { left: 0.5rem; right: 0.5rem; top: calc(3.6rem); bottom: 3.6rem; }
   .helix3d-root .stage-readout { display: none; }
   .helix3d-root .nav { padding: 1rem; }
-  .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: 44px; }
+  .helix3d-root .corner-crop--tl, .helix3d-root .corner-crop--tr { top: calc(1rem + 2.6rem + 0.6rem); }   /* below the nav row (logo, controls) */
   .helix3d-root .corner-crop--bl, .helix3d-root .corner-crop--br { bottom: 16px; }
   .helix3d-root .node-label-name { font-size: 0.7rem; }
   .helix3d-root .node-label-sub  { font-size: 0.5rem; }
