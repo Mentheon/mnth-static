@@ -858,8 +858,11 @@
 /* Top marks sit just below the nav row (padding + control height) so
    they never touch the logo or the menu. */
 .helix3d-root .corner-crop { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 30; }
-.helix3d-root .corner-crop--tl { top: calc(1.4rem + 2.6rem + 0.7rem); left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
-.helix3d-root .corner-crop--tr { top: calc(1.4rem + 2.6rem + 0.7rem); right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+/* Top marks sit 12px below the nav row, whose bottom is fixed in px
+   (22px padding + 42px controls + 22px = 86px): in px, not rem, so the
+   A− / A / A+ text size can't lift them into the row under MENU. */
+.helix3d-root .corner-crop--tl { top: 98px; left: 16px;     border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.helix3d-root .corner-crop--tr { top: 98px; right: 16px;    border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--bl { bottom: 16px; left: 16px;  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
 .helix3d-root .corner-crop--br { bottom: 16px; right: 16px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
 
@@ -1042,7 +1045,9 @@
    md shadow) with the crimson corner crop. Keys are mono caps. */
 .helix3d-root .helix-help {
   position: absolute; z-index: 45;
-  top: calc(4.4rem); right: 2rem;
+  /* Level with the page's top crop marks (98px), and inset clear of the
+     top-right one (right: 16px + 20px wide), so neither touches MENU. */
+  top: 98px; right: 48px;
   width: 300px; padding: 0.75rem 1rem 0.8rem;
   background: var(--bg); color: var(--ink);
   border: 1px solid var(--ink-soft); border-radius: 2px;
@@ -1052,8 +1057,9 @@
 }
 @keyframes helixHelpIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 .helix3d-root .helix-help-crop {
-  position: absolute; top: -10px; right: -10px; width: 20px; height: 20px;
-  border-top: 2px solid var(--crimson); border-right: 2px solid var(--crimson);
+  /* Bottom-left: the top-right corner is the page's own crop mark. */
+  position: absolute; bottom: -10px; left: -10px; width: 20px; height: 20px;
+  border-bottom: 2px solid var(--crimson); border-left: 2px solid var(--crimson);
   pointer-events: none;
 }
 .helix3d-root .helix-help-head {

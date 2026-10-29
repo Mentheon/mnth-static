@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { productTileHTML, AUF_ID, essenIcon } from '../ProductMark'
 import Padlock from '../Padlock'
-import CopyEmail from '../CopyEmail'
 import BetaSeats from './BetaSeats'
 import PersonAvatar from '../PersonAvatar'
 import PersonWindow from '../PersonWindow'
@@ -14,7 +13,7 @@ import {
   CATEGORIES, HELIX_CATEGORIES, OUTPUT_TYPES, OUTPUTS, BOUNDARIES, PLASMID_METAPHOR, TRACK_NOTES,
   FIELDS, INFRASTRUCTURE, REG_CLASSES, categoryById, outputById, outputsIn, categoryStatus, typeById,
   stageLabel, outputName, affiliationLabel, pad2, isSoftware, LINK_LABEL, isOpen,
-  type CategoryId, type OutputTypeId, type Output, type Contact,
+  type CategoryId, type OutputTypeId, type Output, type Contact, type Feature,
 } from '../../data/framework'
 
 const star = <span className={s.star} aria-hidden="true">✲</span>
@@ -253,6 +252,111 @@ function OutputMarks({ o }: { o: Output }) {
   )
 }
 const pending = (what: string) => <p className={s.empty}>{what} · to be written</p>
+
+/* ---- Core features (software outputs with o.features) ---- */
+/* Feature copy may carry `inline code` in backticks. */
+const withCode = (t: string) => t.split('`').map((p, i) => (i % 2 ? <code key={i} className={s.fCode}>{p}</code> : p))
+
+/* A real screenshot of the software, light and dark (the site's theme picks
+   one; the hidden one is lazy and never loads). Not a link: it only lifts
+   on hover. */
+function FeatureShot({ shot }: { shot: NonNullable<Feature['shot']> }) {
+  const themed = shot.themed !== false
+  const src = (t?: string) => `${import.meta.env.BASE_URL}${shot.dir}/${shot.name}${t ? `-${t}` : ''}.webp`
+  const panel = shot.fit === 'panel'
+  return (
+    <figure className={cx(s.fShot, panel && s.fShotPanel)}>
+      {themed ? (
+        <>
+          <img className={s.shotLight} src={src('light')} alt={shot.alt} width={1920} height={1200} loading="lazy" decoding="async" />
+          <img className={s.shotDark} src={src('dark')} alt={shot.alt} width={1920} height={1200} loading="lazy" decoding="async" />
+        </>
+      ) : (
+        <img src={src()} alt={shot.alt} loading="lazy" decoding="async" />
+      )}
+    </figure>
+  )
+}
+
+/* HTML prototype of the macOS menu bar item (the Electron tray), which no
+   browser can show. Labels are the app's own (desktop/menuBar.ts). */
+function MenuBarProto() {
+  return (
+    <div className={s.mb} role="img" aria-label="The Mac menu bar: the clock on a task, with its menu open at Menu Bar, Friends, Essen">
+      <div className={s.mbBar}>
+        <span className={s.mbApp}>Aufdröselung</span><span>File</span><span>Edit</span><span>View</span>
+        <span className={s.mbSpacer} />
+        <img className={s.mbEssen} src={`${import.meta.env.BASE_URL}essen-idle.svg`} alt="" />
+        <span className={s.mbItem}>■ t: 00:38:01<i className={s.mbBarFill} style={{ ['--p' as string]: '63%' }} />d: 03:02:01</span>
+        <span>Wed 14:05</span>
+      </div>
+      <div className={s.mbMenu}>
+        <span className={s.mbOff}>On: tidy the lab repo</span>
+        <span>Stop the Clock</span>
+        <span className={s.mbOff}>t: 00:38:01 / 1h · 63%</span>
+        <span className={s.mbOff}>d: 03:02:01 / 7h30m · 40%</span>
+        <i className={s.mbSep} />
+        <span>Pop Out the Clock</span>
+        <span>Show Aufdröselung</span>
+        <i className={s.mbSep} />
+        <span className={s.mbOn}>Menu Bar<b>›</b></span>
+      </div>
+      <div className={cx(s.mbMenu, s.mbSub)}>
+        <span>Task Shows<b>›</b></span>
+        <span>Day Shows<b>›</b></span>
+        <span>Picture<b>›</b></span>
+        <span className={s.mbOn}>Friends<b>›</b></span>
+        <span>Picture Only</span>
+      </div>
+      <div className={cx(s.mbMenu, s.mbSub2)}>
+        <span><em>✓</em>Essen</span>
+        <i className={s.mbSep} />
+        <span><em>✓</em>Animate</span>
+      </div>
+    </div>
+  )
+}
+
+function CoreFeatures({ o }: { o: Output }) {
+  const rows = useRef<(HTMLElement | null)[]>([])
+  const jump = (i: number) => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    rows.current[i]?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }
+  const features = o.features ?? []
+  return (
+    <>
+      {/* Buttons, not #anchors: the hash is the router. */}
+      <nav className={s.fIndex} aria-label="Features">
+        {features.map((f, i) => (
+          <button key={f.tag} type="button" className={s.fIndexItem} onClick={() => jump(i)}>
+            <span className={s.fIndexNum}>{pad2(i + 1)}</span>{f.tag}
+          </button>
+        ))}
+      </nav>
+      <div className={s.fRows}>
+        {features.map((f, i) => (
+          <article key={f.tag} ref={(el) => { rows.current[i] = el }} className={s.fRow}>
+            <div className={s.fText}>
+              <span className={s.cardNum}>{pad2(i + 1)} · {f.tag}</span>
+              <h3 className={s.featureTitle}>{f.title}</h3>
+              <p className={s.featureText}>{withCode(f.text)}</p>
+              {f.keys?.length ? (
+                <dl className={s.fKeys}>
+                  {f.keys.map(([k, v]) => <div key={k} className={s.fKey}><dt>{k}</dt><dd>{v}</dd></div>)}
+                </dl>
+              ) : null}
+            </div>
+            <div className={s.fMedia}>
+              {f.shot ? <FeatureShot shot={f.shot} /> : f.proto === 'menubar' ? <MenuBarProto /> : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
+  )
+}
+
 /* Contact cards. A contact tied to a person (data/people) shows their
    photo, and "profile" opens their window over this page (no
    navigation); Esc closes it before PageShell's Esc-back fires. */
@@ -289,7 +393,6 @@ function Contacts({ contacts, subject }: { contacts: Contact[]; subject: string 
                     onClick={() => setOpenId(person.id)}>profile →</button>
                 )}
                 {c.email && <a className={s.personMail} href={`mailto:${c.email}?subject=${encodeURIComponent(subject)}`}>email →</a>}
-                {c.email && <CopyEmail email={c.email} />}
               </span>
             )}
           </div>
@@ -411,6 +514,12 @@ export function OutputPage({ o }: { o: Output }) {
       <Section num={num()} title="Abstract">
         {o.abstract ? <p className={s.abstract}>{o.abstract}</p> : pending('abstract')}
       </Section>
+
+      {!!o.features?.length && (
+        <Section num={num()} title="Core features">
+          <CoreFeatures o={o} />
+        </Section>
+      )}
 
       <Section num={num()} title="Objectives">
         {o.objectives?.length ? (

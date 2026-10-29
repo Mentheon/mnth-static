@@ -398,6 +398,95 @@ a.bExitTitle { border-bottom: 1px solid var(--ink-soft); }
 }
 .objectiveVerb { font-weight: 900; font-size: 1.25rem; letter-spacing: -0.01em; color: var(--crimson); }
 
+/* ---- core features (software outputs) ---- */
+.fIndex { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.5rem; }
+.fIndexItem {
+  display: inline-flex; align-items: baseline; gap: 0.45rem; padding: 0.4rem 0.65rem;
+  border: 1px solid var(--ink-soft); border-radius: 2px; background: none; color: var(--ink); cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s;
+}
+.fIndexNum { color: var(--ink-quiet); font-weight: 500; }
+@media (hover: hover) { .fIndexItem:hover { border-color: var(--crimson); color: var(--crimson); } }
+
+/* One row per feature: the words beside the real screen, sides alternating. */
+.fRows { display: grid; }
+.fRow {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 2.5rem; align-items: center;
+  padding: 2.75rem 0; border-top: 1px solid var(--ink-soft); scroll-margin-top: 6rem;
+}
+.fRow:nth-child(even) { grid-template-columns: minmax(0, 8fr) minmax(0, 5fr); }
+.fRow:nth-child(even) .fText { order: 2; }
+.fText { display: flex; flex-direction: column; gap: 0.6rem; }
+.featureTitle { margin: 0.15rem 0 0; font-weight: 900; font-size: 1.6rem; line-height: 1.1; letter-spacing: -0.015em; }
+.featureText { margin: 0; font-size: 0.98rem; line-height: 1.6; opacity: 0.88; text-wrap: pretty; }
+.fCode { font-family: 'JetBrains Mono', monospace; font-size: 0.86em; font-weight: 700; color: var(--crimson); white-space: nowrap; }
+.fKeys { display: grid; gap: 0.45rem; margin: 0.4rem 0 0; padding-top: 0.85rem; border-top: 1px dashed var(--ink-soft); }
+.fKey { display: grid; grid-template-columns: minmax(6.5rem, max-content) minmax(0, 1fr); gap: 0.75rem; align-items: baseline; }
+.fKey dt { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; line-height: 1.4; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crimson); }
+.fKey dd { margin: 0; font-size: 0.88rem; line-height: 1.4; }
+.fMedia { min-width: 0; }
+
+/* The screenshot, framed as a window with the site's crop marks. */
+.fShot {
+  position: relative; display: block; margin: 0; border: 1px solid var(--ink-soft); border-radius: 3px;
+  background: var(--bg-soft); box-shadow: 0 18px 40px -22px rgba(47, 1, 71, 0.45);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s;
+}
+.fShot::before, .fShot::after { content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; }
+.fShot::before { top: -7px; left: -7px; border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.fShot::after { bottom: -7px; right: -7px; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.fShot img { display: block; width: 100%; height: auto; border-radius: 3px; }
+@media (hover: hover) { .fShot:hover, .mb:hover { transform: translateY(-3px); box-shadow: 0 26px 50px -24px rgba(47, 1, 71, 0.55); } }
+.shotDark { display: none !important; }
+:global(:root[data-theme="dark"]) .shotLight { display: none !important; }
+:global(:root[data-theme="dark"]) .shotDark { display: block !important; }
+/* A small window (the pop-out) at its own size, on a quiet field. */
+.fShotPanel { display: grid; place-items: center; padding: 1.5rem; }
+.fShotPanel img { width: auto; max-width: min(100%, 300px); }
+
+/* Menu bar prototype: scales with its width (cqw), 16:10 like the screens. */
+.mb {
+  position: relative; container-type: inline-size; aspect-ratio: 16 / 10; overflow: hidden;
+  border: 1px solid var(--ink-soft); border-radius: 3px; box-shadow: 0 18px 40px -22px rgba(47, 1, 71, 0.45);
+  background: radial-gradient(120% 90% at 70% 10%, #5a1a6b 0%, #2F0147 55%, #1A0226 100%);
+  font-family: 'Lato', sans-serif; color: #2F0147;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s;
+}
+.mb::before, .mb::after { content: ''; position: absolute; width: 14px; height: 14px; z-index: 2; }
+.mb::before { top: 0; left: 0; border-top: 2px solid var(--crimson); border-left: 2px solid var(--crimson); }
+.mb::after { bottom: 0; right: 0; border-bottom: 2px solid var(--crimson); border-right: 2px solid var(--crimson); }
+.mbBar {
+  display: flex; align-items: center; gap: 2.2cqw; height: 4.2cqw; padding: 0 1.8cqw;
+  background: rgba(255, 236, 225, 0.82); font-size: 1.45cqw; color: #2F0147; white-space: nowrap;
+}
+.mbApp { font-weight: 900; }
+.mbSpacer { flex: 1; }
+.mbEssen { height: 3.2cqw; width: auto; }
+.mbItem {
+  display: inline-flex; align-items: center; gap: 0.9cqw; padding: 0.35cqw 1cqw; border-radius: 0.6cqw;
+  background: rgba(47, 1, 71, 0.14); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.3cqw;
+}
+.mbBarFill { width: 5cqw; height: 0.9cqw; border: 1px solid #2F0147; border-radius: 1px; background: linear-gradient(90deg, #A30B37 var(--p), transparent var(--p)); }
+.mbMenu {
+  position: absolute; top: 4.6cqw; right: 15cqw; width: 30cqw; display: flex; flex-direction: column;
+  padding: 0.6cqw; border-radius: 1cqw; background: rgba(255, 236, 225, 0.97);
+  box-shadow: 0 1.5cqw 4cqw rgba(0, 0, 0, 0.35); font-size: 1.45cqw;
+}
+.mbMenu span { display: flex; align-items: center; gap: 0.8cqw; padding: 0.55cqw 1.2cqw; border-radius: 0.6cqw; white-space: nowrap; }
+.mbMenu b { margin-left: auto; font-weight: 400; }
+.mbMenu em { width: 1.4cqw; font-style: normal; color: #A30B37; }
+.mbOff { color: rgba(47, 1, 71, 0.45); font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+.mbOn { background: #A30B37; color: #FFECE1; }
+.mbSep { height: 1px; margin: 0.5cqw 0.6cqw; background: rgba(47, 1, 71, 0.15); }
+.mbSub { top: 24.8cqw; right: auto; left: 33.2cqw; width: 22cqw; }
+.mbSub2 { top: 33.3cqw; right: auto; left: 17.4cqw; width: 16cqw; }
+
+@media (max-width: 900px) {
+  .fRow, .fRow:nth-child(even) { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; padding: 2rem 0; }
+  .fRow:nth-child(even) .fText { order: 0; }
+}
+
 /* ---- research questions ---- */
 .rqs { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
 .rq { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1rem; padding: 1rem 1.2rem; border-left: 3px solid var(--grape); background: var(--bg-soft); transition: border-color 0.2s; }
