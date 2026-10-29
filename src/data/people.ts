@@ -84,26 +84,26 @@ export const PEOPLE: Person[] = [
     id: 'rhys',
     name: 'Rhys Jason Hook',
     credentials: 'MSc, BSc · Durham',
-    role: 'Head of Development',
-    tagline: '(MSc, BSc · Durham) · Head of Development',
+    role: 'Chief Financial Officer',
+    tagline: '(MSc, BSc · Durham) · Chief Financial Officer',
     href: '#/people/rhys',
     linkedin: 'https://www.linkedin.com/in/rhys-hook-3874a9193/',
     photo: 'people/rhys.jpeg',
     themes: [
       {
-        title: 'Market analysis & product strategy',
+        title: 'Finance & funding',
         description:
-          'Analyzes market trends and customer needs to inform product development and go-to-market strategies.',
+          "Oversees Mentheon's finances, budgeting and funding strategy, so every work strand is costed and sustainable.",
       },
       {
-        title: 'Data & signal work',
+        title: 'Market research',
         description:
-          'Researches the market landscape for data-driven digital health products, identifying opportunities for innovation and differentiation.',
+          'Researches the markets, users and competitive landscape around each project, so what we build answers a real need.',
       },
       {
-        title: 'Operations & quality management',
+        title: 'Feasibility across the pipeline',
         description:
-          'Oversees operational processes and quality management systems to ensure compliance with industry standards and regulatory requirements.',
+          'Runs commercial, financial and operational feasibility studies at each stage of the pipeline, informing what moves forward.',
       },
     ],
   },
