@@ -259,14 +259,14 @@ const pending = (what: string) => <p className={s.empty}>{what} · to be written
 const withCode = (t: string) => t.split('`').map((p, i) => (i % 2 ? <code key={i} className={s.fCode}>{p}</code> : p))
 
 /* A real screenshot of the software, light and dark (the site's theme picks
-   one; the hidden one is lazy and never loads). Opens full size. */
+   one; the hidden one is lazy and never loads). Not a link: it only lifts
+   on hover. */
 function FeatureShot({ shot }: { shot: NonNullable<Feature['shot']> }) {
   const themed = shot.themed !== false
   const src = (t?: string) => `${import.meta.env.BASE_URL}${shot.dir}/${shot.name}${t ? `-${t}` : ''}.webp`
   const panel = shot.fit === 'panel'
   return (
-    <a className={cx(s.fShot, panel && s.fShotPanel)} href={src(themed ? 'light' : undefined)} target="_blank" rel="noreferrer"
-      title="Open full size">
+    <figure className={cx(s.fShot, panel && s.fShotPanel)}>
       {themed ? (
         <>
           <img className={s.shotLight} src={src('light')} alt={shot.alt} width={1920} height={1200} loading="lazy" decoding="async" />
@@ -275,7 +275,7 @@ function FeatureShot({ shot }: { shot: NonNullable<Feature['shot']> }) {
       ) : (
         <img src={src()} alt={shot.alt} loading="lazy" decoding="async" />
       )}
-    </a>
+    </figure>
   )
 }
 
