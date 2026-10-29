@@ -3460,7 +3460,7 @@ export default function Helix3D({ skipIntro = false, nodeStyle = 'embedded', cub
 
       <div className="footer-strip">
         <span>mentheon ltd · <strong>15974246</strong></span>
-        <span><strong>est 09.2024 · </strong> bloemfontein · newcastle · london</span>
+        <span><strong>est 09.2024 · </strong> durham · newcastle · london</span>
         <span><strong>mnth ✲</strong></span>
       </div>
 
