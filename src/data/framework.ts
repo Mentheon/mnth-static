@@ -308,7 +308,7 @@ export const OUTPUTS: Output[] = [
   ph('PER-01', { product: 'Sphekia', title: 'Sphekia', placeholder: false, synopsis: 'Description to be assigned.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
   ph('PER-02', { product: 'Fernfenster', title: 'Fernfenster', placeholder: false, synopsis: 'LDR diorama portal.', category: 'perception',   type: 'artefact',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
   ph('PLA-01', { product: 'Aufdröselung', title: 'Aufdröselung', placeholder: false, synopsis: 'German efficiency, untangling your day-to-day.', category: 'plasmids',     type: 'software',  stage: 3, regClass: 'None',              affiliation: { kind: 'owned' }, inflow: 'Insights flowing in', open: true,
-    beta: { seats: 10, taken: 3, email: CONTACT_EMAIL },
+    beta: { seats: 10, taken: 6, email: CONTACT_EMAIL },
     contacts: [{ name: 'Nicholas Quentin Smith', role: 'Founder & Director of Research', institution: 'Mentheon', person: 'nicholas', email: CONTACT_EMAIL }],
     ...AUFDROSELUNG }),
   ph('PLA-02', { product: 'Rostrella', title: 'Rostrella', placeholder: false, synopsis: 'Description to be assigned.', category: 'plasmids',     type: 'software',  stage: 0, regClass: 'None',              affiliation: { kind: 'owned' } }),
